@@ -1,0 +1,101 @@
+﻿@using System.Globalization;
+@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, int month, int year, int departmentId)
+@{
+    var currentYear = Model.year;
+    var selectedMonth = Model.month;
+}
+
+<table class="table table-borderless m-0" id="scheduleTable" style="border-collapse: separate; border-spacing: 0;">
+    <thead class="text-center sticky-top z-2">
+        <tr>
+            <th></th>
+            <th colspan="@DateTime.DaysInMonth(currentYear, selectedMonth)">@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)</th>
+        </tr>
+        <tr>
+            <th>Name</th>
+            @for (int i = 1; i <= DateTime.DaysInMonth(currentYear, selectedMonth); i++)
+            {
+                var date = new DateTime(currentYear, selectedMonth, i);
+                var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                <th class="@(isWeekend ? "bg-light text-muted" : "")">@i</th>
+            }
+        </tr>
+    </thead>
+    <tbody class="">
+        @foreach (var user in Model.Users)
+        {
+            <tr>
+                <td class="border-bottom border-end border-black text-nowrap text-start">@user.First_name @user.Last_name</td>
+                @for (int day = 1; day <= DateTime.DaysInMonth(currentYear, selectedMonth); day++)
+                {
+                    var date = new DateTime(currentYear, selectedMonth, day);
+                    var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                    var existingSchedule = Model.Schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date.Year == currentYear && s.Date.Month == selectedMonth && s.Date == date);
+                    var selectedShiftId = existingSchedule?.Shift_ID ?? 0;
+                    var hasLeave = existingSchedule?.Leave_ID.HasValue ?? false;
+
+                    <td id="cell-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")" class="p-1 @(isWeekend || date.ToString("yyyy-MM-dd") == "2025-03-20" ? "bg-secondary-subtle" : "") position-relative border-bottom border-end border-black"
+                        data-bs-toggle="tooltip" data-bs-placement="top"
+                        title="@existingSchedule?.Comment">
+                        @* @if (date.ToString("yyyy-MM-dd") == "2025-03-20")
+                        {
+                            <p data-date="@date.ToString("yyyy-MM-dd")" id="p-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")"
+                               class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center bg-danger"
+                               style="z-index: 0;">
+                            </p>
+                        } else
+                        { *@
+                            <p data-date="@date.ToString("yyyy-MM-dd")" id="p-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")"
+                               class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @(hasLeave ? $"bg-{existingSchedule?.Leave?.BsColor}" : "")"
+                               style="z-index: 0;">
+                                @existingSchedule?.Shift?.Shift_name
+                            </p>
+                        @* } *@
+                        <select class="form-control position-relative" onchange="assignShift(@user.Personnel_ID, '@date.ToString("yyyy-MM-dd")', this)" style="background-color: transparent;border: none;color: transparent;z-index: 1;">
+                            <option value="0"></option>
+                            <option disabled>Shifts</option> <!-- Separator -->
+                            @foreach (var shift in Model.Shifts)
+                            {
+                                if (shift.Shift_ID == selectedShiftId)
+                                {
+                                    <option class="text-body" value="@shift.Shift_ID" selected>@shift.Shift_name</option>
+                                }
+                                else
+                                {
+                                    <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
+                                }
+                            }
+                            <option disabled>Leaves</option> <!-- Separator -->
+                            <option class="text-body" value="10">Business trip</option>
+                            <option class="text-body" value="11">Paid leave</option>
+                            <option class="text-body" value="12">Unpaid leave</option>
+                        </select>
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+    <tfoot class="sticky-bottom z-2">
+        @foreach (var shift in Model.Shifts)
+        {
+            if (new[] { "A", "B", "C" }.Contains(shift.Shift_name))
+            {
+                <tr>
+                    <td class="border-end border-secondary-subtle fw-semibold text-end">Shift @shift.Shift_name</td>
+                    @for (int day = 1; day <= DateTime.DaysInMonth(currentYear, selectedMonth); day++)
+                    {
+                        var date = new DateTime(currentYear, selectedMonth, day);
+                        var totalShifts = Model.Schedules.Count(s => s.Shift_ID == shift.Shift_ID && s.Date == date && Model.Users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID));
+
+                        var bgColor = totalShifts == 0 ? "bg-danger"
+                                    : totalShifts == 1 ? "bg-warning-subtle"
+                                    : totalShifts == 2 ? "bg-success-subtle"
+                                    : "bg-success text-white";
+
+                        <td class="border-bottom border-end text-center @bgColor" id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">@totalShifts</td>
+                    }
+                </tr>
+            }
+        }
+    </tfoot>
+</table>

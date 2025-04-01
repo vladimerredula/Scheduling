@@ -1,0 +1,284 @@
+﻿@using System.Globalization;
+@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, int month, int year, int departmentId)
+@{
+    ViewData["Title"] = "Manage Schedules";
+
+    var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
+    var leaves = ViewBag.Leaves as List<Leave> ?? new List<Leave>();
+    var currentYear = Model.year;
+    var selectedMonth = Model.month;
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div class="row mb-3">
+    <div class="col-10">
+        <div class="row justify-content-between">
+            <div class="col-auto">
+                <div class="row">
+                    <div class="col-auto mb-2">
+                        <label for="departmentId" class="form-label">Department</label>
+                        <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                        </select>
+                    </div>
+                    <!-- Month Selection -->
+                    <div class="col-auto mb-2">
+                        <label for="monthSelect" class="form-label">Month</label>
+                        <input type="text" class="form-control" id="monthPicker">
+                    </div>
+                </div>
+            </div>
+            <div class="col-auto align-self-end">
+            </div>
+        </div>
+    </div>
+    <div class="col-2"></div>
+</div>
+
+<div class="row">
+    <div class="col-10">
+        <!-- Table with Regular Members and Dates -->
+        <div class="table-responsive border rounded-3" style="max-height: calc(100vh - 275px);">
+            <table class="table table-borderless border-secondary-subtle m-0" id="scheduleTable" style="border-collapse: separate; border-spacing: 0;">
+                <thead class="text-center sticky-top z-2">
+                    <tr>
+                        <th></th>
+                        <th colspan="@DateTime.DaysInMonth(currentYear, selectedMonth)">@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)</th>
+                    </tr>
+                    <tr>
+                        <th>Name</th>
+                        @for (int i = 1; i <= DateTime.DaysInMonth(currentYear, selectedMonth); i++)
+                        {
+                            var date = new DateTime(currentYear, selectedMonth, i);
+                            var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                            <th class="@(isWeekend ? "bg-light text-muted" : "")">@i</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody class="border">
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr>
+                            <td class="border-bottom border-end border-secondary-subtle text-nowrap text-start">@user.First_name @user.Last_name</td>
+                            @for (int day = 1; day <= DateTime.DaysInMonth(currentYear, selectedMonth); day++)
+                            {
+                                var date = new DateTime(currentYear, selectedMonth, day);
+                                var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                                var existingSchedule = Model.Schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date.Year == currentYear && s.Date.Month == selectedMonth && s.Date == date);
+                                var selectedShiftId = existingSchedule?.Shift_ID ?? 0;
+                                var hasLeave = existingSchedule?.Leave_ID.HasValue ?? false;
+
+                                <td id="cell-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")" class="p-1 @(isWeekend ? "bg-secondary-subtle" : "") position-relative border-bottom border-end border-secondary-subtle"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="@existingSchedule?.Comment">
+                                    <p data-date="@date.ToString("yyyy-MM-dd")" id="p-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")"
+                                       class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @(hasLeave ? $"bg-{existingSchedule?.Leave?.BsColor}" : "")"
+                                       style="z-index: 0;">
+                                        @existingSchedule?.Shift?.Shift_name
+                                    </p>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="sticky-bottom z-2">
+                    @foreach (var shift in Model.Shifts)
+                    {
+                        if (new[] { "A", "B", "C" }.Contains(shift.Shift_name))
+                        {
+                            <tr>
+                                <td class="border-end border-secondary-subtle fw-semibold text-end">Shift @shift.Shift_name</td>
+                                @for (int day = 1; day <= DateTime.DaysInMonth(currentYear, selectedMonth); day++)
+                                {
+                                    var date = new DateTime(currentYear, selectedMonth, day);
+                                    var totalShifts = Model.Schedules.Count(s => s.Shift_ID == shift.Shift_ID && s.Date == date && Model.Users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID));
+
+                                    var bgColor = totalShifts == 0 ? "bg-danger text-white"
+                                    : totalShifts == 1 ? "bg-warning-subtle"
+                                    : totalShifts == 2 ? "bg-success-subtle"
+                                    : "bg-success text-white";
+
+                                    <td class="border-bottom border-end border-secondary-subtle text-center @bgColor" id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">@totalShifts</td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <div class="col-2">
+        <table class="table table-sm table-borderless text-center mb-3">
+            <tbody>
+                <tr>
+                    <td class="">Business trip</td>
+                    <td class="bg-warning col-5"></td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td class="">Paid Leave</td>
+                    <td class="bg-primary col-5"></td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td class="">Unpaid leave</td>
+                    <td class="bg-success col-5"></td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td class="">Comapny Holiday</td>
+                    <td class="bg-danger col-5"></td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="table text-center mb-3">
+            <thead>
+                <tr>
+                    <th colspan="2">4/2 pattern</th>
+                </tr>
+                <tr>
+                    <th>Shift</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>A</td>
+                    <td>7:15 - 16:45</td>
+                </tr>
+                <tr>
+                    <td>B</td>
+                    <td>12:45 - 22:15</td>
+                </tr>
+                <tr>
+                    <td>C</td>
+                    <td>22:00 - 7:30</td>
+                </tr>
+                <tr>
+                    <td>J</td>
+                    <td>09:00 - 18:00</td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="table text-center">
+            <thead>
+                <tr>
+                    <th colspan="2">5/2 pattern</th>
+                </tr>
+                <tr>
+                    <th>Shift</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>A</td>
+                    <td>7:15 - 16:15</td>
+                </tr>
+                <tr>
+                    <td>B</td>
+                    <td>13:15 - 22:15</td>
+                </tr>
+                <tr>
+                    <td>C</td>
+                    <td>22:15 - 7:15</td>
+                </tr>
+                <tr>
+                    <td>J</td>
+                    <td>09:00 - 18:00</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
+            $('#monthPicker').datepicker({
+                format: "MM yyyy",
+                minViewMode: 1,
+                maxViewMode: 2,
+                autoclose: true
+            }).datepicker('setDate', new Date()).on("changeDate", function (e) {
+                let selectedDate = e.date;
+                let month = selectedDate.getMonth() + 1; // getMonth() returns month from 0 to 11
+                let year = selectedDate.getFullYear();
+                loadSchedule(month, year);
+            });
+        });
+
+        $("#departmentId").on("change", function () {
+            let date = $('#monthPicker').datepicker("getDate");
+            loadSchedule(date.getMonth() + 1, date.getFullYear());
+        });
+
+        function loadSchedule(month, year) {
+            let departmentId = $("#departmentId").val();
+
+            $.ajax({
+                url: '/Schedule/GetScheduleByMonth',
+                type: 'GET',
+                data: {
+                    month: month,
+                    year: year,
+                    departmentId: departmentId
+                },
+                success: function (response) {
+                    $("#scheduleTable").html(response);
+                },
+                error: function () {
+                    alert("Error loading schedule.");
+                }
+            });
+        }
+
+        function updateShiftCount(date) {
+            let shiftTypes = ["A", "B", "C"];
+
+            shiftTypes.forEach(shift => {
+                let count = $(`[data-date="${date}"]`).filter((_, el) => $(el).text().trim() === shift).length;
+                let cell = $(`#shift-${shift}-${date}`);
+
+                cell.text(count);
+
+                // Remove previous colors before applying the new one
+                cell.removeClass("bg-danger bg-warning-subtle bg-success-subtle bg-success text-white");
+
+                // Apply background color based on shift count
+                if (count === 0) {
+                    cell.addClass("bg-danger text-white"); // Red
+                } else if (count === 1) {
+                    cell.addClass("bg-warning-subtle"); // Yellow
+                } else if (count === 2) {
+                    cell.addClass("bg-success-subtle"); // Light Green
+                } else {
+                    cell.addClass("bg-success text-white"); // Green
+                }
+            });
+        }
+    </script>
+}

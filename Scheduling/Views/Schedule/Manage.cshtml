@@ -1,0 +1,393 @@
+﻿@using System.Globalization;
+@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, int month, int year, int departmentId)
+@{
+    ViewData["Title"] = "Manage Schedules";
+
+    var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
+    var leaves = ViewBag.Leaves as List<Leave> ?? new List<Leave>();
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div class="row mb-3">
+    <div class="col-10">
+        <div class="row justify-content-between">
+            <div class="col-auto">
+                <div class="row">
+                    <div class="col-auto mb-2">
+                        <label for="departmentId" class="form-label">Department</label>
+                        <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                        </select>
+                    </div>
+                    <!-- Month Selection -->
+                    <div class="col-auto mb-2">
+                        <label for="monthSelect" class="form-label">Month</label>
+                        <input type="text" class="form-control" id="monthPicker">
+                    </div>
+                </div>
+            </div>
+            <div class="col-auto align-self-end">
+                <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveModal">Add leave</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-2"></div>
+</div>
+
+<div class="row">
+    <div class="col-10">
+        <!-- Table with Regular Members and Dates -->
+        <div class="table-responsive border rounded-3" style="max-height: calc(100vh - 275px);">
+            <div id="loading-spinner" class="position-absolute top-50 start-50 z-3 d-none">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <partial name="_ScheduleTable" />
+        </div>
+    </div>
+    <div class="col-2">
+        <table class="table table-sm table-borderless text-center mb-3 ms-5">
+            <tbody>
+                <tr>
+                    <td class="bg-warning col-2"></td>
+                    <td class="text-start ps-2">Business trip</td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td class="bg-primary"></td>
+                    <td class="text-start ps-2">Paid Leave</td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td class="bg-success"></td>
+                    <td class="text-start ps-2">Unpaid leave</td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td class="bg-danger"></td>
+                    <td class="text-start ps-2">Company Holiday</td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="table text-center mb-3">
+            <thead>
+                <tr>
+                    <th colspan="2">4/2 pattern</th>
+                </tr>
+                <tr>
+                    <th>Shift</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>A</td>
+                    <td>7:15 - 16:45</td>
+                </tr>
+                <tr>
+                    <td>B</td>
+                    <td>12:45 - 22:15</td>
+                </tr>
+                <tr>
+                    <td>C</td>
+                    <td>22:00 - 7:30</td>
+                </tr>
+                <tr>
+                    <td>J</td>
+                    <td>09:00 - 18:00</td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="table text-center">
+            <thead>
+                <tr>
+                    <th colspan="2">5/2 pattern</th>
+                </tr>
+                <tr>
+                    <th>Shift</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>A*</td>
+                    <td>7:15 - 16:15</td>
+                </tr>
+                <tr>
+                    <td>B*</td>
+                    <td>13:15 - 22:15</td>
+                </tr>
+                <tr>
+                    <td>C*</td>
+                    <td>22:15 - 7:15</td>
+                </tr>
+                <tr>
+                    <td>J</td>
+                    <td>09:00 - 18:00</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Leave Modal -->
+<div class="modal fade" id="leaveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Assign leave</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="AssignLeaves">
+                <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label">Employee</label>
+                                <select name="userId" id="userId" class="form-select">
+                                    <option value="" disabled selected>Choose..</option>
+                                    @foreach (var user in Model.Users)
+                                    {
+                                        <option value="@user.Personnel_ID">@user.First_name @user.Last_name</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label">Leave type</label>
+                                <select name="leaveId" id="leaveId" class="form-select">
+                                    <option value="" disabled selected>Choose..</option>
+                                    @foreach (var leave in leaves)
+                                    {
+                                        <option value="@leave.Leave_ID">@leave.Leave_name</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label">Start</label>
+                                <input class="form-control" type="text" name="dateStart" id="dateStart" placeholder="mm/dd/yyyyy" />
+                            </div>
+                            <div class="col">
+                                <label class="form-label">End</label>
+                                <input class="form-control" type="text" name="dateEnd" id="dateEnd" placeholder="mm/dd/yyyyy" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <label>Comment</label>
+                                <textarea name="comment" id="comment" class="form-control"></textarea>
+                            </div>
+                        </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function (){
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
+            $('#monthPicker').datepicker({
+                format: "MM yyyy",
+                minViewMode: 1,
+                maxViewMode: 2,
+                autoclose: true
+            }).datepicker('setDate', new Date()).on("changeDate", function (e) {
+                let selectedDate = e.date;
+                let month = selectedDate.getMonth() + 1; // getMonth() returns month from 0 to 11
+                let year = selectedDate.getFullYear(); 
+                loadSchedule(month, year);
+            });
+
+            $("#dateStart").datepicker({
+                format: "mm/dd/yyyy",
+                orientation: "bottom auto",
+                autoclose: true,
+                todayHighlight: true
+            }).on("changeDate", function (e) {
+                let selectedDate = e.date;
+                let endDate = $("#dateEnd");
+                if (endDate.val() == "") {
+                    endDate.focus();
+                }
+            });
+
+            $("#dateEnd").datepicker({
+                format: "mm/dd/yyyy",
+                orientation: "bottom auto",
+                autoclose: true,
+                todayHighlight: true
+            });
+        });
+
+        $("#departmentId").on("change", function () {
+            let date = $('#monthPicker').datepicker("getDate");
+            loadSchedule(date.getMonth() + 1, date.getFullYear());
+        }); 
+        
+        function showSpinner() {
+            $("#loading-spinner").removeClass("d-none");
+        }
+
+        function hideSpinner() {
+            $("#loading-spinner").addClass("d-none");
+        }
+
+        function loadSchedule(month, year) {
+            let departmentId = $("#departmentId").val();
+
+            showSpinner();
+            $.ajax({
+                url: '/Schedule/GetScheduleByMonth',
+                type: 'GET',
+                data: { 
+                    month: month,
+                    year: year,
+                    departmentId: departmentId
+                },
+                success: function (response) {
+                    $("#scheduleTable").html(response);
+                    hideSpinner();
+                },
+                error: function () {
+                    alert("Error loading schedule.");
+                }
+            });
+        }
+
+        function assignShift(userId, date, dropdown) {
+            var shiftId = dropdown.value;
+
+            if (shiftId >= 10) {
+                $.ajax({
+                    url: '/Schedule/AssignLeave',
+                    type: 'POST',
+                    data: {
+                        userId: userId,
+                        date: date,
+                        leaveId: shiftId
+                    },
+                    success: function (response) {
+                        if (!response.success) {
+                            alert('Error assigning leave!');
+                        } else {
+                            let p = $(`#p-${userId}-${date}`);
+
+                            addLeaveBg(p, shiftId);
+                            p.text("");
+
+                            updateShiftCount(date);
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while assigning the leave.');
+                    }
+                });
+            } else {
+                $.ajax({
+                    url: '/Schedule/AssignShift',
+                    type: 'POST',
+                    data: {
+                        userId: userId,
+                        date: date,
+                        shiftId: shiftId
+                    },
+                    success: function (response) {
+                        if (!response.success) {
+                            alert('Error assigning shift!');
+                        } else {
+                            let p = $(`#p-${userId}-${date}`);
+                            removeLeaveBg(p);
+                            p.text(dropdown.options[dropdown.selectedIndex].text);
+
+                            updateShiftCount(date);
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while assigning the shift.');
+                    }
+                });
+            }
+        }
+
+        function updateShiftCount(date) {
+            let shiftTypes = ["A", "B", "C"];
+
+            shiftTypes.forEach(shift => {
+                let count = $(`[data-date="${date}"]`).filter((_, el) => $(el).text().trim() === shift).length;
+                let cell = $(`#shift-${shift}-${date}`);
+
+                cell.text(count);
+
+                // Remove previous colors before applying the new one
+                cell.removeClass("bg-danger bg-warning-subtle bg-success-subtle bg-success text-white");
+
+                // Apply background color based on shift count
+                if (count === 0) {
+                    cell.addClass("bg-danger-subtle text-white"); // Red
+                } else if (count === 1) {
+                    cell.addClass("bg-warning-subtle"); // Yellow
+                } else if (count === 2) {
+                    cell.addClass("bg-success-subtle"); // Light Green
+                } else {
+                    cell.addClass("bg-success text-white"); // Green
+                }
+            });
+        }
+
+        function addLeaveBg(p, leaveId) {
+            let bgClass = "";
+
+            switch (leaveId) {
+                case "10":
+                    bgClass = "bg-warning";
+                    break;
+                case "12":
+                    bgClass = "bg-success";
+                    break;
+                default:
+                    bgClass = "bg-primary";
+                    break;
+            }
+
+            removeLeaveBg(p);
+            $(p).addClass(bgClass);
+        }
+
+        function removeLeaveBg(p) {
+            $(p).removeClass("bg-primary");
+            $(p).removeClass("bg-success");
+            $(p).removeClass("bg-warning");
+        }
+    </script>
+}

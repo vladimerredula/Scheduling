@@ -1,0 +1,22 @@
+﻿@model Scheduling.Models.ErrorViewModel
+
+@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="row">
+    <div class="col-sm-12 col-lg-6 mx-auto">
+        <div class="card shadow-sm mt-sm-2 mt-md-5">
+            <div class="card-body text-center py-5">
+                <h2 class="card-title"><span class="text-danger">Ops!</span> An error occurred.</h2>
+                <p class="card-text">We're sorry, but something went wrong. Please try again later.</p>
+            </div>
+            <div class="card-footer">
+                @if (Model.ShowRequestId)
+                {
+                    <strong>Request ID:</strong> <code>@Model.RequestId</code>
+                }
+            </div>
+        </div>
+    </div>
+</div>

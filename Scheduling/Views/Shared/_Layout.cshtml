@@ -1,0 +1,100 @@
+﻿@using System.Security.Claims
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Scheduling</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-datepicker/css/bootstrap-datepicker.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Scheduling.styles.css" asp-append-version="true" />
+
+    <!-- Data Tables -->
+    <link rel="stylesheet" href="~/css/datatables.min.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        var routeData = ViewContext.RouteData.Values;
+        var controller = routeData["controller"]?.ToString();
+        var action = routeData["action"]?.ToString();
+        var firstName = User.FindFirstValue(ClaimTypes.GivenName);
+        var lastName = User.FindFirstValue(ClaimTypes.Surname);
+    }
+
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Scheduling</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Schedule" asp-action="Index">Schedule</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Schedule" asp-action="Manage">Manage</a>
+                        </li>
+                    </ul>
+
+                    <ul class="navbar-nav navbar-right">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item dropdown" id="notifDropdown">
+                                @* <a class="nav-link " href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" id="notification">
+                            Notifications  <span class="badge bg-secondary" id="notificationCount">0</span>
+                            </a> *@
+                                <a class="nav-link position-relative me-2 p-1" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" id="notification">
+                                    <i class="fs-5 bi bi-bell-fill"></i>
+                                    <div id="notificationCount" hidden>
+                                        <span class="position-absolute bottom-50 start-50 p-2 bg-danger border border-light rounded-circle">
+                                            <span class="visually-hidden">New alerts</span>
+                                        </span>
+                                    </div>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notification" style="min-width:350px;max-width:370px;" id="notificationList">
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="userDropdownMenu">
+                                    @firstName @lastName
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdownMenu">
+                                    @* <li><a class="dropdown-item" data-bs-toggle="popover" data-bs-offset="0,30" data-bs-trigger="hover focus" data-bs-content="In progress"><i class="bi bi-person-circle"></i> My Profile</a></li> *@
+                                    <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#changePassModal"><i class="bi bi-person-fill-gear"></i> Change password</a></li>
+                                    <li><a asp-controller="Access" asp-action="Logout" class="dropdown-item"><i class="bi bi-box-arrow-left"></i> Logout</a></li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item"><a class="nav-link" asp-controller="Access" asp-action="Login" role="button"><i class="bi bi-box-arrow-in-right"></i> Login</a></li>
+                        }
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    @* <div class="container"> *@
+    <div class="px-3 px-sm-5">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Data Tables -->
+    <script src="~/js/datatables.min.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
