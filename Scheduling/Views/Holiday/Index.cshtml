@@ -1,4 +1,7 @@
-﻿@model Holiday
+﻿@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "admin,manager")] // Ensure only Manager can access this page
+
+@model Holiday
 
 @{
     ViewData["Title"] = "Holidays";
@@ -127,7 +130,7 @@
                 </dl>
             </div>
             <div class="modal-footer border-0">
-                <form asp-action="DeleteHoliday">
+                <form asp-action="Delete">
                     <input type="hidden" name="id" id="deleteID" />
                     <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
                     <input type="submit" value="Delete" class="btn btn-danger" />

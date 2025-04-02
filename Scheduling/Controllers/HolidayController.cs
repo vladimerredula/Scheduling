@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Scheduling.Models;
-using System.Threading.Tasks;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Scheduling.Controllers
 {
@@ -111,19 +108,6 @@ namespace Scheduling.Controllers
             }
 
             return Ok(holiday);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var holiday = await _db.Holidays.FindAsync(id);
-            if (holiday != null)
-            {
-                _db.Holidays.Remove(holiday);
-                await _db.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(Index));
         }
     }
 }
