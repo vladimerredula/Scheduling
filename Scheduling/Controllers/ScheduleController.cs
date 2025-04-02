@@ -43,7 +43,7 @@ namespace Scheduling.Controllers
             return View((users, shifts, schedules, holidays, month, year, departmentId));
         }
 
-        [Authorize(Roles = "0,3")]
+        [Authorize(Roles = "admin,manager")]
         public async Task<IActionResult> Manage(int month = 0, int year = 0, int departmentId = 0)
         {
             var user = await ThisUser();
@@ -77,7 +77,7 @@ namespace Scheduling.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "0,3")]
+        [Authorize(Roles = "admin,manager")]
         public async Task<IActionResult> AssignShift(int userId, int shiftId, DateTime date)
         {
             var existingSchedule = await _db.Schedules
@@ -114,7 +114,7 @@ namespace Scheduling.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "0,3")]
+        [Authorize(Roles = "admin,manager")]
         public async Task<IActionResult> AssignLeave(int userId, int leaveId, DateTime date)
         {
             var existingLeave = await _db.Schedules
@@ -144,7 +144,7 @@ namespace Scheduling.Controllers
             return Json(new { success = true });
         }
 
-        [Authorize(Roles = "0,3")]
+        [Authorize(Roles = "admin,manager")]
         public async Task<IActionResult> AssignLeaves(int userId, int leaveId, DateTime dateStart, DateTime dateEnd, string comment = "")
         {
             for (DateTime date = dateStart; date <= dateEnd; date = date.AddDays(1))
@@ -184,7 +184,7 @@ namespace Scheduling.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "0,3")]
+        [Authorize(Roles = "admin,manager")]
         public async Task<IActionResult> RemoveShift(int scheduleId)
         {
             var schedule = await _db.Schedules.FindAsync(scheduleId);

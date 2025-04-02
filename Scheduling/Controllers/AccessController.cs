@@ -56,10 +56,27 @@ namespace Scheduling.Controllers
                     return View(model);
                 }
 
+                var role = "";
+                switch (userdetails.Privilege_ID)
+                {
+                    case 0:
+                        role = "admin";
+                        break;
+                    case 2:
+                        role = "shiftLeader";
+                        break;
+                    case 3:
+                        role = "manager";
+                        break;
+                    default:
+                        role = "member";
+                        break;
+                }
+
                 List<Claim> claims = new List<Claim>()
                 {
                     // Here we store user login information of the user that we can retrieve later
-                    new Claim(ClaimTypes.Role, userdetails.Privilege_ID.ToString()),
+                    new Claim(ClaimTypes.Role, role),
                     new Claim(ClaimTypes.Name, userdetails.Username),
                     new Claim(ClaimTypes.GivenName, userdetails.First_name),
                     new Claim(ClaimTypes.Surname, userdetails.Last_name),
