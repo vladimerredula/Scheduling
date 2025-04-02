@@ -7,148 +7,126 @@
     var leaves = ViewBag.Leaves as List<Leave> ?? new List<Leave>();
 }
 
-<h2>@ViewData["Title"]</h2>
+<div class="px-3 px-sm-5">
+    <h2>@ViewData["Title"]</h2>
 
-<div class="row mb-3">
-    <div class="col-10">
-        <div class="row justify-content-between">
-            <div class="col-auto">
-                <div class="row">
-                    <div class="col-auto mb-2">
-                        <label for="departmentId" class="form-label">Department</label>
-                        <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
-                        </select>
+    <div class="row mb-3">
+        <div class="col-10">
+            <div class="row justify-content-between">
+                <div class="col-auto">
+                    <div class="row">
+                        <div class="col-auto mb-2">
+                            <label for="departmentId" class="form-label">Department</label>
+                            <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                            </select>
+                        </div>
+                        <!-- Month Selection -->
+                        <div class="col-auto mb-2">
+                            <label for="monthSelect" class="form-label">Month</label>
+                            <input type="text" class="form-control" id="monthPicker">
+                        </div>
                     </div>
-                    <!-- Month Selection -->
-                    <div class="col-auto mb-2">
-                        <label for="monthSelect" class="form-label">Month</label>
-                        <input type="text" class="form-control" id="monthPicker">
+                </div>
+                <div class="col-auto align-self-end">
+                    @* <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveModal">Add leave</a> *@
+                </div>
+            </div>
+        </div>
+        <div class="col-2"></div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-xxl-10 mb-3">
+            <!-- Table with Regular Members and Dates -->
+            <div class="card p-3">
+                <div id="loading-spinner" class="position-absolute top-50 start-50 z-3 d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div class="table-responsive" id="scheduleTable" style="max-height: calc(100vh - 275px);">
+                    <partial name="_ScheduleTable" />
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-xxl-2">
+            <div class="row mb-3">
+                <div class="col col-sm-6 col-xxl-12 mb-3">
+                    <div class="card p-4">
+                        <p><span class="bg-primary-subtle">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Business trip</p>
+                        <p><span class="bg-info">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Paid leave</p>
+                        <p><span class="bg-primary">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Unpaid leave</p>
+                        <p class="mb-0"><span class="bg-danger">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Company holiday</p>
+                    </div>
+                </div>
+                <div class="col col-sm-6 col-xxl-12 mb-3">
+                    <div class="card py-2 px-4">
+                        <table class="table text-center mb-3">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">4/2 pattern</th>
+                                </tr>
+                                <tr>
+                                    <th>Shift</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>A</td>
+                                    <td>7:15 - 16:45</td>
+                                </tr>
+                                <tr>
+                                    <td>B</td>
+                                    <td>12:45 - 22:15</td>
+                                </tr>
+                                <tr>
+                                    <td>C</td>
+                                    <td>22:00 - 7:30</td>
+                                </tr>
+                                <tr>
+                                    <td>J</td>
+                                    <td>09:00 - 18:00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col col-sm-6 col-xxl-12 mb-3">
+                    <div class="card py-2 px-4">
+                        <table class="table text-center">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">5/2 pattern</th>
+                                </tr>
+                                <tr>
+                                    <th>Shift</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>A*</td>
+                                    <td>7:15 - 16:15</td>
+                                </tr>
+                                <tr>
+                                    <td>B*</td>
+                                    <td>13:15 - 22:15</td>
+                                </tr>
+                                <tr>
+                                    <td>C*</td>
+                                    <td>22:15 - 7:15</td>
+                                </tr>
+                                <tr>
+                                    <td>J</td>
+                                    <td>09:00 - 18:00</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-            <div class="col-auto align-self-end">
-                <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveModal">Add leave</a>
-            </div>
         </div>
-    </div>
-    <div class="col-2"></div>
-</div>
-
-<div class="row">
-    <div class="col-10">
-        <!-- Table with Regular Members and Dates -->
-        <div class="table-responsive border rounded-3" style="max-height: calc(100vh - 275px);">
-            <div id="loading-spinner" class="position-absolute top-50 start-50 z-3 d-none">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-            <partial name="_ScheduleTable" />
-        </div>
-    </div>
-    <div class="col-2">
-        <table class="table table-sm table-borderless text-center mb-3 ms-5">
-            <tbody>
-                <tr>
-                    <td class="bg-warning col-2"></td>
-                    <td class="text-start ps-2">Business trip</td>
-                </tr>
-                <tr>
-                    <td> </td>
-                    <td> </td>
-                </tr>
-                <tr>
-                    <td> </td>
-                    <td> </td>
-                </tr>
-                <tr>
-                    <td class="bg-primary"></td>
-                    <td class="text-start ps-2">Paid Leave</td>
-                </tr>
-                <tr>
-                    <td> </td>
-                    <td> </td>
-                </tr>
-                <tr>
-                    <td> </td>
-                    <td> </td>
-                </tr>
-                <tr>
-                    <td class="bg-success"></td>
-                    <td class="text-start ps-2">Unpaid leave</td>
-                </tr>
-                <tr>
-                    <td> </td>
-                    <td> </td>
-                </tr>
-                <tr>
-                    <td> </td>
-                    <td> </td>
-                </tr>
-                <tr>
-                    <td class="bg-danger"></td>
-                    <td class="text-start ps-2">Company Holiday</td>
-                </tr>
-            </tbody>
-        </table>
-        <table class="table text-center mb-3">
-            <thead>
-                <tr>
-                    <th colspan="2">4/2 pattern</th>
-                </tr>
-                <tr>
-                    <th>Shift</th>
-                    <th>Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>A</td>
-                    <td>7:15 - 16:45</td>
-                </tr>
-                <tr>
-                    <td>B</td>
-                    <td>12:45 - 22:15</td>
-                </tr>
-                <tr>
-                    <td>C</td>
-                    <td>22:00 - 7:30</td>
-                </tr>
-                <tr>
-                    <td>J</td>
-                    <td>09:00 - 18:00</td>
-                </tr>
-            </tbody>
-        </table>
-        <table class="table text-center">
-            <thead>
-                <tr>
-                    <th colspan="2">5/2 pattern</th>
-                </tr>
-                <tr>
-                    <th>Shift</th>
-                    <th>Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>A*</td>
-                    <td>7:15 - 16:15</td>
-                </tr>
-                <tr>
-                    <td>B*</td>
-                    <td>13:15 - 22:15</td>
-                </tr>
-                <tr>
-                    <td>C*</td>
-                    <td>22:15 - 7:15</td>
-                </tr>
-                <tr>
-                    <td>J</td>
-                    <td>09:00 - 18:00</td>
-                </tr>
-            </tbody>
-        </table>
     </div>
 </div>
 
@@ -354,7 +332,7 @@
 
                 // Apply background color based on shift count
                 if (count === 0) {
-                    cell.addClass("bg-danger-subtle text-white"); // Red
+                    cell.addClass("bg-danger text-white"); // Red
                 } else if (count === 1) {
                     cell.addClass("bg-warning-subtle"); // Yellow
                 } else if (count === 2) {

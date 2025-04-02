@@ -5,14 +5,11 @@
     var selectedMonth = Model.month;
 }
 
-<table class="table table-borderless m-0" id="scheduleTable" style="border-collapse: separate; border-spacing: 0;">
+<h4 class="text-center stick-top">@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)</h4>
+<table class="table table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
     <thead class="text-center sticky-top z-2">
         <tr>
-            <th></th>
-            <th colspan="@DateTime.DaysInMonth(currentYear, selectedMonth)">@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)</th>
-        </tr>
-        <tr>
-            <th>Name</th>
+            <th class="border border-black">Name</th>
             @for (int i = 1; i <= DateTime.DaysInMonth(currentYear, selectedMonth); i++)
             {
                 var date = new DateTime(currentYear, selectedMonth, i);
@@ -27,7 +24,7 @@
         @foreach (var user in Model.Users)
         {
             <tr>
-                <td class="border-bottom border-end border-black text-nowrap text-start">@user.First_name @user.Last_name</td>
+                <td class="border border-top-0 border-black text-nowrap text-start">@user.First_name @user.Last_name</td>
                 @for (int day = 1; day <= DateTime.DaysInMonth(currentYear, selectedMonth); day++)
                 {
                     var date = new DateTime(currentYear, selectedMonth, day);
@@ -42,23 +39,13 @@
                         class="p-1 @(isWeekend ? "bg-secondary-subtle" : holidayClass != "" ? holidayClass : "") position-relative border-bottom border-end border-black"
                         data-bs-toggle="tooltip" data-bs-placement="top"
                         title="@existingSchedule?.Comment">
-                        @* @if (date.ToString("yyyy-MM-dd") == "2025-03-20")
-                        {
-                            <p data-date="@date.ToString("yyyy-MM-dd")" id="p-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")"
-                               class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center bg-danger"
-                               style="z-index: 0;">
-                            </p>
-                        } else
-                        { *@
-                            <p data-date="@date.ToString("yyyy-MM-dd")" id="p-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")"
-                               class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @(hasLeave ? $"bg-{existingSchedule?.Leave?.BsColor}" : "")"
-                               style="z-index: 0;">
-                                @existingSchedule?.Shift?.Shift_name
-                            </p>
-                        @* } *@
+                        <p data-date="@date.ToString("yyyy-MM-dd")" id="p-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")"
+                           class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @(hasLeave ? $"bg-{existingSchedule?.Leave?.BsColor}" : "")"
+                           style="z-index: 0;">
+                            @existingSchedule?.Shift?.Shift_name
+                        </p>
                         <select class="form-control position-relative" onchange="assignShift(@user.Personnel_ID, '@date.ToString("yyyy-MM-dd")', this)" style="background-color: transparent;border: none;color: transparent;z-index: 1;">
                             <option value="0"></option>
-                            <option disabled>Shifts</option> <!-- Separator -->
                             @foreach (var shift in Model.Shifts)
                             {
                                 if (shift.Shift_ID == selectedShiftId)
@@ -70,10 +57,10 @@
                                     <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
                                 }
                             }
-                            <option disabled>Leaves</option> <!-- Separator -->
-                            <option class="text-body" value="10">Business trip</option>
-                            <option class="text-body" value="11">Paid leave</option>
-                            <option class="text-body" value="12">Unpaid leave</option>
+                            @* <option disabled>Leaves</option> <!-- Separator --> *@
+                            @* <option class="text-body" value="10">Business trip</option> *@
+                            @* <option class="text-body" value="11">Paid leave</option> *@
+                            @* <option class="text-body" value="12">Unpaid leave</option> *@
                         </select>
                     </td>
                 }
@@ -86,18 +73,19 @@
             if (new[] { "A", "B", "C" }.Contains(shift.Shift_name))
             {
                 <tr>
-                    <td class="border-end border-secondary-subtle fw-semibold text-end">Shift @shift.Shift_name</td>
+                    <td class="border-end border-black fw-semibold text-end">Shift @shift.Shift_name</td>
                     @for (int day = 1; day <= DateTime.DaysInMonth(currentYear, selectedMonth); day++)
                     {
                         var date = new DateTime(currentYear, selectedMonth, day);
                         var totalShifts = Model.Schedules.Count(s => s.Shift_ID == shift.Shift_ID && s.Date == date && Model.Users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID));
 
-                        var bgColor = totalShifts == 0 ? "bg-danger"
+                        var bgColor = totalShifts == 0 ? "bg-danger-subtle"
                                     : totalShifts == 1 ? "bg-warning-subtle"
-                                    : totalShifts == 2 ? "bg-success-subtle"
+                                    : totalShifts == 2 ? "bg-warning"
+                                    : totalShifts == 3 ? "bg-success-subtle"
                                     : "bg-success text-white";
 
-                        <td class="border-bottom border-end text-center @bgColor" id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">@totalShifts</td>
+                        <td class="border-bottom border-end border-black text-center @bgColor" id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">@totalShifts</td>
                     }
                 </tr>
             }

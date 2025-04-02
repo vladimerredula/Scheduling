@@ -34,7 +34,7 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Schedule" asp-action="Index">Schedule</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Schedule" asp-action="Manage">Schedule</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Holiday" asp-action="Index">Holiday</a>
@@ -81,11 +81,10 @@
         </nav>
     </header>
     @* <div class="container"> *@
-    <div class="px-3 px-sm-5">
         <main role="main">
             @RenderBody()
         </main>
-    </div>
+    @* </div> *@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
