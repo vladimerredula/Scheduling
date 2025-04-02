@@ -35,11 +35,12 @@ namespace Scheduling.Controllers
             var users = _db.Users.Where(u => (u.Privilege_ID == 1 || u.Privilege_ID == 2) && u.Department_ID == departmentId).ToList();
             var shifts = _db.Shifts.ToList();
             var schedules = _db.Schedules.Include(s => s.User).Include(s => s.Shift).Include(s => s.Leave).ToList();
+            var holidays = _db.Holidays.ToList();
 
             ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
             ViewBag.Leaves = _db.Leaves.ToList();
 
-            return View((users, shifts, schedules, month, year, departmentId));
+            return View((users, shifts, schedules, holidays, month, year, departmentId));
         }
 
         [Authorize(Roles = "0,3")]
@@ -67,11 +68,12 @@ namespace Scheduling.Controllers
                 .ToList();
             var shifts = _db.Shifts.ToList();
             var schedules = _db.Schedules.Include(s => s.User).Include(s => s.Shift).Include(s => s.Leave).ToList();
+            var holidays = _db.Holidays.ToList();
 
             ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
             ViewBag.Leaves = _db.Leaves.ToList();
 
-            return View((users, shifts, schedules, month, year, departmentId));
+            return View((users, shifts, schedules, holidays, month, year, departmentId));
         }
 
         [HttpPost]
@@ -207,8 +209,9 @@ namespace Scheduling.Controllers
                 .ToList();
 
             ViewBag.Leaves = _db.Leaves.ToList();
+            var holidays = _db.Holidays.ToList();
 
-            return PartialView("_ScheduleTable", (users, shifts, schedules, month, year, departmentId));
+            return PartialView("_ScheduleTable", (users, shifts, schedules, holidays, month, year, departmentId));
         }
 
         public int GetPersonnelID()

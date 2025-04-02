@@ -1,5 +1,5 @@
 ﻿@using System.Globalization;
-@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, int month, int year, int departmentId)
+@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Holiday> Holidays, int month, int year, int departmentId)
 @{
     var currentYear = Model.year;
     var selectedMonth = Model.month;
@@ -17,7 +17,9 @@
             {
                 var date = new DateTime(currentYear, selectedMonth, i);
                 var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
-                <th class="@(isWeekend ? "bg-light text-muted" : "")">@i</th>
+                var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
+                var holidayClass = holiday != null ? (holiday.Type == "Company" ? "bg-danger" : "bg-secondary-subtle") : "";
+                <th class="border border-start-0 border-black @(isWeekend ? "bg-secondary-subtle" : holidayClass)">@i</th>
             }
         </tr>
     </thead>
@@ -33,8 +35,11 @@
                     var existingSchedule = Model.Schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date.Year == currentYear && s.Date.Month == selectedMonth && s.Date == date);
                     var selectedShiftId = existingSchedule?.Shift_ID ?? 0;
                     var hasLeave = existingSchedule?.Leave_ID.HasValue ?? false;
+                    var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
+                    var holidayClass = holiday != null ? (holiday.Type == "Company" ? "bg-danger" : "bg-secondary-subtle") : "";
 
-                    <td id="cell-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")" class="p-1 @(isWeekend || date.ToString("yyyy-MM-dd") == "2025-03-20" ? "bg-secondary-subtle" : "") position-relative border-bottom border-end border-black"
+                    <td id="cell-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")" 
+                        class="p-1 @(isWeekend ? "bg-secondary-subtle" : holidayClass != "" ? holidayClass : "") position-relative border-bottom border-end border-black"
                         data-bs-toggle="tooltip" data-bs-placement="top"
                         title="@existingSchedule?.Comment">
                         @* @if (date.ToString("yyyy-MM-dd") == "2025-03-20")

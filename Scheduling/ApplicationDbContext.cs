@@ -10,6 +10,7 @@ namespace Scheduling
         public DbSet<Department> Departments { get; set; }
         public DbSet<Leave> Leaves { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
+        public DbSet<Holiday> Holidays { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
     }

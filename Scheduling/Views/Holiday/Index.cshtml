@@ -1,0 +1,249 @@
+﻿@model Holiday
+
+@{
+    ViewData["Title"] = "Holidays";
+
+    var holidays = ViewBag.Holidays as List<Holiday> ?? new List<Holiday>();
+}
+
+<div class="container">
+    <h1>@ViewData["Title"]</h1>
+
+    <p class="mb-4">
+        <a class="btn btn-primary shadow" onclick="addHoliday()">Create New</a>
+    </p>
+
+    <div class="card p-3 border-0 shadow-sm">
+        <table class="datatable table table-hover">
+            <thead>
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Date)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Name)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Type)
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in holidays)
+                {
+                    <tr>
+                        <td>
+                            @item.Date.ToString("yyyy-MM-dd")
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Name)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Type)
+                        </td>
+                        <td class="text-nowrap">
+                            <a href="javascript:void(0)" onclick="editHoliday(@item.Holiday_ID)">Edit</a> |
+                            <a href="javascript:void(0)" onclick="deleteHoliday(@item.Holiday_ID)">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="holidayModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="holidayModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="holidayForm" method="post">
+                <div class="modal-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Holiday_ID" />
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Date" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <input asp-for="Date" type="date" class="form-control" />
+                            <span asp-validation-for="Date" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Name" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Type" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <select asp-for="Type" class="form-select">
+                                <option value="Regular">Regular</option>
+                                <option value="Company">Company</option>
+                            </select>
+                            <span asp-validation-for="Type" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <div class="form-group">
+                        <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
+                        <a href="javascript:void(0)" class="btn btn-primary" id="modalButton"></a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Holiday</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Date)
+                    </dt>
+                    <dd class="col-sm-9" id="date">
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Name)
+                    </dt>
+                    <dd class="col-sm-9" id="name">
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Type)
+                    </dt>
+                    <dd class="col-sm-9" id="type">
+                    </dd>
+                </dl>
+            </div>
+            <div class="modal-footer border-0">
+                <form asp-action="DeleteHoliday">
+                    <input type="hidden" name="id" id="deleteID" />
+                    <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
+                    <input type="submit" value="Delete" class="btn btn-danger" />
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $("table.datatable").DataTable({
+            responsive: true,
+            fixedHeader: true
+        });
+
+        $(document).ready(function () {
+        });
+
+        function addHoliday() {
+            $(".modal-title").text("Add Holiday");
+
+            $("#modalButton").text("Create");
+
+            $("#holidayForm").attr("action", "/Holiday/Add");
+
+            clearModal();
+
+            // Show the modal
+            $("#holidayModal").modal("show");
+        }
+
+        function editHoliday(id) {
+            clearModal();
+
+            $.ajax({
+                url: "/Holiday/GetHoliday",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    // Iterate over the properties of the data object and set the corresponding form field values
+                    $.each(data, function (key, value) {
+                        var elementId = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize the first letter
+
+                        if (elementId == "Date") {
+                            $("#" + elementId).val(formatDate(value));
+                        } else {
+                            $("#" + elementId).val(value);
+                        }
+                    });
+
+                    // Set the action attribute of the form
+                    $("#holidayForm").attr("action", "/Holiday/Edit/" + data["holiday_ID"]);
+                    $("#holidayModalLabel").text("Edit holiday");
+                    $("#modalButton").text("Update");
+
+                    // Show the modal
+                    $("#holidayModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response.status, response.responseJSON.message);
+                    alert("Error: " + response.responseJSON.message);
+                }
+            });
+        };
+
+        function deleteHoliday(id) {
+            $.ajax({
+                url: "/Holiday/GetHoliday",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    // Iterate over the properties of the data object and set the corresponding form field values
+                    $.each(data, function (key, value) {
+                        var $element = $("#" + key);
+                        if ($element.length) {
+                            if (key == "date") {
+                                $element.text(formatDate(value));
+                            } else {
+                                $element.text(value);
+                            }
+                        }
+                    });
+
+                    $("#deleteID").val(data["holiday_ID"]);
+
+                    // Show the modal
+                    $("#deleteModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response.status, response.responseJSON.message);
+                    alert("Error: " + response.responseJSON.message);
+                }
+            });
+        }
+
+        $("#modalButton").on("click", function() {
+            $("#holidayForm").submit();
+        });
+
+        function clearModal() {
+            $('input[type="text"]').val('');
+            // $('select').prop('selectedIndex', "");
+
+            $(".field-validation-error").text("");
+        }
+
+        function formatDate(dateString) {
+            var date = new Date(dateString);
+            var day = ("0" + date.getDate()).slice(-2);
+            var month = ("0" + (date.getMonth() + 1)).slice(-2);
+            var year = date.getFullYear();
+            return year + "-" + month + "-" + day; // Format: YYYY/MM/DD
+        }
+    </script>
+}
