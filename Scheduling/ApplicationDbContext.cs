@@ -9,6 +9,7 @@ namespace Scheduling
         public DbSet<Shift> Shifts { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<Leave> Leaves { get; set; }
+        public DbSet<Leave_type> Leave_types { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
         public DbSet<Holiday> Holidays { get; set; }
 

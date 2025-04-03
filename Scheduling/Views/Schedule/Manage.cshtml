@@ -138,28 +138,16 @@
                 <h5 class="modal-title">Assign leave</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form asp-action="AssignLeaves">
+            <form asp-controller="Leave" asp-action="Apply">
                 <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col">
-                                <label class="form-label">Employee</label>
-                                <select name="userId" id="userId" class="form-select">
-                                    <option value="" disabled selected>Choose..</option>
-                                    @foreach (var user in Model.Users)
-                                    {
-                                        <option value="@user.Personnel_ID">@user.First_name @user.Last_name</option>
-                                    }
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col">
                                 <label class="form-label">Leave type</label>
-                                <select name="leaveId" id="leaveId" class="form-select">
+                                <select name="Leave_type_ID" id="Leave_type_ID" class="form-select">
                                     <option value="" disabled selected>Choose..</option>
                                     @foreach (var leave in leaves)
                                     {
-                                        <option value="@leave.Leave_ID">@leave.Leave_name</option>
+                                        <option value="@leave.Leave_type_ID">@leave.Leave_type_name</option>
                                     }
                                 </select>
                             </div>
@@ -167,11 +155,11 @@
                         <div class="row mb-3">
                             <div class="col">
                                 <label class="form-label">Start</label>
-                                <input class="form-control" type="text" name="dateStart" id="dateStart" placeholder="mm/dd/yyyyy" />
+                                <input class="form-control" type="text" name="Date_start" id="Date_start" placeholder="mm/dd/yyyyy" />
                             </div>
                             <div class="col">
                                 <label class="form-label">End</label>
-                                <input class="form-control" type="text" name="dateEnd" id="dateEnd" placeholder="mm/dd/yyyyy" />
+                                <input class="form-control" type="text" name="Date_end" id="Date_end" placeholder="mm/dd/yyyyy" />
                             </div>
                         </div>
                         <div class="row">
@@ -187,6 +175,80 @@
                 </div>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- Approve/deny leave Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Leave application</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-3 text-end">
+                        Name
+                    </dt>
+                    <dd class="col-sm-9" id="name">
+                    </dd>
+                    <dt class="col-sm-3 text-end">
+                        Leave type
+                    </dt>
+                    <dd class="col-sm-9" id="leaveType">
+                    </dd>
+                    <dt class="col-sm-3 text-end">
+                        Date
+                    </dt>
+                    <dd class="col-sm-9" id="date">
+                    </dd>
+                </dl>
+            </div>
+            <div class="modal-footer border-0">
+                <a class="btn btn-danger" id="denyBtn">Deny</a>
+                <a class="btn btn-success" id="approveBtn">Approve</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reflect leave Modal -->
+<div class="modal fade" id="reflectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Leave application</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-3 text-end">
+                        Name
+                    </dt>
+                    <dd class="col-sm-9" id="name">
+                    </dd>
+                    <dt class="col-sm-3 text-end">
+                        Leave type
+                    </dt>
+                    <dd class="col-sm-9" id="leaveType">
+                    </dd>
+                    <dt class="col-sm-3 text-end">
+                        Date
+                    </dt>
+                    <dd class="col-sm-9" id="date">
+                    </dd>
+                    <dt class="col-sm-3 text-end">
+                        Approved by
+                    </dt>
+                    <dd class="col-sm-9" id="approvedBy">
+                    </dd>
+                </dl>
+            </div>
+            <div class="modal-footer border-0">
+                <a class="btn btn-danger">Mark as reflected</a>
+    </div>
+</div>
     </div>
 </div>
 
@@ -207,20 +269,20 @@
                 loadSchedule(month, year);
             });
 
-            $("#dateStart").datepicker({
+            $("#Date_start").datepicker({
                 format: "mm/dd/yyyy",
                 orientation: "bottom auto",
                 autoclose: true,
                 todayHighlight: true
             }).on("changeDate", function (e) {
                 let selectedDate = e.date;
-                let endDate = $("#dateEnd");
+                let endDate = $("#Date_end");
                 if (endDate.val() == "") {
                     endDate.focus();
                 }
             });
 
-            $("#dateEnd").datepicker({
+            $("#Date_end").datepicker({
                 format: "mm/dd/yyyy",
                 orientation: "bottom auto",
                 autoclose: true,
@@ -360,6 +422,30 @@
 
             removeLeaveBg(p);
             $(p).addClass(bgClass);
+        }
+
+        function getLeave(id) {
+            console.log(id);
+            $.ajax({
+                url: '/Leave/GetLeave',
+                type: 'POST',
+                data: {
+                    Id: id
+                },
+                success: function (response) {
+                    $("#name").text(response.name);
+                    $("#leaveType").text(response.leave_type_name);
+                    $("#date").text(`${response.date_start} to ${response.date_end}`);
+                    $("#comment").text(response.comment);
+
+                    $("#approveBtn").attr("href", `/Leave/Approve/${response.leave_ID}`);
+                    $("#denyBtn").attr("href", `/Leave/Deny/${response.leave_ID}`);
+                },
+                error: function () {
+                    alert('An error occurred while assigning the shift.');
+                }
+            });
+            $("#approveModal").modal("show");
         }
 
         function removeLeaveBg(p) {
