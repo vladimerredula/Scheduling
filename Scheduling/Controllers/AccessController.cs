@@ -62,6 +62,9 @@ namespace Scheduling.Controllers
                     case 0:
                         role = "admin";
                         break;
+                    case 1:
+                        role = "member";
+                        break;
                     case 2:
                         role = "shiftLeader";
                         break;
@@ -69,7 +72,7 @@ namespace Scheduling.Controllers
                         role = "manager";
                         break;
                     default:
-                        role = "member";
+                        role = userdetails.Privilege_ID.ToString();
                         break;
                 }
 
