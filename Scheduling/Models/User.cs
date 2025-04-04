@@ -45,5 +45,17 @@ namespace Scheduling.Models
 
         public int Status { get; set; } = 0;
         public DateTime? Last_password_changed { get; set; }
+
+        [Display(Name = "Name")]
+        public string? Full_name
+        {
+            get
+            {
+                if (First_name != null && Last_name != null)
+                    return First_name + " " + Last_name;
+                else
+                    return null;
+            }
+        }
     }
 }

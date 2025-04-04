@@ -1,0 +1,269 @@
+﻿@model Leave
+
+@{
+    ViewData["Title"] = "Leaves";
+
+    var leaves = ViewBag.Leaves as List<Leave> ?? new List<Leave>();
+}
+
+<div class="container">
+    <h1>@ViewData["Title"]</h1>
+
+    <p class="mb-4">
+        <a class="btn btn-primary shadow" onclick="addLeave()">Create New</a>
+    </p>
+
+    <div class="card p-3 border-0 shadow-sm">
+        <table class="datatable table table-hover">
+            <thead>
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Date_start)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Date_end)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Status)
+                    </th>
+                    <th>
+                        Approved by
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in leaves)
+                {
+                    <tr>
+                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
+                            @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                        </td>
+                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
+                            @Html.DisplayFor(modelItem => item.Date_start_string)
+                        </td>
+                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
+                            @Html.DisplayFor(modelItem => item.Date_end_string)
+                        </td>
+                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
+                            @Html.DisplayFor(modelItem => item.Status)
+                        </td>
+                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
+                            @Html.DisplayFor(modelItem => item.Approver.Full_name)
+                        </td>
+                        <td class="text-nowrap @(item.Status == "Cancelled" ? "text-secondary" : "")">
+                            @if (item.Status == "Pending")
+                            {
+                                <a href="javascript:void(0)" onclick="editLeave(@item.Leave_ID)">Edit</a><span> | </span>
+                            }
+
+                            @if (item.Status != "Cancelled")
+                            {
+                                <a href="javascript:void(0)" onclick="cancelLeave(@item.Leave_ID)">Cancel</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="leaveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="leaveModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="leaveForm" method="post">
+                <div class="modal-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Leave_ID" />
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Leave_type_ID" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <select asp-for="Leave_type_ID" class="form-select" asp-items="ViewBag.LeaveTypes"></select>
+                            <span asp-validation-for="Leave_type_ID" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Date_start" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <input asp-for="Date_start" type="date" class="form-control" />
+                            <span asp-validation-for="Date_start" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Date_end" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <input asp-for="Date_end" type="date" class="form-control" />
+                            <span asp-validation-for="Date_end" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Comment" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <textarea asp-for="Comment" class="form-control"></textarea>
+                            <span asp-validation-for="Comment" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <div class="form-group">
+                        <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
+                        <a href="javascript:void(0)" class="btn btn-primary" id="modalButton"></a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="cancelModalLabel">Are you sure you want to cancel this leave?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                    </dt>
+                    <dd class="col-sm-9" id="leave_type_name">
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Date_start)
+                    </dt>
+                    <dd class="col-sm-9" id="date_start">
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Date_end)
+                    </dt>
+                    <dd class="col-sm-9" id="date_end">
+                    </dd>
+                </dl>
+            </div>
+            <div class="modal-footer border-0">
+                <form asp-action="Cancel">
+                    <input type="hidden" name="id" id="cancelID" />
+                    <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">No</a>
+                    <input type="submit" value="Yes, proceed" class="btn btn-danger" />
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $("table.datatable").DataTable({
+            responsive: true,
+            fixedHeader: true,
+            order: [[1, 'asc']]
+        });
+
+        $(document).ready(function () {
+        });
+
+        function addLeave() {
+            $(".modal-title").text("Add Leave");
+
+            $("#modalButton").text("Create");
+
+            $("#leaveForm").attr("action", "/Leave/Add");
+
+            clearModal();
+
+            // Show the modal
+            $("#leaveModal").modal("show");
+        }
+
+        function editLeave(id) {
+            clearModal();
+
+            $.ajax({
+                url: "/Leave/GetLeave",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    console.log(data);
+                    // Iterate over the properties of the data object and set the corresponding form field values
+                    $.each(data, function (key, value) {
+                        var elementId = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize the first letter
+                        $("#" + elementId).val(value);
+                    });
+
+                    // Set the action attribute of the form
+                    $("#leaveForm").attr("action", "/Leave/Edit/" + data["leave_ID"]);
+                    $("#leaveModalLabel").text("Edit leave");
+                    $("#modalButton").text("Update");
+
+                    // Show the modal
+                    $("#leaveModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response.status, response.responseJSON.message);
+                    alert("Error: " + response.responseJSON.message);
+                }
+            });
+        };
+
+        function cancelLeave(id) {
+            $.ajax({
+                url: "/Leave/GetLeave",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    // Iterate over the properties of the data object and set the corresponding form field values
+                    $.each(data, function (key, value) {
+                        var $element = $("#" + key);
+                        if ($element.length) {
+                            if (key == "date") {
+                                $element.text(formatDate(value));
+                            } else {
+                                $element.text(value);
+                            }
+                        }
+                    });
+
+                    $("#cancelID").val(data["leave_ID"]);
+
+                    // Show the modal
+                    $("#cancelModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response.status, response.responseJSON.message);
+                    alert("Error: " + response.responseJSON.message);
+                }
+            });
+        }
+
+        $("#modalButton").on("click", function() {
+            $("#leaveForm").submit();
+        });
+
+        function clearModal() {
+            $('input[type="text"]').val('');
+            // $('select').prop('selectedIndex', "");
+
+            $(".field-validation-error").text("");
+        }
+
+        function formatDate(dateString) {
+            var date = new Date(dateString);
+            var day = ("0" + date.getDate()).slice(-2);
+            var month = ("0" + (date.getMonth() + 1)).slice(-2);
+            var year = date.getFullYear();
+            return year + "-" + month + "-" + day; // Format: YYYY/MM/DD
+        }
+    </script>
+}
