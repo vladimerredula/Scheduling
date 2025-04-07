@@ -23,9 +23,10 @@
     <tbody class="">
         @foreach (var user in Model.Users)
         {
-            <tr>
-                <td class="border border-top-0 border-black text-nowrap text-start">@user.First_name @user.Last_name</td>
-                @for (int day = 1; day <= DateTime.DaysInMonth(currentYear, selectedMonth); day++)
+                <tr id="user-@user.Personnel_ID">
+                    <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle">
+                        @user.First_name @user.Last_name
+                    </td>
                 {
                     var date = new DateTime(currentYear, selectedMonth, day);
                     var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
