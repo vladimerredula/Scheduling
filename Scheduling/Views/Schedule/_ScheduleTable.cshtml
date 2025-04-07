@@ -34,91 +34,102 @@
         </thead>
 
         <tbody>
-            @foreach (var user in Model.Users)
+            @foreach (var sector in Model.Users.GroupBy(u => u.Sector_ID))
             {
-                <tr id="user-@user.Personnel_ID">
-                    <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle">
-                        @user.First_name @user.Last_name
-                    </td>
-                    @for (int day = 1; day <= daysInMonth; day++)
+                <thead>
+                    <tr>
+                        <th class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">@Model.Sectors?.FirstOrDefault(s => s.Sector_ID == sector.Key)?.Sector_name</th>
+                    </tr>
+            </thead>
+            <tbody class="sector" data-sector-id="@sector.Key">
+                    @foreach (var user in sector)
                     {
-                        var date = new DateTime(currentYear, selectedMonth, day);
-                        var date_string = date.ToString("yyyy-MM-dd");
-                        var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
-                        var schedule = Model.Schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
-                        var shiftId = schedule?.Shift_ID ?? 0;
+                    <tr id="user-@user.Personnel_ID" class="draggable">
+                        <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle">
+                                @user.First_name @user.Last_name
+                        </td>
+                            @for (int day = 1; day <= daysInMonth; day++)
+                            {
+                                var date = new DateTime(currentYear, selectedMonth, day);
+                                var date_string = date.ToString("yyyy-MM-dd");
+                                var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                                var schedule = Model.Schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
+                                var shiftId = schedule?.Shift_ID ?? 0;
 
-                        var leave = Model.Leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end && l.Status != "Denied");
-                        var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
+                                var leave = Model.Leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end && l.Status != "Denied");
+                                var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
 
-                        var cellClass = holiday != null
-                        ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
-                            : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
+                                var cellClass = holiday != null
+                                ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
+                                : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
 
-                        string bgclass = leave?.Status switch
-                        {
-                            "Pending" => "bg-warning bg-opacity-25",
-                            "Approved" => "bg-success bg-opacity-25",
-                            _ => "bg-" + leave?.Leave_type?.BsColor
-                        };
+                                string bgclass = leave?.Status switch
+                                {
+                                    "Pending" => "bg-warning bg-opacity-25",
+                                    "Approved" => "bg-success bg-opacity-25",
+                                    _ => "bg-" + leave?.Leave_type?.BsColor
+                                };
 
-                        string borderClass = string.Empty;
-                        string borderColor = leave?.Status switch
-                        {
-                            "Pending" => "border-warning",
-                            "Approved" => "border-success",
-                            _ => string.Empty
-                        };
+                                string borderClass = string.Empty;
+                                string borderColor = leave?.Status switch
+                                {
+                                    "Pending" => "border-warning",
+                                    "Approved" => "border-success",
+                                    _ => string.Empty
+                                };
 
-                        if (!string.IsNullOrEmpty(borderColor) && leave != null)
-                        {
-                            if (date == leave.Date_start)
-                                borderClass = $"border border-2 border-end-0 {borderColor} rounded-start";
-                            else if (date > leave.Date_start && date < leave.Date_end)
-                                borderClass = $"border border-2 border-start-0 border-end-0 {borderColor}";
-                            else if (date == leave.Date_end)
-                                borderClass = $"border border-2 border-start-0 {borderColor} rounded-end";
-                        }
+                                if (!string.IsNullOrEmpty(borderColor) && leave != null)
+                                {
+                                    if (date == leave.Date_start)
+                                        borderClass = $"border border-2 border-end-0 {borderColor} rounded-start";
+                                    else if (date > leave.Date_start && date < leave.Date_end)
+                                        borderClass = $"border border-2 border-start-0 border-end-0 {borderColor}";
+                                    else if (date == leave.Date_end)
+                                        borderClass = $"border border-2 border-start-0 {borderColor} rounded-end";
+                                }
 
-                        var action = leave?.Status == "Pending"
-                            ? $"onclick=getLeave({leave.Leave_ID})"
-                            : leave?.Status == "Approved"
+                                var action = leave?.Status == "Pending"
+                                ? $"onclick=getLeave({leave.Leave_ID})"
+                                : leave?.Status == "Approved"
                                 ? $"onclick=reflectLeave({leave.Leave_ID})"
                                 : string.Empty;
 
-                        var disabledSelect = (holiday != null && holiday.Type == "Company") || leave != null ? "disabled" : "";
+                                var disabledSelect = (holiday != null && holiday.Type == "Company") || leave != null ? "disabled" : "";
 
-                        <td id="cell-@user.Personnel_ID-@date_string"
-                        class="p-1 @cellClass position-relative border-bottom border-end border-secondary">
+                            <td id="cell-@user.Personnel_ID-@date_string"
+                                class="p-1 @cellClass position-relative border-bottom border-end border-secondary">
 
-                            <select class="form-control px-1 position-relative text-center"
-                            onchange="assignShift(@user.Personnel_ID, '@date_string', this)"
-                            style="background-color: transparent; border: none; z-index: 1;"
-                            @(disabledSelect)>
-                                <option value="0"></option>
-                                @foreach (var shift in Model.Shifts)
-                                {
-                                    if (shift.Shift_ID == shiftId)
-                                    {
-                                        <option class="text-body" value="@shift.Shift_ID" selected>@shift.Shift_name</option>
-                                    } else
-                                    {
-                                        <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
-                                    }
-                                }
-                                <option value="999">Company holiday</option>
-                            </select>
+                                <select class="form-control px-1 position-relative text-center"
+                                        onchange="assignShift(@user.Personnel_ID, '@date_string', this)"
+                                        style="background-color: transparent; border: none; z-index: 1;"
+                                    @(disabledSelect)>
+                                    <option value="0"></option>
+                                        @foreach (var shift in Model.Shifts)
+                                        {
+                                            if (shift.Shift_ID == shiftId)
+                                            {
+                                            <option class="text-body" value="@shift.Shift_ID" selected>@shift.Shift_name</option>
+                                            }
+                                            else
+                                            {
+                                            <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
+                                            }
+                                        }
+                                    <option value="999">Company holiday</option>
+                                </select>
 
-                            <p data-date="@date_string"
-                                id="p-@user.Personnel_ID-@date_string"
-                                class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @borderClass @(leave != null ? bgclass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
-                                @Html.Raw(action)
-                                style="z-index: 1;@(leave?.Status == "Pending" ? "cursor: pointer;" : "")">
-                            </p>
-                        </td>
+                                <p data-date="@date_string"
+                                   id="p-@user.Personnel_ID-@date_string"
+                                   class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @borderClass @(leave != null ? bgclass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
+                                    @Html.Raw(action)
+                                   style="z-index: 1;@(leave?.Status == "Pending" ? "cursor: pointer;" : "")">
+                                </p>
+                            </td>
+                            }
+                    </tr>
                     }
-                </tr>
+            </tbody>
             }
         </tbody>
 
