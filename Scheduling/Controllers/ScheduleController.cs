@@ -35,20 +35,41 @@ namespace Scheduling.Controllers
             var holidays = _db.Holidays.ToList();
             var sectors = _db.Sectors.ToList();
 
-            var users = _db.Users
+            var userOrder = _db.Employee_orders
+                .Where(o => o.Year == year && o.Month == month)
+                .OrderBy(o => o.Order_index)
+                .Select(o => o.Personnel_ID)
+                .ToList();
+
+            var baseQuery = _db.Users
                 .Include(u => u.Sector)
-                .Where(u => (u.Privilege_ID != 0 && u.Privilege_ID != 4) && u.Department_ID == departmentId && u.Status == 1)
+                .Where(u =>
+                    u.Privilege_ID != 0 &&
+                    u.Privilege_ID != 4 &&
+                    u.Department_ID == departmentId &&
+                    u.Status == 1)
+                .ToList(); // Execute once, filter and sort in memory
+
+            var usersInOrder = baseQuery
+                .Where(u => userOrder.Contains(u.Personnel_ID))
+                .OrderBy(u => userOrder.IndexOf(u.Personnel_ID))
+                .ToList();
+
+            var usersNotInOrder = baseQuery
+                .Where(u => !userOrder.Contains(u.Personnel_ID))
                 .OrderBy(u => u.Sector.Order)
                 .ThenByDescending(u => u.Privilege_ID)
                 .ThenBy(u => u.First_name)
                 .ThenBy(u => u.Last_name)
                 .ToList();
 
+            var users = usersInOrder.Concat(usersNotInOrder).ToList();
+
             var schedules = _db.Schedules
-                .Include(s => s.User)
-                .Include(s => s.Shift)
-                .Where(s => s.Date.Month == month && s.Date.Year == year)
-                .ToList();
+                    .Include(s => s.User)
+                    .Include(s => s.Shift)
+                    .Where(s => s.Date.Month == month && s.Date.Year == year)
+                    .ToList();
 
             var leaves = _db.Leaves
                 .Where(l => 
@@ -123,14 +144,35 @@ namespace Scheduling.Controllers
             var holidays = _db.Holidays.ToList();
             var sectors = _db.Sectors.ToList();
 
-            var users = _db.Users
+            var userOrder = _db.Employee_orders
+                .Where(o => o.Year == year && o.Month == month)
+                .OrderBy(o => o.Order_index)
+                .Select(o => o.Personnel_ID)
+                .ToList();
+
+            var baseQuery = _db.Users
                 .Include(u => u.Sector)
-                .Where(u => (u.Privilege_ID != 0 && u.Privilege_ID != 4) && u.Department_ID == departmentId && u.Status == 1)
+                .Where(u =>
+                    u.Privilege_ID != 0 &&
+                    u.Privilege_ID != 4 &&
+                    u.Department_ID == departmentId &&
+                    u.Status == 1)
+                .ToList(); // Execute once, filter and sort in memory
+
+            var usersInOrder = baseQuery
+                .Where(u => userOrder.Contains(u.Personnel_ID))
+                .OrderBy(u => userOrder.IndexOf(u.Personnel_ID))
+                .ToList();
+
+            var usersNotInOrder = baseQuery
+                .Where(u => !userOrder.Contains(u.Personnel_ID))
                 .OrderBy(u => u.Sector.Order)
                 .ThenByDescending(u => u.Privilege_ID)
                 .ThenBy(u => u.First_name)
                 .ThenBy(u => u.Last_name)
                 .ToList();
+
+            var users = usersInOrder.Concat(usersNotInOrder).ToList();
 
             var schedules = _db.Schedules
                 .Include(s => s.User)
@@ -173,6 +215,43 @@ namespace Scheduling.Controllers
                 .CountAsync(s => s.Shift_ID == shiftId && s.Date == date);
 
             return Json(new { count });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateEmployeeOrder(string order, int month, int year)
+        {
+            var index = 1;
+            foreach (var item in order.Split(","))
+            {
+                var userId = int.Parse(item.Split("-")[1]);
+                var sample = _db.Employee_orders.FirstOrDefault(e => e.Personnel_ID == 1);
+
+                var employeeOrder = await _db.Employee_orders
+                    .FirstOrDefaultAsync(e => e.Personnel_ID == userId && e.Year == year && e.Month == month);
+
+                if (employeeOrder == null)
+                {
+                    employeeOrder = new Employee_order
+                    {
+                        Personnel_ID = userId,
+                        Year = year,
+                        Month = month,
+                        Order_index = index
+                    };
+                    _db.Employee_orders.Add(employeeOrder);
+                }
+                else
+                {
+                    employeeOrder.Order_index = index;
+                    _db.Employee_orders.Update(employeeOrder);
+                }
+
+                index++;
+            }
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new { success = true });
         }
     }
 }

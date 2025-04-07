@@ -6,6 +6,7 @@ namespace Scheduling
     public class ApplicationDbContext : DbContext
     {
         public DbSet<User> Users { get; set; }
+        public DbSet<Employee_order> Employee_orders { get; set; }
         public DbSet<Sector> Sectors { get; set; }
         public DbSet<Shift> Shifts { get; set; }
         public DbSet<Department> Departments { get; set; }
