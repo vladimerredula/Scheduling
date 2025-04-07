@@ -39,9 +39,10 @@ namespace Scheduling.Models
         [ForeignKey("Departments")]
         public int? Department_ID { get; set; }
 
-        [Display(Name = "Sector")]
-        [ForeignKey("Sectors")]
+        [Display(Name = "Team")]
+        [ForeignKey("Sector")]
         public int? Sector_ID { get; set; }
+        public virtual Sector? Sector { get; set; }
 
         public int Status { get; set; } = 0;
         public DateTime? Last_password_changed { get; set; }

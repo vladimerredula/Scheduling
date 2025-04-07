@@ -33,11 +33,13 @@ namespace Scheduling.Controllers
 
             var shifts = _db.Shifts.ToList();
             var holidays = _db.Holidays.ToList();
+            var sectors = _db.Sectors.ToList();
 
             var users = _db.Users
+                .Include(u => u.Sector)
                 .Where(u => (u.Privilege_ID != 0 && u.Privilege_ID != 4) && u.Department_ID == departmentId && u.Status == 1)
-                .OrderBy(u => u.Sector_ID)
-                .ThenBy(u => u.Privilege_ID)
+                .OrderBy(u => u.Sector.Order)
+                .ThenByDescending(u => u.Privilege_ID)
                 .ThenBy(u => u.First_name)
                 .ThenBy(u => u.Last_name)
                 .ToList();
@@ -58,11 +60,10 @@ namespace Scheduling.Controllers
             ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
             ViewBag.LeaveTypes = _db.Leave_types.ToList();
 
-
             if (User.IsInRole("member"))
-                return View((users, shifts, schedules, leaves, holidays, month, year));
+                return View((users, shifts, schedules, leaves, holidays, sectors, month, year));
             else
-                return View("Manage", (users, shifts, schedules, leaves, holidays, month, year));
+                return View("Manage", (users, shifts, schedules, leaves, holidays, sectors, month, year));
         }
 
         [HttpPost]
@@ -118,24 +119,33 @@ namespace Scheduling.Controllers
         [Authorize]
         public IActionResult GetScheduleByMonth(int month, int year, int departmentId)
         {
-            var users = _db.Users.Where(u => (u.Privilege_ID != 0 && u.Privilege_ID != 4) && u.Department_ID == departmentId && u.Status == 1).ToList();
             var shifts = _db.Shifts.ToList();
-            var schedules = _db.Schedules
-                .Include(s => s.Shift)
-                .Where(s => s.Date.Year == year && s.Date.Month == month)
+            var holidays = _db.Holidays.ToList();
+            var sectors = _db.Sectors.ToList();
+
+            var users = _db.Users
+                .Include(u => u.Sector)
+                .Where(u => (u.Privilege_ID != 0 && u.Privilege_ID != 4) && u.Department_ID == departmentId && u.Status == 1)
+                .OrderBy(u => u.Sector.Order)
+                .ThenByDescending(u => u.Privilege_ID)
+                .ThenBy(u => u.First_name)
+                .ThenBy(u => u.Last_name)
                 .ToList();
 
-            var holidays = _db.Holidays.ToList();
+            var schedules = _db.Schedules
+                .Include(s => s.User)
+                .Include(s => s.Shift)
+                .Where(s => s.Date.Month == month && s.Date.Year == year)
+                .ToList();
+
             var leaves = _db.Leaves
-                .Include(l => l.Leave_type)
                 .Where(l =>
                     (l.Date_start.Year == year && l.Date_start.Month == month) ||
-                    (l.Date_end.Year == year && l.Date_end.Month == month))
+                    (l.Date_end.Year == year && l.Date_end.Month == month) &&
+                    l.Status != "Cancelled" && l.Status != "Denied")
                 .ToList();
 
-            ViewBag.LeaveTypes = _db.Leave_types.ToList();
-
-            return PartialView("_ScheduleTable", (users, shifts, schedules, leaves, holidays, month, year));
+            return PartialView("_ScheduleTable", (users, shifts, schedules, leaves, holidays, sectors, month, year));
         }
 
         public int GetPersonnelID()
