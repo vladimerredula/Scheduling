@@ -1,124 +1,151 @@
 ﻿@using System.Globalization;
 @model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
+
 @{
     var currentYear = Model.year;
     var selectedMonth = Model.month;
+    var daysInMonth = DateTime.DaysInMonth(currentYear, selectedMonth);
 }
 
-<h4 class="text-center stick-top">@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)</h4>
-<table class="table table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
-    <thead class="text-center sticky-top z-2">
-        <tr>
-            <th class="border border-black">Name</th>
-            @for (int i = 1; i <= DateTime.DaysInMonth(currentYear, selectedMonth); i++)
+<h4 class="text-center stick-top">
+    @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)
+</h4>
+
+<div class="table-responsive" style="max-height: calc(100vh - 325px);">
+    <table class="table table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
+        <thead class="text-center sticky-top z-2">
+            <tr>
+                <th class="border border-secondary">Name</th>
+                @for (int day = 1; day <= daysInMonth; day++)
+                {
+                    var date = new DateTime(currentYear, selectedMonth, day);
+                    var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                    var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
+                    var holidayClass = holiday != null
+                    ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
+                        : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
+
+                    <th class="border border-start-0 border-secondary p-1 @holidayClass">
+                        <p class="m-0">@day</p><p class="m-0"><small class="fw-light font-monospace">@date.ToString("ddd")</small></p>
+                    </th>
+                }
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var user in Model.Users)
             {
-                var date = new DateTime(currentYear, selectedMonth, i);
-                var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
-                var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
-                var holidayClass = holiday != null ? (holiday.Type == "Company" ? "bg-danger" : "bg-secondary-subtle") : "";
-                <th class="border border-start-0 border-black @(isWeekend ? "bg-secondary-subtle" : holidayClass)">@i</th>
-            }
-        </tr>
-    </thead>
-    <tbody class="">
-        @foreach (var user in Model.Users)
-        {
                 <tr id="user-@user.Personnel_ID">
                     <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle">
                         @user.First_name @user.Last_name
                     </td>
-                {
-                    var date = new DateTime(currentYear, selectedMonth, day);
-                    var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
-                    var existingSchedule = Model.Schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date.Year == currentYear && s.Date.Month == selectedMonth && s.Date == date);
-                    var selectedShiftId = existingSchedule?.Shift_ID ?? 0;
-
-                        var leave = Model.Leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end && l.Status != "Denied");
-
-                    var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
-                    var holidayClass = holiday != null ? (holiday.Type == "Company" ? "bg-danger" : "bg-secondary-subtle") : "";
-
-                    <td id="cell-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")" 
-                        class="p-1 @(isWeekend ? "bg-secondary-subtle" : holidayClass != "" ? holidayClass : "") position-relative border-bottom border-end border-black"
-                        data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="@existingSchedule?.Comment">
-                            @{
-                                var borderClass = "";
-                                var borderColor = leave?.Status == "Pending" ? "border-warning" : leave?.Status == "Approved" ? "border-success" : "";
-
-                                if (!string.IsNullOrEmpty(borderColor))
-                                {
-                                    if (date == leave?.Date_start)
-                                    {
-                                        borderClass = $"border border-2 border-end-0 {borderColor} rounded-start";
-                                    }
-                                    else if (date > leave?.Date_start && date < leave.Date_end)
-                                    {
-                                        borderClass = $"border border-2 border-start-0 border-end-0 {borderColor}";
-                                    }
-                                    else if (date == leave?.Date_end)
-                                    {
-                                        borderClass = $"border border-2 border-start-0 {borderColor} rounded-end";
-                                    }
-                                }
-                            }
-
-                        <p data-date="@date.ToString("yyyy-MM-dd")" id="p-@user.Personnel_ID-@date.ToString("yyyy-MM-dd")"
-                                class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @borderClass @(leave != null ? leave?.Status == "Pending" ? "bg-warning-subtle text-warning-emphasis" : leave?.Status == "Approved" ? "bg-success-subtle text-success-emphasis" : "bg-" + leave?.Leave_type?.BsColor : "")"
-                           style="z-index: 0;">
-                                @(leave == null || (leave != null && leave.Status != "Reflected") ? existingSchedule?.Shift?.Shift_name : "")
-                        </p>
-                            @if (User.IsInRole("admin") || User.IsInRole("manager"))
-                            {
-                                if (leave == null)
-                                {
-                                    <select class="form-control position-relative" onchange="assignShift(@user.Personnel_ID, '@date.ToString("yyyy-MM-dd")', this)" style="background-color: transparent;border: none;color: transparent;z-index: 1;" @(holiday != null ? "disabled" : "")>
-                            <option value="0"></option>
-                            @foreach (var shift in Model.Shifts)
-                            {
-                                if (shift.Shift_ID == selectedShiftId)
-                                {
-                                    <option class="text-body" value="@shift.Shift_ID" selected>@shift.Shift_name</option>
-                                }
-                                else
-                                {
-                                    <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
-                                }
-                            }
-                        </select>
-                                } else
-                                {
-
-                                    <p class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center" @(leave?.Status == "Pending" ? $"onclick=getLeave({leave.Leave_ID})" : leave?.Status == "Approved" ? $"onclick=reflectLeave({leave.Leave_ID})" : "") style="z-index: 1;">&nbsp;</p>
-                                }
-                            }
-                    </td>
-                }
-            </tr>
-        }
-    </tbody>
-    <tfoot class="sticky-bottom z-2">
-        @foreach (var shift in Model.Shifts)
-        {
-            if (new[] { "A", "B", "C" }.Contains(shift.Shift_name))
-            {
-                <tr>
-                    <td class="border-end border-black fw-semibold text-end">Shift @shift.Shift_name</td>
-                    @for (int day = 1; day <= DateTime.DaysInMonth(currentYear, selectedMonth); day++)
+                    @for (int day = 1; day <= daysInMonth; day++)
                     {
                         var date = new DateTime(currentYear, selectedMonth, day);
-                        var totalShifts = Model.Schedules.Count(s => s.Shift_ID == shift.Shift_ID && s.Date == date && Model.Users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID));
+                        var date_string = date.ToString("yyyy-MM-dd");
+                        var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                        var schedule = Model.Schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
+                        var shiftId = schedule?.Shift_ID ?? 0;
 
-                        var bgColor = totalShifts == 0 ? "bg-danger-subtle"
-                                    : totalShifts == 1 ? "bg-warning-subtle"
-                                    : totalShifts == 2 ? "bg-warning"
-                                    : totalShifts == 3 ? "bg-success-subtle"
-                                    : "bg-success text-white";
+                        var leave = Model.Leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end && l.Status != "Denied");
+                        var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
 
-                        <td class="border-bottom border-end border-black text-center @bgColor" id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">@totalShifts</td>
+                        var cellClass = holiday != null
+                        ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
+                            : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
+
+
+                        string bgclass = leave?.Status switch
+                        {
+                            "Pending" => "bg-warning bg-opacity-25",
+                            "Approved" => "bg-success bg-opacity-25",
+                            _ => "bg-" + leave?.Leave_type?.BsColor
+                        };
+
+                        string borderClass = string.Empty;
+                        string borderColor = leave?.Status switch
+                        {
+                            "Pending" => "border-warning",
+                            "Approved" => "border-success",
+                            _ => string.Empty
+                        };
+
+                        if (!string.IsNullOrEmpty(borderColor) && leave != null)
+                        {
+                            if (date == leave.Date_start)
+                                borderClass = $"border border-2 border-end-0 {borderColor} rounded-start";
+                            else if (date > leave.Date_start && date < leave.Date_end)
+                                borderClass = $"border border-2 border-start-0 border-end-0 {borderColor}";
+                            else if (date == leave.Date_end)
+                                borderClass = $"border border-2 border-start-0 {borderColor} rounded-end";
+                        }
+
+                        var action = leave?.Status == "Pending"
+                            ? $"onclick=getLeave({leave.Leave_ID})"
+                            : leave?.Status == "Approved"
+                                ? $"onclick=reflectLeave({leave.Leave_ID})"
+                                : string.Empty;
+
+                        var disabledSelect = (holiday != null && holiday.Type == "Company") || leave != null ? "disabled" : "";
+
+                        <td id="cell-@user.Personnel_ID-@date_string"
+                        class="p-1 @cellClass position-relative border-bottom border-end border-secondary">
+
+                            <select class="form-control position-relative"
+                            onchange="assignShift(@user.Personnel_ID, '@date_string', this)"
+                            style="background-color: transparent; border: none; z-index: 1;"
+                            @(disabledSelect)>
+                                <option value="0"></option>
+                                @foreach (var shift in Model.Shifts)
+                                {
+                                    if (shift.Shift_ID == shiftId)
+                                    {
+                                        <option class="text-body" value="@shift.Shift_ID" selected>@shift.Shift_name</option>
+                                    } else
+                                    {
+                                        <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
+                                    }
+                                }
+                                <option value="999">Company holiday</option>
+                            </select>
+
+                            <p data-date="@date_string"
+                                id="p-@user.Personnel_ID-@date_string"
+                                class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @borderClass @(leave != null ? bgclass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
+                                @Html.Raw(action)
+                                style="z-index: 1;@(leave?.Status == "Pending" ? "cursor: pointer;" : "")">
+                            </p>
+                        </td>
                     }
                 </tr>
             }
-        }
-    </tfoot>
-</table>
+        </tbody>
+
+        <tfoot class="sticky-bottom z-2">
+            @foreach (var shift in Model.Shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
+            {
+                <tr>
+                    <td class="border-end border-secondary fw-semibold text-end">Shift @shift.Shift_name</td>
+                    @for (int day = 1; day <= daysInMonth; day++)
+                    {
+                        var date = new DateTime(currentYear, selectedMonth, day);
+                        var count = Model.Schedules.Count(s => s.Shift_ID == shift.Shift_ID && s.Date == date && Model.Users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID));
+
+                        var bgColor = count switch
+                        {
+                            0 => "bg-danger-subtle text-danger-emphasis",
+                            1 => "bg-warning-subtle text-warning-emphasis",
+                            2 => "bg-success-subtle text-success-emphasis",
+                            _ => "bg-success text-white"
+                        };
+
+                        <td class="border-bottom border-end border-secondary text-center @bgColor"
+                            id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
+                            @count
+                        </td>
+                    }
+                </tr>
+            }
+        </tfoot>
+    </table>
+</div>

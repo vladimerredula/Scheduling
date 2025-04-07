@@ -1,10 +1,10 @@
 ﻿@using System.Globalization;
-@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Holiday> Holidays, int month, int year, int departmentId)
+@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
 @{
     ViewData["Title"] = "Manage Schedules";
 
     var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
-    var leaves = ViewBag.Leaves as List<Leave> ?? new List<Leave>();
+    var leaves = ViewBag.LeaveTypes as List<Leave_type> ?? new List<Leave_type>();
 }
 
 <div class="px-3 px-sm-5">
@@ -28,7 +28,7 @@
                     </div>
                 </div>
                 <div class="col-auto align-self-end">
-                    @* <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveModal">Add leave</a> *@
+                    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply leave</a>
                 </div>
             </div>
         </div>
@@ -44,7 +44,7 @@
                         <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
-                <div class="table-responsive" id="scheduleTable" style="max-height: calc(100vh - 275px);">
+                <div id="scheduleTable">
                     <partial name="_ScheduleTable" />
                 </div>
             </div>
@@ -53,10 +53,14 @@
             <div class="row mb-3">
                 <div class="col col-sm-6 col-xxl-12 mb-3">
                     <div class="card p-4">
-                        <p><span class="bg-primary-subtle">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Business trip</p>
-                        <p><span class="bg-info">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Paid leave</p>
-                        <p><span class="bg-primary">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Unpaid leave</p>
-                        <p class="mb-0"><span class="bg-danger">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Company holiday</p>
+                        <small class="text-body-secondary mb-3">Leave applications</small>
+                        <p><span class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Pending</p>
+                        <p><span class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Approved by manager</p>
+                        @* <p><span class="bg-primary-subtle">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Business trip</p> *@
+                        <small class="text-body-secondary mb-3">Reflected leaves</small>
+                        <p><span class="bg-info border border-2 border-info rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Paid leave</p>
+                        <p><span class="bg-primary border border-2 border-primary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</p>
+                        <p class="mb-0"><span class="bg-secondary border border-2 border-secondary rounded-1 opacity-75">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
                     </div>
                 </div>
                 <div class="col col-sm-6 col-xxl-12 mb-3">
@@ -247,13 +251,15 @@
             </div>
             <div class="modal-footer border-0">
                 <a class="btn btn-danger">Mark as reflected</a>
-    </div>
-</div>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
+        // $.fn.bootstrapDP = $.fn.datepicker.noConflict();
+
         $(document).ready(function (){
             $('[data-bs-toggle="tooltip"]').tooltip();
 
@@ -262,7 +268,7 @@
                 minViewMode: 1,
                 maxViewMode: 2,
                 autoclose: true
-            }).datepicker('setDate', new Date()).on("changeDate", function (e) {
+            }).datepicker('setDate', new Date(@Model.year,@(Model.month - 1))).on("changeDate", function (e) {
                 let selectedDate = e.date;
                 let month = selectedDate.getMonth() + 1; // getMonth() returns month from 0 to 11
                 let year = selectedDate.getFullYear(); 
@@ -318,6 +324,7 @@
                     //     }
                     // });
                 }
+            });
         });
 
         $("#departmentId").on("change", function () {
@@ -358,29 +365,32 @@
         function assignShift(userId, date, dropdown) {
             var shiftId = dropdown.value;
 
-            if (shiftId >= 10) {
+            if  (shiftId == 999) {
                 $.ajax({
-                    url: '/Schedule/AssignLeave',
+                    url: '/Leave/AssignCompanyLeave',
                     type: 'POST',
                     data: {
                         userId: userId,
                         date: date,
-                        leaveId: shiftId
                     },
                     success: function (response) {
                         if (!response.success) {
-                            alert('Error assigning leave!');
+                            alert('Error assigning company holiday!');
                         } else {
-                            let p = $(`#p-${userId}-${date}`);
+                            let cell = $(`#cell-${userId}-${date}`);
+                            removeLeaveBg(cell);
 
-                            addLeaveBg(p, shiftId);
-                            p.text("");
+                            cell.addClass("bg-secondary");
+                            cell.find("select").blur();
+                            cell.find("select").prop("disabled", true);
+                            cell.find("select").val("0");
+                            cell.find("p").removeClass("visually-hidden");
 
                             updateShiftCount(date);
                         }
                     },
                     error: function () {
-                        alert('An error occurred while assigning the leave.');
+                        alert('An error occurred while assigning the shift.');
                     }
                 });
             } else {
@@ -396,10 +406,6 @@
                         if (!response.success) {
                             alert('Error assigning shift!');
                         } else {
-                            let p = $(`#p-${userId}-${date}`);
-                            removeLeaveBg(p);
-                            p.text(dropdown.options[dropdown.selectedIndex].text);
-
                             updateShiftCount(date);
                         }
                     },
@@ -420,38 +426,19 @@
                 cell.text(count);
 
                 // Remove previous colors before applying the new one
-                cell.removeClass("bg-danger bg-warning-subtle bg-success-subtle bg-success text-white");
+                removeColorClass(cell);
 
                 // Apply background color based on shift count
                 if (count === 0) {
-                    cell.addClass("bg-danger text-white"); // Red
+                    cell.addClass("bg-danger-subtle text-danger-emphasis"); // Light red
                 } else if (count === 1) {
-                    cell.addClass("bg-warning-subtle"); // Yellow
+                    cell.addClass("bg-warning-subtle text-warning-emphasis"); // Light yellow
                 } else if (count === 2) {
-                    cell.addClass("bg-success-subtle"); // Light Green
+                    cell.addClass("bg-success-subtle text-success-emphasis"); // Light green
                 } else {
                     cell.addClass("bg-success text-white"); // Green
                 }
             });
-        }
-
-        function addLeaveBg(p, leaveId) {
-            let bgClass = "";
-
-            switch (leaveId) {
-                case "10":
-                    bgClass = "bg-warning";
-                    break;
-                case "12":
-                    bgClass = "bg-success";
-                    break;
-                default:
-                    bgClass = "bg-primary";
-                    break;
-            }
-
-            removeLeaveBg(p);
-            $(p).addClass(bgClass);
         }
 
         function getLeave(id) {
@@ -479,9 +466,11 @@
         }
 
         function removeLeaveBg(p) {
-            $(p).removeClass("bg-primary");
-            $(p).removeClass("bg-success");
-            $(p).removeClass("bg-warning");
+            $(p).removeClass("bg-secondary bg-secondary-subtle text-secondary-emphasis");
+        }
+
+        function removeColorClass(e) {
+            $(e).removeClass("bg-danger-subtle text-danger-emphasis bg-warning-subtle text-warning-emphasis bg-success-subtle text-success-emphasis bg-success text-white");
         }
     </script>
 }
