@@ -26,7 +26,7 @@
                         : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
                     <th class="border border-start-0 border-secondary p-1 @holidayClass">
-                        <p class="m-0">@day</p><p class="m-0"><small class="fw-light font-monospace">@date.ToString("ddd")</small></p>
+                        <p class="m-0">@day</p><small class="fw-light font-monospace">@date.ToString("ddd")</small>
                     </th>
                 }
             </tr>
@@ -91,7 +91,7 @@
                         <td id="cell-@user.Personnel_ID-@date_string"
                         class="p-1 @cellClass position-relative border-bottom border-end border-secondary">
 
-                            <select class="form-control position-relative"
+                            <select class="form-control px-1 position-relative text-center"
                             onchange="assignShift(@user.Personnel_ID, '@date_string', this)"
                             style="background-color: transparent; border: none; z-index: 1;"
                             @(disabledSelect)>
