@@ -45,7 +45,7 @@
                     @foreach (var user in sector)
                     {
                     <tr id="user-@user.Personnel_ID" class="draggable">
-                        <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle">
+                        <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle @(int.Parse(User.FindFirst("Personnelid")?.Value) == user.Personnel_ID ? "fw-semibold" : "")">
                                 @user.First_name @user.Last_name
                         </td>
                             @for (int day = 1; day <= daysInMonth; day++)
@@ -89,13 +89,13 @@
                                         borderClass = $"border border-2 border-start-0 {borderColor} rounded-end";
                                 }
 
-                                var action = leave?.Status == "Pending"
+                                var action = !User.IsInRole("member") ? leave?.Status == "Pending"
                                 ? $"onclick=getLeave({leave.Leave_ID})"
                                 : leave?.Status == "Approved"
                                 ? $"onclick=reflectLeave({leave.Leave_ID})"
-                                : string.Empty;
+                                : string.Empty : string.Empty;
 
-                                var disabledSelect = (holiday != null && holiday.Type == "Company") || leave != null ? "disabled" : "";
+                                var disabledSelect = (holiday != null && holiday.Type == "Company") || leave != null || User.IsInRole("member") ? "disabled" : "";
 
                             <td id="cell-@user.Personnel_ID-@date_string"
                                 class="p-1 @cellClass position-relative border-bottom border-end border-secondary">
@@ -123,7 +123,7 @@
                                    id="p-@user.Personnel_ID-@date_string"
                                    class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @borderClass @(leave != null ? bgclass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
                                     @Html.Raw(action)
-                                   style="z-index: 1;@(leave?.Status == "Pending" ? "cursor: pointer;" : "")">
+                                   style="z-index: 1;@(leave?.Status == "Pending" && !User.IsInRole("member") ? "cursor: pointer;" : "")">
                                 </p>
                             </td>
                             }
