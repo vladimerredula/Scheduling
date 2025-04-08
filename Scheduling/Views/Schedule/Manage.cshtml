@@ -65,7 +65,7 @@
                 </div>
                 <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
                     <div class="card py-2 px-4">
-                        <table class="table text-center mb-3">
+                        <table class="table table-sm text-center mb-3">
                             <thead>
                                 <tr>
                                     <th colspan="2">4/2 pattern</th>
@@ -98,7 +98,7 @@
                 </div>
                 <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
                     <div class="card py-2 px-4">
-                        <table class="table text-center">
+                        <table class="table table-sm text-center">
                             <thead>
                                 <tr>
                                     <th colspan="2">5/2 pattern</th>
@@ -457,13 +457,15 @@
                     }
                 });
             // }
-            }
+        }
 
         function updateShiftCount(date) {
             let shiftTypes = ["A", "B", "C"];
 
             shiftTypes.forEach(shift => {
-                let count = $(`[data-date="${date}"]`).filter((_, el) => $(el).text().trim() === shift).length;
+                let count = $(`select[data-date="${date}"]`).filter(function () {
+                    return $(this).find('option:selected').text().trim() === shift;
+                }).length;
                 let cell = $(`#shift-${shift}-${date}`);
 
                 cell.text(count);
