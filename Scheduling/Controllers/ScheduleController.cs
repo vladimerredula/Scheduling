@@ -73,8 +73,8 @@ namespace Scheduling.Controllers
 
             var leaves = _db.Leaves
                 .Where(l => 
-                    (l.Date_start.Year == year && l.Date_start.Month == month) || 
-                    (l.Date_end.Year == year && l.Date_end.Month == month) &&
+                    ((l.Date_start.Year == year && l.Date_start.Month == month) || 
+                    (l.Date_end.Year == year && l.Date_end.Month == month)) &&
                     l.Status != "Cancelled" && l.Status != "Denied")
                 .ToList();
 
@@ -182,8 +182,8 @@ namespace Scheduling.Controllers
 
             var leaves = _db.Leaves
                 .Where(l =>
-                    (l.Date_start.Year == year && l.Date_start.Month == month) ||
-                    (l.Date_end.Year == year && l.Date_end.Month == month) &&
+                    ((l.Date_start.Year == year && l.Date_start.Month == month) ||
+                    (l.Date_end.Year == year && l.Date_end.Month == month)) &&
                     l.Status != "Cancelled" && l.Status != "Denied")
                 .ToList();
 

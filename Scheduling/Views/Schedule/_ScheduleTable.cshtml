@@ -56,7 +56,7 @@
                                 var schedule = Model.Schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
                                 var shiftId = schedule?.Shift_ID ?? 0;
 
-                                var leave = Model.Leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end && l.Status != "Denied");
+                                var leave = Model.Leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
                                 var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
 
                                 var cellClass = holiday != null
@@ -68,6 +68,8 @@
                                 {
                                     "Pending" => "bg-warning bg-opacity-25",
                                     "Approved" => "bg-success bg-opacity-25",
+                                    "Cancelled" => "",
+                                    "Denied" => "",
                                     _ => "bg-" + leave?.Leave_type?.BsColor
                                 };
 
@@ -76,6 +78,8 @@
                                 {
                                     "Pending" => "border-warning",
                                     "Approved" => "border-success",
+                                    "Cancelled" => "",
+                                    "Denied" => "",
                                     _ => string.Empty
                                 };
 
