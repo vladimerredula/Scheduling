@@ -123,12 +123,18 @@
                                     <option value="999">Company holiday</option>
                                 </select>
 
-                                <p data-date="@date_string"
-                                   id="p-@user.Personnel_ID-@date_string"
+                                    <p id="p-@user.Personnel_ID-@date_string"
                                    class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @borderClass @(leave != null ? bgclass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
                                     @Html.Raw(action)
                                    style="z-index: 1;@(leave?.Status == "Pending" && !User.IsInRole("member") ? "cursor: pointer;" : "")">
                                 </p>
+                                    @if (schedule?.Comment == "cancelled")
+                                    {
+                                        <svg class="position-absolute top-0 start-0 w-100 h-100">
+                                            <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
+                                            <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
+                                        </svg>
+                                    }
                             </td>
                             }
                     </tr>

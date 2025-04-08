@@ -260,6 +260,8 @@
     <script>
         // $.fn.bootstrapDP = $.fn.datepicker.noConflict();
         let cancelSort = false;
+        let previousValue;
+
         $(document).ready(function (){
             $('[data-bs-toggle="tooltip"]').tooltip();
 
@@ -303,6 +305,10 @@
                 cancelSort = true;
               }
             });
+        });
+
+        $(document).on('focus', 'select', function () {
+            previousValue = $(this).val(); // Store the current value
         });
 
         $("#departmentId").on("change", function () {
@@ -388,35 +394,35 @@
         function assignShift(userId, date, dropdown) {
             var shiftId = dropdown.value;
 
-            if  (shiftId == 999) {
-                $.ajax({
-                    url: '/Leave/AssignCompanyLeave',
-                    type: 'POST',
-                    data: {
-                        userId: userId,
-                        date: date,
-                    },
-                    success: function (response) {
-                        if (!response.success) {
-                            alert('Error assigning company holiday!');
-                        } else {
-                            let cell = $(`#cell-${userId}-${date}`);
-                            removeLeaveBg(cell);
+            // if  (shiftId == 999) {
+            //     $.ajax({
+            //         url: '/Leave/AssignCompanyLeave',
+            //         type: 'POST',
+            //         data: {
+            //             userId: userId,
+            //             date: date,
+            //         },
+            //         success: function (response) {
+            //             if (!response.success) {
+            //                 alert('Error assigning company holiday!');
+            //             } else {
+            //                 let cell = $(`#cell-${userId}-${date}`);
+            //                 removeLeaveBg(cell);
 
-                            cell.addClass("bg-secondary");
-                            cell.find("select").blur();
-                            cell.find("select").prop("disabled", true);
-                            cell.find("select").val("0");
-                            cell.find("p").removeClass("visually-hidden");
+            //                 cell.addClass("bg-secondary");
+            //                 cell.find("select").blur();
+            //                 cell.find("select").prop("disabled", true);
+            //                 cell.find("select").val("0");
+            //                 cell.find("p").removeClass("visually-hidden");
 
-                            updateShiftCount(date);
-                        }
-                    },
-                    error: function () {
-                        alert('An error occurred while assigning the shift.');
-                    }
-                });
-            } else {
+            //                 updateShiftCount(date);
+            //             }
+            //         },
+            //         error: function () {
+            //             alert('An error occurred while assigning the shift.');
+            //         }
+            //     });
+            // } else {
                 $.ajax({
                     url: '/Schedule/AssignShift',
                     type: 'POST',
@@ -429,6 +435,20 @@
                         if (!response.success) {
                             alert('Error assigning shift!');
                         } else {
+                            let cell = $(`#cell-${userId}-${date}`);
+
+                            if (shiftId == 999) {
+                                cell.append(`
+                                    <svg class="position-absolute top-0 start-0 w-100 h-100">
+                                        <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
+                                        <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
+                                    </svg>
+                                `);
+                            } else {
+                                cell.find("svg").remove();
+                            }
+
+                            dropdown.value = previousValue;
                             updateShiftCount(date);
                         }
                     },
@@ -436,8 +456,8 @@
                         alert('An error occurred while assigning the shift.');
                     }
                 });
+            // }
             }
-        }
 
         function updateShiftCount(date) {
             let shiftTypes = ["A", "B", "C"];

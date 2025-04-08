@@ -101,8 +101,15 @@ namespace Scheduling.Controllers
                     _db.Schedules.Remove(existingSchedule);
                 } else
                 {
+                    if (shiftId == 999) // Cancelled shift by manager
+                    {
+                        existingSchedule.Comment = "cancelled";
+                    } else
+                    {
                     // Update existing schedule with new shift
                     existingSchedule.Shift_ID = shiftId;
+                    }
+
                     _db.Schedules.Update(existingSchedule);
                 }
             }
