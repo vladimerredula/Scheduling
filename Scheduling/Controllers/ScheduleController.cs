@@ -106,8 +106,8 @@ namespace Scheduling.Controllers
                         existingSchedule.Comment = "cancelled";
                     } else
                     {
-                    // Update existing schedule with new shift
-                    existingSchedule.Shift_ID = shiftId;
+                        // Update existing schedule with new shift
+                        existingSchedule.Shift_ID = shiftId;
                     }
 
                     _db.Schedules.Update(existingSchedule);
@@ -173,7 +173,7 @@ namespace Scheduling.Controllers
 
             var usersNotInOrder = baseQuery
                 .Where(u => !userOrder.Contains(u.Personnel_ID))
-                .OrderBy(u => u.Sector.Order)
+                .OrderBy(u => u?.Sector?.Order)
                 .ThenByDescending(u => u.Privilege_ID)
                 .ThenBy(u => u.First_name)
                 .ThenBy(u => u.Last_name)
