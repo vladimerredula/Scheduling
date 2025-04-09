@@ -165,6 +165,7 @@
                         var date = new DateTime(currentYear, selectedMonth, day);
                         var count = Model.Schedules.Count(s => 
                             s.Shift_ID == shift.Shift_ID && 
+                            s.Comment != "cancelled" &&
                             s.Date == date && 
                             Model.Users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID) && 
                             !Model.Holidays.Where(h => h.Type == "Company").Select(h => h.Date).Contains(date)
