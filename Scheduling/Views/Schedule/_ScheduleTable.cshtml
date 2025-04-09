@@ -6,6 +6,7 @@
     var selectedMonth = Model.month;
     var sectors = ViewBag.Sectors as List<Sector>;
     var daysInMonth = DateTime.DaysInMonth(currentYear, selectedMonth);
+    bool isRegularUser = !User.IsInRole("admin") && !User.IsInRole("manager");
 }
 
 <div class="row justify-content-between mb-3">
@@ -54,7 +55,7 @@
                 <tbody class="sector" data-sector-id="@sector.Key">
                     @foreach (var user in sector)
                     {
-                        <tr id="user-@user.Personnel_ID" class="draggable">
+                        <tr id="user-@user.Personnel_ID" class="@(!isRegularUser ? "draggable" : "")">
                             <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle @(int.Parse(User.FindFirst("Personnelid")?.Value) == user.Personnel_ID ? "fw-semibold" : "")">
                                 @user.First_name @user.Last_name
                             </td>
