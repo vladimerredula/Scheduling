@@ -316,6 +316,28 @@
             loadSchedule(date.getMonth() + 1, date.getFullYear());
         });
 
+        $(document).on("click", "#prevBtn", function () {
+            let $datepicker = $('#monthPicker');
+            let currentDate = $datepicker.datepicker('getDate');
+
+            if (currentDate) {
+                let prevMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+                $datepicker.datepicker('setDate', prevMonthDate);
+                $datepicker.datepicker('update'); // Triggers changeDate event
+            }
+        });
+
+        $(document).on("click", "#nextBtn", function () {
+            let $datepicker = $('#monthPicker');
+            let currentDate = $datepicker.datepicker('getDate');
+
+            if (currentDate) {
+                let nextMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
+                $datepicker.datepicker('setDate', nextMonthDate);
+                $datepicker.datepicker('update'); // Triggers changeDate event
+            }
+        });
+
         function initializeSortable() {
             $(".sector").sortable({
                 items: ".draggable",
