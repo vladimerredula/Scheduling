@@ -14,7 +14,7 @@
     </div>
     <div class="col">
         <h3 class="text-center">
-    @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)
+            @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)
         </h3>
     </div>
     <div class="col-auto">
@@ -117,7 +117,7 @@
                                     <select data-date="@date_string"
                                     class="form-control px-1 position-relative text-center"
                                     onchange="assignShift(@user.Personnel_ID, '@date_string', this)"
-                                    style="background-color: transparent; border: none; z-index: 1;"
+                                    style="background-color: transparent; border: none; z-index: 1;@(holiday != null && holiday.Type == "Company" ? "color: transparent;" : "")"
                                     @(disabledSelect)>
                                         <option value="0"></option>
                                         @foreach (var shift in Model.Shifts)
@@ -131,7 +131,7 @@
                                                 <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
                                             }
                                         }
-                                        <option value="999">Company holiday</option>
+                                        <option value="999">*Cancelled shift</option>
                                     </select>
 
                                     <p id="p-@user.Personnel_ID-@date_string"
@@ -162,7 +162,12 @@
                     @for (int day = 1; day <= daysInMonth; day++)
                     {
                         var date = new DateTime(currentYear, selectedMonth, day);
-                        var count = Model.Schedules.Count(s => s.Shift_ID == shift.Shift_ID && s.Date == date && Model.Users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID));
+                        var count = Model.Schedules.Count(s => 
+                            s.Shift_ID == shift.Shift_ID && 
+                            s.Date == date && 
+                            Model.Users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID) && 
+                            !Model.Holidays.Where(h => h.Type == "Company").Select(h => h.Date).Contains(date)
+                        );
 
                         var bgColor = count switch
                         {

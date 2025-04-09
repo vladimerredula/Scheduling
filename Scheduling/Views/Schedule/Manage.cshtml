@@ -466,11 +466,12 @@
                                         <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
                                     </svg>
                                 `);
+
+                                dropdown.value = previousValue;
                             } else {
                                 cell.find("svg").remove();
                             }
 
-                            dropdown.value = previousValue;
                             updateShiftCount(date);
                         }
                     },
@@ -485,7 +486,7 @@
             let shiftTypes = ["A", "B", "C"];
 
             shiftTypes.forEach(shift => {
-                let count = $(`select[data-date="${date}"]`).filter(function () {
+                    let count = $(`select[data-date="${date}"]:not(:disabled)`).filter(function () {
                     return $(this).find('option:selected').text().trim() === shift;
                 }).length;
                 let cell = $(`#shift-${shift}-${date}`);
