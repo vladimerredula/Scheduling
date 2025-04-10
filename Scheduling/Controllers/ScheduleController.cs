@@ -31,9 +31,9 @@ namespace Scheduling.Controllers
                 departmentId = user.Department_ID.Value;
             }
 
-            var shifts = _db.Shifts.ToList();
+            var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
             var holidays = _db.Holidays.ToList();
-            var sectors = _db.Sectors.ToList();
+            var sectors = _db.Sectors.Where(s => s.Department_ID == departmentId).ToList();
 
             var userOrder = _db.Employee_orders
                 .Where(o => o.Year == year && o.Month == month)
@@ -81,7 +81,7 @@ namespace Scheduling.Controllers
             ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
             ViewBag.LeaveTypes = _db.Leave_types.ToList();
 
-            if (User.IsInRole("member"))
+            if (User.IsInRole("member") || User.IsInRole("shiftLeader"))
                 return View((users, shifts, schedules, leaves, holidays, sectors, month, year));
             else
                 return View("Manage", (users, shifts, schedules, leaves, holidays, sectors, month, year));
@@ -148,9 +148,9 @@ namespace Scheduling.Controllers
         [Authorize]
         public IActionResult GetScheduleByMonth(int month, int year, int departmentId)
         {
-            var shifts = _db.Shifts.ToList();
+            var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
             var holidays = _db.Holidays.ToList();
-            var sectors = _db.Sectors.ToList();
+            var sectors = _db.Sectors.Where(s => s.Department_ID == departmentId).ToList();
 
             var userOrder = _db.Employee_orders
                 .Where(o => o.Year == year && o.Month == month)
