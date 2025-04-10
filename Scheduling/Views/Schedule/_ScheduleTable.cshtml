@@ -62,7 +62,7 @@
                             @for (int day = 1; day <= daysInMonth; day++)
                             {
                                 var date = new DateTime(currentYear, selectedMonth, day);
-                                var date_string = date.ToString("yyyy-MM-dd");
+                                var dateString = date.ToString("yyyy-MM-dd");
                                 var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
                                 var schedule = Model.Schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
                                 var shiftId = schedule?.Shift_ID ?? 0;
@@ -70,8 +70,12 @@
                                 var leave = Model.Leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
                                 var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
 
-                                var cellClass = holiday != null
-                                ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
+                                bool isHoliday = holiday != null;
+                                bool isCompanyHoliday = isHoliday && holiday?.Type == "Company";
+                                bool hasLeave = leave != null;
+
+                                var cellClass = isHoliday
+                                ? (isCompanyHoliday ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
                                 : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
 
@@ -94,31 +98,32 @@
                                     _ => string.Empty
                                 };
 
-                                if (!string.IsNullOrEmpty(borderColor) && leave != null)
+                                if (!string.IsNullOrEmpty(borderColor) && hasLeave)
                                 {
-                                    if (date == leave.Date_start)
+                                    if (date == leave?.Date_start)
                                         borderClass = $"border border-2 border-end-0 {borderColor} rounded-start";
-                                    else if (date > leave.Date_start && date < leave.Date_end)
+                                    else if (date > leave?.Date_start && date < leave?.Date_end)
                                         borderClass = $"border border-2 border-start-0 border-end-0 {borderColor}";
-                                    else if (date == leave.Date_end)
+                                    else if (date == leave?.Date_end)
                                         borderClass = $"border border-2 border-start-0 {borderColor} rounded-end";
                                 }
 
-                                var action = !User.IsInRole("member") ? leave?.Status == "Pending"
-                                ? $"onclick=getLeave({leave.Leave_ID})"
+                                var action = !isRegularUser 
+                                ? leave?.Status == "Pending"
+                                    ? $"onclick=getLeave({leave.Leave_ID})"
                                 : leave?.Status == "Approved"
-                                ? $"onclick=reflectLeave({leave.Leave_ID})"
-                                : string.Empty : string.Empty;
+                                    ? $"onclick=reflectLeave({leave.Leave_ID})" : string.Empty 
+                                : string.Empty;
 
-                                var disabledSelect = (holiday != null && holiday.Type == "Company") || leave != null || User.IsInRole("member") ? "disabled" : "";
+                                var disabledSelect = (isCompanyHoliday || hasLeave || isRegularUser) ? "disabled" : "";
 
-                                <td id="cell-@user.Personnel_ID-@date_string"
+                                <td id="cell-@user.Personnel_ID-@dateString"
                                 class="p-1 @cellClass position-relative border-bottom border-end border-secondary">
 
-                                    <select data-date="@date_string"
+                                    <select data-date="@dateString"
                                     class="form-control px-1 position-relative text-center"
-                                    onchange="assignShift(@user.Personnel_ID, '@date_string', this)"
-                                    style="background-color: transparent; border: none; z-index: 1;@(holiday != null && holiday.Type == "Company" ? "color: transparent;" : "")"
+                                    onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
+                                    style="background-color: transparent; border: none; z-index: 1;@(isCompanyHoliday ? "color: transparent;" : "")"
                                     @(disabledSelect)>
                                         <option value="0"></option>
                                         @foreach (var shift in Model.Shifts)
@@ -135,8 +140,8 @@
                                         <option value="999">*Cancelled shift</option>
                                     </select>
 
-                                    <p id="p-@user.Personnel_ID-@date_string"
-                                    class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @borderClass @(leave != null ? bgclass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
+                                    <p id="p-@user.Personnel_ID-@dateString"
+                                    class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @borderClass @(hasLeave ? bgclass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
                                     @Html.Raw(action)
                                     style="z-index: 1;@(leave?.Status == "Pending" && !User.IsInRole("member") ? "cursor: pointer;" : "")">
                                     </p>
@@ -149,9 +154,9 @@
                                     }
                                 </td>
                             }
-                    </tr>
+                        </tr>
                     }
-            </tbody>
+                </tbody>
             }
         </tbody>
 
