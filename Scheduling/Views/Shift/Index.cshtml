@@ -1,0 +1,272 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "admin,manager")] // Ensure only Manager can access this page
+
+@model Shift
+
+@{
+    ViewData["Title"] = "Shifts";
+
+    var shifts = ViewBag.Shifts as List<Shift> ?? new List<Shift>();
+}
+
+<div class="container">
+    <h1>@ViewData["Title"]</h1>
+
+    <p class="mb-4">
+        <a class="btn btn-primary shadow" onclick="addShift()">Create New</a>
+    </p>
+
+    <div class="card p-3 border-0 shadow-sm">
+        <table class="datatable table table-hover">
+            <thead>
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Pattern)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Shift_name)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Time_start)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Time_end)
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in shifts)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Pattern)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Shift_name)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Time_start)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Time_end)
+                        </td>
+                        <td class="text-nowrap">
+                            <a href="javascript:void(0)" onclick="editShift(@item.Shift_ID)">Edit</a> |
+                            <a href="javascript:void(0)" onclick="deleteShift(@item.Shift_ID)">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="shiftModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="shiftModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="shiftForm" method="post">
+                <div class="modal-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Shift_ID" />
+                    <input type="hidden" asp-for="Department_ID" />
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Shift_name" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <input asp-for="Shift_name" class="form-control" />
+                            <span asp-validation-for="Shift_name" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Time_start" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <input asp-for="Time_start" class="form-control" />
+                            <span asp-validation-for="Time_start" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Time_end" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <input asp-for="Time_end" class="form-control" />
+                            <span asp-validation-for="Time_end" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Pattern" class="form-label"></label>
+                            <select asp-for="Pattern" class="form-select">
+                                <option value=""></option>
+                                <option value="4/2">4/2</option>
+                                <option value="5/2">5/2</option>
+                            </select>
+                            <span asp-validation-for="Pattern" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <div class="form-group">
+                        <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
+                        <a href="javascript:void(0)" class="btn btn-primary" id="modalButton"></a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Shift</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Shift_name)
+                    </dt>
+                    <dd class="col-sm-9" id="shift_name">
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Time_start)
+                    </dt>
+                    <dd class="col-sm-9" id="time_start">
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Time_end)
+                    </dt>
+                    <dd class="col-sm-9" id="time_end">
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Pattern)
+                    </dt>
+                    <dd class="col-sm-9" id="pattern">
+                    </dd>
+                </dl>
+            </div>
+            <div class="modal-footer border-0">
+                <form asp-action="Delete">
+                    <input type="hidden" name="id" id="deleteID" />
+                    <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
+                    <input type="submit" value="Delete" class="btn btn-danger" />
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $("table.datatable").DataTable({
+            responsive: true,
+            fixedHeader: true
+        });
+
+        $(document).ready(function () {
+        });
+
+        function addShift() {
+            $(".modal-title").text("Add Shift");
+
+            $("#modalButton").text("Create");
+
+            $("#shiftForm").attr("action", "/Shift/Add");
+
+            clearModal();
+
+            // Show the modal
+            $("#shiftModal").modal("show");
+        }
+
+        function editShift(id) {
+            clearModal();
+
+            $.ajax({
+                url: "/Shift/GetShift",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    // Iterate over the properties of the data object and set the corresponding form field values
+                    $.each(data, function (key, value) {
+                        var elementId = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize the first letter
+
+                        if (elementId == "Date") {
+                            $("#" + elementId).val(formatDate(value));
+                        } else {
+                            $("#" + elementId).val(value);
+                        }
+                    });
+
+                    // Set the action attribute of the form
+                    $("#shiftForm").attr("action", "/Shift/Edit/" + data["shift_ID"]);
+                    $("#shiftModalLabel").text("Edit shift");
+                    $("#modalButton").text("Update");
+
+                    // Show the modal
+                    $("#shiftModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response.status, response.responseJSON.message);
+                    alert("Error: " + response.responseJSON.message);
+                }
+            });
+        };
+
+        function deleteShift(id) {
+            $.ajax({
+                url: "/Shift/GetShift",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    // Iterate over the properties of the data object and set the corresponding form field values
+                    $.each(data, function (key, value) {
+                        var $element = $("#" + key);
+                        if ($element.length) {
+                            if (key == "date") {
+                                $element.text(formatDate(value));
+                            } else {
+                                $element.text(value);
+                            }
+                        }
+                    });
+
+                    $("#deleteID").val(data["shift_ID"]);
+
+                    // Show the modal
+                    $("#deleteModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response.status, response.responseJSON.message);
+                    alert("Error: " + response.responseJSON.message);
+                }
+            });
+        }
+
+        $("#modalButton").on("click", function() {
+            $("#shiftForm").submit();
+        });
+
+        function clearModal() {
+            $('input[type="text"]').val('');
+            // $('select').prop('selectedIndex', "");
+
+            $(".field-validation-error").text("");
+        }
+
+        function formatDate(dateString) {
+            var date = new Date(dateString);
+            var day = ("0" + date.getDate()).slice(-2);
+            var month = ("0" + (date.getMonth() + 1)).slice(-2);
+            var year = date.getFullYear();
+            return year + "-" + month + "-" + day; // Format: YYYY/MM/DD
+        }
+    </script>
+}
