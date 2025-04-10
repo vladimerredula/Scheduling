@@ -69,6 +69,7 @@ namespace Scheduling.Controllers
                         role = "shiftLeader";
                         break;
                     case 3:
+                    case 4:
                         role = "manager";
                         break;
                     default:
