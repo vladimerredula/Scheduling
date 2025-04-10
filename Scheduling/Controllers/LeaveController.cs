@@ -69,7 +69,7 @@ namespace Scheduling.Controllers
             await _db.SaveChangesAsync();
 
             // Redirect to Schedule page
-            return RedirectToAction("Index", "Schedule", new { month = request.Date_start.Month, year = request.Date_start.Year });
+            return RedirectToAction("Manage", "Schedule", new { month = request.Date_start.Month, year = request.Date_start.Year });
         }
 
         public async Task<IActionResult> Cancel(int Id)
@@ -144,7 +144,7 @@ namespace Scheduling.Controllers
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
 
-            return RedirectToAction("Index", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
+            return RedirectToAction("Manage", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
         }
 
         public async Task<IActionResult> Deny(int Id)
@@ -157,7 +157,7 @@ namespace Scheduling.Controllers
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
 
-            return RedirectToAction("Index", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
+            return RedirectToAction("Manage", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
         }
 
         public async Task<IActionResult> AssignCompanyLeave(int userId, DateTime date)
