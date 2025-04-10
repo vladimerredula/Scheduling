@@ -36,8 +36,13 @@ namespace Scheduling.Controllers
             var sectors = _db.Sectors.Where(s => s.Department_ID == departmentId).ToList();
 
             var userOrder = _db.Employee_orders
-                .Where(o => o.Year == year && o.Month == month)
-                .OrderBy(o => o.Order_index)
+                .Include(o => o.User)
+                .Where(o =>
+                    o.User.Department_ID == departmentId &&
+                    (o.Year < year || (o.Year == year && o.Month <= month))) // Filter for orders earlier or equal to the selected month and year
+                .OrderBy(o => o.Year)  // Order by Year first to get the latest orders
+                .ThenBy(o => o.Month)  // Then by Month within the same year
+                .ThenBy(o => o.Order_index) // Optional: If you want to order by Order_index
                 .Select(o => o.Personnel_ID)
                 .ToList();
 
@@ -153,8 +158,13 @@ namespace Scheduling.Controllers
             var sectors = _db.Sectors.Where(s => s.Department_ID == departmentId).ToList();
 
             var userOrder = _db.Employee_orders
-                .Where(o => o.Year == year && o.Month == month)
-                .OrderBy(o => o.Order_index)
+                .Include(o => o.User)
+                .Where(o =>
+                    o.User.Department_ID == departmentId &&
+                    (o.Year < year || (o.Year == year && o.Month <= month))) // Filter for orders earlier or equal to the selected month and year
+                .OrderBy(o => o.Year)  // Order by Year first to get the latest orders
+                .ThenBy(o => o.Month)  // Then by Month within the same year
+                .ThenBy(o => o.Order_index) // Optional: If you want to order by Order_index
                 .Select(o => o.Personnel_ID)
                 .ToList();
 
