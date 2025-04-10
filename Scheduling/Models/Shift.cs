@@ -14,8 +14,12 @@ namespace Scheduling.Models
         [Display(Name = "Shift name")]
         [StringLength(25)]
         public string? Shift_name { get; set; }
+
+        [Required]
         [Display(Name = "Start time")]
         public TimeSpan? Time_start { get; set; }
+
+        [Required]
         [Display(Name = "End time")]
         public TimeSpan? Time_end { get; set; }
         public string? Pattern { get; set; }
