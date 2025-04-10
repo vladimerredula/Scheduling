@@ -1,7 +1,7 @@
 ﻿@using System.Globalization;
 @model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, List<Sector> Sectors, int month, int year)
 @{
-    ViewData["Title"] = "Manage Schedules";
+    ViewData["Title"] = "Schedules";
 
     var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
     var leaves = ViewBag.LeaveTypes as List<Leave_type> ?? new List<Leave_type>();
@@ -34,103 +34,9 @@
         </div>
         <div class="col-2"></div>
     </div>
-
-    <div class="row">
-        <div class="col-12 col-xxl-10 mb-3">
-            <!-- Table with Regular Members and Dates -->
-            <div class="card p-3">
-                <div id="loading-spinner" class="position-absolute top-50 start-50 z-3 d-none">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-                <div id="scheduleTable">
-                    <partial name="_ScheduleTable" />
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-xxl-2">
-            <div class="row mb-3">
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card p-4">
-                        <small class="text-body-secondary mb-3">Leave applications</small>
-                        <p><span class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Pending</p>
-                        <p><span class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Approved by manager</p>
-                        <small class="text-body-secondary mb-3">Reflected leaves</small>
-                        <p><span class="bg-primary-subtle border border-2 border-primary-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Business trip</p>
-                        <p><span class="bg-info border border-2 border-info rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Paid leave</p>
-                        <p><span class="bg-primary border border-2 border-primary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</p>
-                        <p class="mb-0"><span class="bg-secondary border border-2 border-secondary rounded-1 opacity-75">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
-                    </div>
-                </div>
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card py-2 px-4">
-                        <table class="table table-sm text-center mb-3">
-                            <thead>
-                                <tr>
-                                    <th colspan="2">4/2 pattern</th>
-                                </tr>
-                                <tr>
-                                    <th>Shift</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>A</td>
-                                    <td>7:15 - 16:45</td>
-                                </tr>
-                                <tr>
-                                    <td>B</td>
-                                    <td>12:45 - 22:15</td>
-                                </tr>
-                                <tr>
-                                    <td>C</td>
-                                    <td>22:00 - 7:30</td>
-                                </tr>
-                                <tr>
-                                    <td>J</td>
-                                    <td>09:00 - 18:00</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card py-2 px-4">
-                        <table class="table table-sm text-center">
-                            <thead>
-                                <tr>
-                                    <th colspan="2">5/2 pattern</th>
-                                </tr>
-                                <tr>
-                                    <th>Shift</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>A*</td>
-                                    <td>7:15 - 16:15</td>
-                                </tr>
-                                <tr>
-                                    <td>B*</td>
-                                    <td>13:15 - 22:15</td>
-                                </tr>
-                                <tr>
-                                    <td>C*</td>
-                                    <td>22:15 - 7:15</td>
-                                </tr>
-                                <tr>
-                                    <td>J</td>
-                                    <td>09:00 - 18:00</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+    
+    <div id="scheduleTable">
+        <partial name="_ScheduleTable" />
     </div>
 </div>
 
@@ -345,13 +251,13 @@
                 connectWith: ".sector", // Allow dragging between sectors
                 cursor: "move",
                 start: function (event, ui) {
-                  cancelSort = false; // Reset flag on new drag
+                    cancelSort = false; // Reset flag on new drag
                 },
                 beforeStop: function (event, ui) {
-                  if (cancelSort) {
-                    $(this).sortable("cancel"); // Cancel the sort
-                    cancelSort = false;
-                  }
+                    if (cancelSort) {
+                        $(this).sortable("cancel"); // Cancel the sort
+                        cancelSort = false;
+                    }
                 },
                 update: function (event, ui) {
                     let orders = $(".draggable").map(function () {
@@ -416,36 +322,6 @@
 
         function assignShift(userId, date, dropdown) {
             var shiftId = dropdown.value;
-
-            // if  (shiftId == 999) {
-            //     $.ajax({
-            //         url: '/Leave/AssignCompanyLeave',
-            //         type: 'POST',
-            //         data: {
-            //             userId: userId,
-            //             date: date,
-            //         },
-            //         success: function (response) {
-            //             if (!response.success) {
-            //                 alert('Error assigning company holiday!');
-            //             } else {
-            //                 let cell = $(`#cell-${userId}-${date}`);
-            //                 removeLeaveBg(cell);
-
-            //                 cell.addClass("bg-secondary");
-            //                 cell.find("select").blur();
-            //                 cell.find("select").prop("disabled", true);
-            //                 cell.find("select").val("0");
-            //                 cell.find("p").removeClass("visually-hidden");
-
-            //                 updateShiftCount(date);
-            //             }
-            //         },
-            //         error: function () {
-            //             alert('An error occurred while assigning the shift.');
-            //         }
-            //     });
-            // } else {
                 $.ajax({
                     url: '/Schedule/AssignShift',
                     type: 'POST',
