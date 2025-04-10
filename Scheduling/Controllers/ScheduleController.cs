@@ -109,7 +109,12 @@ namespace Scheduling.Controllers
                     if (shiftId == 999) // Cancelled shift by manager
                     {
                         existingSchedule.Comment = "cancelled";
-                    } else
+                    }
+                    else if (shiftId == 998)
+                    {
+                        existingSchedule.Comment = null;
+                    }
+                    else
                     {
                         // Update existing schedule with new shift
                         existingSchedule.Shift_ID = shiftId;
@@ -128,7 +133,8 @@ namespace Scheduling.Controllers
                     Shift_ID = shiftId,
                     Date = date
                 };
-                _db.Schedules.Add(newSchedule);
+
+                await _db.Schedules.AddAsync(newSchedule);
             }
 
             await _db.SaveChangesAsync();

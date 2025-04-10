@@ -322,6 +322,7 @@
 
         function assignShift(userId, date, dropdown) {
             var shiftId = dropdown.value;
+
                 $.ajax({
                     url: '/Schedule/AssignShift',
                     type: 'POST',
@@ -344,8 +345,23 @@
                                     </svg>
                                 `);
 
+                                removeCancelOption(dropdown);
+                                addUncancelOption(dropdown);
+
                                 dropdown.value = previousValue;
+                            } else if (shiftId == 998) {
+
+                                removeUncancelOption(dropdown);
+                                addCancelOption(dropdown);
+
+                                cell.find("svg").remove();
+                                dropdown.value = previousValue;
+                            } else if (shiftId == 0) {
+                                removeCancelOption(dropdown);
+                                removeUncancelOption(dropdown);
+                                cell.find("svg").remove();
                             } else {
+                                addCancelOption(dropdown);
                                 cell.find("svg").remove();
                             }
 
@@ -357,6 +373,30 @@
                     }
                 });
             // }
+        }
+
+        function removeCancelOption(select) {
+            let option = select.querySelector(`option[value="999"]`);
+            if (option) {
+                option.remove(); // Removes the option from the select
+            }
+        }
+
+        function addCancelOption(select) {
+            removeCancelOption(select);
+            $(select).append(new Option("*Cancel shift", "999"));
+        }
+
+        function removeUncancelOption(select) {
+            let option = select.querySelector(`option[value="998"]`);
+            if (option) {
+                option.remove(); // Removes the option from the select
+            }
+        }
+
+        function addUncancelOption(select) {
+            removeUncancelOption(select);
+            $(select).append(new Option("*Uncancel shift", "998"));
         }
 
         function updateShiftCount(date) {

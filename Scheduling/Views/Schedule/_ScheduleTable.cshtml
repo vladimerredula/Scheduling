@@ -64,7 +64,7 @@
                             <tbody class="sector">
                                 @foreach (var user in sector)
                                 {
-                                <tr id="user-@user.Personnel_ID" data-sector-id="@sector.Key" class="@(!isRegularUser ? "draggable" : "")">
+                                    <tr id="user-@user.Personnel_ID" data-sector-id="@sector.Key" class="@(!isRegularUser ? "draggable" : "")">
                                         <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle @(int.Parse(User.FindFirst("Personnelid")?.Value) == user.Personnel_ID ? "fw-semibold" : "")">
                                             @user.First_name @user.Last_name
                                         </td>
@@ -146,7 +146,18 @@
                                                             <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
                                                         }
                                                     }
-                                                    <option value="999">*Cancelled shift</option>
+
+                                                    @if (schedule?.Shift_ID != null)
+                                                    {
+                                                        @if (schedule?.Comment == "cancelled")
+                                                        {
+                                                            <option value="998">*Uncancel shift</option>
+                                                        }
+                                                        else
+                                                        {
+                                                            <option value="999">*Cancel shift</option>
+                                                        }
+                                                    }
                                                 </select>
 
                                                 <p id="p-@user.Personnel_ID-@dateString"
