@@ -342,6 +342,7 @@
             $(".sector").sortable({
                 items: ".draggable",
                 handle: ".drag-handle",
+                connectWith: ".sector", // Allow dragging between sectors
                 cursor: "move",
                 start: function (event, ui) {
                   cancelSort = false; // Reset flag on new drag
@@ -353,8 +354,8 @@
                   }
                 },
                 update: function (event, ui) {
-                    let orders = $('.draggable').map(function () {
-                        return this.id;
+                    let orders = $(".draggable").map(function () {
+                        return this.id.replace("user-", "") + "-" + $(this).data("sector-id"); // Extract user IDs
                     }).get().join(',');
 
                     let date = $('#monthPicker').datepicker("getDate");
@@ -371,11 +372,11 @@
                         },
                         success: function (response) {
                             if (!response.success) {
-                                alert('Error updating row order!');
+                                alert('Error updating user sector and order!');
                             }
                         },
                         error: function () {
-                            alert('An error occurred while updating the row order.');
+                            alert('An error occurred while updating the user sector and order.');
                         }
                     });
                 }

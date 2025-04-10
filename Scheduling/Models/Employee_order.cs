@@ -13,6 +13,7 @@ namespace Scheduling.Models
         public User? User { get; set; }
 
         public int? Order_index { get; set; } // Position in the calendar
+        public int? Sector_ID { get; set; } // Team ID
         public int? Year { get; set; }
         public int? Month { get; set; }
     }

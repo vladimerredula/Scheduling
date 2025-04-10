@@ -52,10 +52,10 @@
                         <th class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">@Model.Sectors?.FirstOrDefault(s => s.Sector_ID == sector.Key)?.Sector_name</th>
                     </tr>
                 </thead>
-                <tbody class="sector" data-sector-id="@sector.Key">
+                            <tbody class="sector">
                     @foreach (var user in sector)
                     {
-                        <tr id="user-@user.Personnel_ID" class="@(!isRegularUser ? "draggable" : "")">
+                                <tr id="user-@user.Personnel_ID" data-sector-id="@sector.Key" class="@(!isRegularUser ? "draggable" : "")">
                             <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle @(int.Parse(User.FindFirst("Personnelid")?.Value) == user.Personnel_ID ? "fw-semibold" : "")">
                                 @user.First_name @user.Last_name
                             </td>

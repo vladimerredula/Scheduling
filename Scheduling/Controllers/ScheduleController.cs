@@ -231,8 +231,9 @@ namespace Scheduling.Controllers
             var index = 1;
             foreach (var item in order.Split(","))
             {
-                var userId = int.Parse(item.Split("-")[1]);
-                var sample = _db.Employee_orders.FirstOrDefault(e => e.Personnel_ID == 1);
+                var userId = int.Parse(item.Split("-")[0]);
+                var sectorId = int.Parse(item.Split("-")[1]);
+
 
                 var employeeOrder = await _db.Employee_orders
                     .FirstOrDefaultAsync(e => e.Personnel_ID == userId && e.Year == year && e.Month == month);
@@ -244,13 +245,15 @@ namespace Scheduling.Controllers
                         Personnel_ID = userId,
                         Year = year,
                         Month = month,
-                        Order_index = index
+                        Order_index = index,
+                        Sector_ID = sectorId
                     };
                     _db.Employee_orders.Add(employeeOrder);
                 }
                 else
                 {
                     employeeOrder.Order_index = index;
+                    employeeOrder.Sector_ID = sectorId;
                     _db.Employee_orders.Update(employeeOrder);
                 }
 
