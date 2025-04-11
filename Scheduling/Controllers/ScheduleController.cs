@@ -211,6 +211,8 @@ namespace Scheduling.Controllers
                     l.Status != "Cancelled" && l.Status != "Denied")
                 .ToList();
 
+            ViewBag.LeaveTypes = _db.Leave_types.ToList();
+
             return PartialView("_ScheduleTable", (users, shifts, schedules, leaves, holidays, sectors, month, year));
         }
 
