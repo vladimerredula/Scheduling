@@ -28,7 +28,7 @@
                     </div>
                 </div>
                 <div class="col-auto align-self-end">
-                    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply leave</a>
+                    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
                 </div>
             </div>
         </div>
@@ -211,7 +211,29 @@
                 cancelSort = true;
               }
             });
+
+            adjustTableColumns();
+            $(window).on('resize', adjustTableColumns); // Optional: handle resizing
         });
+
+        function adjustTableColumns() {
+            const table = $('#schedule');
+            const columns = table.find('thead th');
+            const totalColumns = columns.length;
+            const firstColumnWidth = 230; // px
+            const availableWidth = table.width() - firstColumnWidth;
+            const otherColumnWidth = Math.floor(availableWidth / (totalColumns - 1));
+
+            console.log(availableWidth, totalColumns);
+
+            columns.each(function (index) {
+                if (index === 0) {
+                    $(this).css('width', firstColumnWidth + 'px');
+                } else {
+                    $(this).css('width', otherColumnWidth + 'px');
+                }
+            });
+        }
 
         $(document).on('focus', 'select', function () {
             previousValue = $(this).val(); // Store the current value
@@ -313,6 +335,7 @@
                     $("#scheduleTable").html(response);
                     hideSpinner();
                     initializeSortable(); // Re-initialize sortable functionality
+                    adjustTableColumns();
                 },
                 error: function () {
                     alert("Error loading schedule.");
