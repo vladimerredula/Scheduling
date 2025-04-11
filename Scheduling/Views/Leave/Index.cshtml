@@ -14,17 +14,36 @@
     </p>
 
     <div class="card p-3 border-0 shadow-sm">
+        @if (!User.IsInRole("member") && !User.IsInRole("shiftLeader"))
+        {
+            <div class="row mb-3">
+                <div class="col-auto">
+                    <form asp-action="Index" id="changeDepartment">
+                        <label for="departmentId" class="form-label">Department</label>
+                        <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                            <option value="" disabled></option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+        }
         <table class="datatable table table-hover">
             <thead>
                 <tr>
-                    <th>
-                        @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
-                    </th>
+                    @if (!User.IsInRole("member") && !User.IsInRole("shiftLeader"))
+                    {
+                        <th>
+                            @Html.DisplayNameFor(model => model.User.Full_name)
+                        </th>
+                    }
                     <th>
                         @Html.DisplayNameFor(model => model.Date_start)
                     </th>
                     <th>
                         @Html.DisplayNameFor(model => model.Date_end)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
                     </th>
                     <th>
                         @Html.DisplayNameFor(model => model.Status)
@@ -39,14 +58,20 @@
                 @foreach (var item in leaves)
                 {
                     <tr>
-                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
-                            @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
-                        </td>
+                        @if (!User.IsInRole("member") && !User.IsInRole("shiftLeader"))
+                        {
+                            <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
+                                @Html.DisplayFor(modelItem => item.User.Full_name)
+                            </td>
+                        }
                         <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
                             @Html.DisplayFor(modelItem => item.Date_start_string)
                         </td>
                         <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
                             @Html.DisplayFor(modelItem => item.Date_end_string)
+                        </td>
+                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
+                            @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
                         </td>
                         <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
                             @Html.DisplayFor(modelItem => item.Status)
@@ -57,12 +82,12 @@
                         <td class="text-nowrap @(item.Status == "Cancelled" ? "text-secondary" : "")">
                             @if (item.Status == "Pending")
                             {
-                                <a href="javascript:void(0)" onclick="editLeave(@item.Leave_ID)">Edit</a><span> | </span>
-                            }
-
-                            @if (item.Status != "Cancelled")
-                            {
+                                <a href="javascript:void(0)" onclick="editLeave(@item.Leave_ID)">Edit</a>
+                                <span> | </span>
                                 <a href="javascript:void(0)" onclick="cancelLeave(@item.Leave_ID)">Cancel</a>
+                            } else if (item.Status != "Cancelled")
+                            {
+                                <a href="javascript:void(0)" onclick="cancelLeave(@item.Leave_ID)">Widthraw</a>
                             }
                         </td>
                     </tr>
@@ -167,11 +192,18 @@
     <script>
         $("table.datatable").DataTable({
             responsive: true,
-            fixedHeader: true,
-            order: [[1, 'asc']]
+            fixedHeader: true
+            @if (!User.IsInRole("member") && !User.IsInRole("shiftLeader"))
+            {
+                @: , order: [[1, 'asc']]
+            }
         });
 
         $(document).ready(function () {
+        });
+
+        $("#departmentId").on("change", function() {
+            $("#changeDepartment").submit();
         });
 
         function addLeave() {

@@ -17,14 +17,36 @@ namespace Scheduling.Controllers
             _db = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index(int departmentId = 1)
         {
-            ViewBag.Leaves = _db.Leaves
-                .Include(l => l.User)
-                .Include(l => l.Leave_type)
-                .Include(l => l.Approver)
-                .Where(l => l.Personnel_ID == GetPersonnelID())
-                .ToList();
+            if (User.IsInRole("member") || User.IsInRole("shiftLeader"))
+            {
+                ViewBag.Leaves = _db.Leaves
+                    .Include(l => l.User)
+                    .Include(l => l.Leave_type)
+                    .Include(l => l.Approver)
+                    .Where(l => l.Personnel_ID == GetPersonnelID())
+                    .ToList();
+            } else if (User.IsInRole("manager")) {
+                var user = await ThisUser();
+
+                ViewBag.Leaves = _db.Leaves
+                    .Include(l => l.User)
+                    .Include(l => l.Leave_type)
+                    .Include(l => l.Approver)
+                    .Where(l => l.User.Department_ID == user.Department_ID)
+                    .ToList();
+            } else if (User.IsInRole("topManager") || User.IsInRole("admin"))
+            {
+                ViewBag.Leaves = _db.Leaves
+                    .Include(l => l.User)
+                    .Include(l => l.Leave_type)
+                    .Include(l => l.Approver)
+                    .Where(l => l.User.Department_ID == departmentId)
+                    .ToList();
+
+                ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
+            }
 
             ViewBag.LeaveTypes = new SelectList(_db.Leave_types.Where(l => l.Leave_type_ID < 999).ToList(), "Leave_type_ID", "Leave_type_name");
 
@@ -144,7 +166,7 @@ namespace Scheduling.Controllers
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
 
-            return RedirectToAction("Manage", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
+            return RedirectToAction("Index", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
         }
 
         public async Task<IActionResult> Deny(int Id)
@@ -157,7 +179,7 @@ namespace Scheduling.Controllers
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
 
-            return RedirectToAction("Manage", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
+            return RedirectToAction("Index", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
         }
 
         public async Task<IActionResult> AssignCompanyLeave(int userId, DateTime date)
