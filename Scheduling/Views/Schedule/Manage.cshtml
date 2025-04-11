@@ -25,6 +25,9 @@
                             <label for="monthSelect" class="form-label">Month</label>
                             <input type="text" class="form-control" id="monthPicker">
                         </div>
+                        <div class="col-auto mb-2 align-self-end">
+                            <input type="text" id="searchBox" class="form-control" placeholder="Search Employee..." />
+                        </div>
                     </div>
                 </div>
                 <div class="col-auto align-self-end">
@@ -214,7 +217,24 @@
 
             adjustTableColumns();
             $(window).on('resize', adjustTableColumns); // Optional: handle resizing
+            filterTable();
+
         });
+
+        // Search functionality
+        $("#searchBox").on("input", function () {
+            filterTable();
+        });
+
+        function filterTable() {
+            let searchValue = $("#searchBox").val().toLowerCase();
+
+            // Filter rows based on the search value
+            $(".sector tr").filter(function () {
+                let name = $(this).find("td:first").text().toLowerCase();
+                $(this).toggle(name.includes(searchValue));
+            });
+        }
 
         function adjustTableColumns() {
             const table = $('#schedule');
@@ -336,6 +356,7 @@
                     hideSpinner();
                     initializeSortable(); // Re-initialize sortable functionality
                     adjustTableColumns();
+                    filterTable();
                 },
                 error: function () {
                     alert("Error loading schedule.");

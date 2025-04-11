@@ -56,12 +56,10 @@
                     <tbody>
                         @foreach (var sector in Model.Users.GroupBy(u => u.Sector_ID))
                         {
-                            <thead>
+                            <tbody class="sector">
                                 <tr>
                                     <th class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">@Model.Sectors?.FirstOrDefault(s => s.Sector_ID == sector.Key)?.Sector_name</th>
                                 </tr>
-                            </thead>
-                            <tbody class="sector">
                                 @foreach (var user in sector)
                                 {
                                     <tr id="user-@user.Personnel_ID" data-sector-id="@sector.Key" class="@(!isRegularUser ? "draggable" : "")">
