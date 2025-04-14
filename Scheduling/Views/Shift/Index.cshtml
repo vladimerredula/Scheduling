@@ -17,6 +17,19 @@
     </p>
 
     <div class="card p-3 border-0 shadow-sm">
+        @if (!User.IsInRole("member") && !User.IsInRole("shiftLeader"))
+        {
+            <div class="row mb-3">
+                <div class="col-auto">
+                    <form asp-action="Index" id="changeDepartment">
+                        <label for="departmentId" class="form-label">Department</label>
+                        <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                            <option value="" disabled></option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+        }
         <table class="datatable table table-hover">
             <thead>
                 <tr>
@@ -84,14 +97,14 @@
                     <div class="row mb-3">
                         <div class="col">
                             <label asp-for="Time_start" class="form-label"></label><span class="text-danger" title="Required">*</span>
-                            <input asp-for="Time_start" class="form-control" />
+                            <input asp-for="Time_start" type="time" class="form-control" />
                             <span asp-validation-for="Time_start" class="text-danger"></span>
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col">
                             <label asp-for="Time_end" class="form-label"></label><span class="text-danger" title="Required">*</span>
-                            <input asp-for="Time_end" class="form-control" />
+                            <input asp-for="Time_end" type="time" class="form-control" />
                             <span asp-validation-for="Time_end" class="text-danger"></span>
                         </div>
                     </div>
@@ -99,7 +112,7 @@
                         <div class="col">
                             <label asp-for="Pattern" class="form-label"></label>
                             <select asp-for="Pattern" class="form-select">
-                                <option value=""></option>
+                                <option value="" selected></option>
                                 <option value="4/2">4/2</option>
                                 <option value="5/2">5/2</option>
                             </select>
@@ -171,6 +184,10 @@
         });
 
         $(document).ready(function () {
+        });
+
+        $("#departmentId").on("change", function() {
+            $("#changeDepartment").submit();
         });
 
         function addShift() {

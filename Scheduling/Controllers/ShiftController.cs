@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Scheduling.Models;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace Scheduling.Controllers
 {
@@ -14,15 +14,23 @@ namespace Scheduling.Controllers
             _db = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int departmentId = 1)
         {
-            if (!User.IsInRole("admin"))
+            if (User.IsInRole("manager"))
             {
                 var user = await ThisUser();
-                ViewBag.Shifts = _db.Shifts.Where(s => s.Department_ID == user.Department_ID).ToList();
-            } else
+
+                ViewBag.Shifts = _db.Shifts
+                    .Where(l => l.Department_ID == user.Department_ID)
+                    .ToList();
+            }
+            else if (User.IsInRole("topManager") || User.IsInRole("admin"))
             {
-                ViewBag.Shifts = _db.Shifts.ToList();
+                ViewBag.Shifts = _db.Shifts
+                    .Where(l => l.Department_ID == departmentId)
+                    .ToList();
+
+                ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
             }
 
             return View();
