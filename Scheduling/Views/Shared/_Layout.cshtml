@@ -36,20 +36,23 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Schedule" asp-action="Index">Schedule</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Leave" asp-action="Index">Leaves</a>
-                        </li>
-                        @if (User.IsInRole("admin") || User.IsInRole("manager"))
+                        @if (int.Parse(User.FindFirstValue("Personnelid")) != 999)
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Holiday" asp-action="Index">Holidays</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Schedule" asp-action="Index">Schedule</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Shift" asp-action="Index">Shifts</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Leave" asp-action="Index">Leaves</a>
                             </li>
+                            @if (User.IsInRole("admin") || User.IsInRole("manager"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Holiday" asp-action="Index">Holidays</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Shift" asp-action="Index">Shifts</a>
+                                </li>
+                            }
                         }
                     </ul>
 

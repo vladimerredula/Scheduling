@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Scheduling.Models;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace Scheduling.Controllers
 {
@@ -15,6 +16,11 @@ namespace Scheduling.Controllers
 
         public IActionResult Index()
         {
+            if (int.Parse(User.FindFirstValue("Personnelid")) == 999)
+            {
+                return RedirectToAction("ScheduleView", "Schedule");
+            }
+
             return View();
         }
 

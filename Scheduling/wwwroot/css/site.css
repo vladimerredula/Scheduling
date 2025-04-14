@@ -21,3 +21,10 @@ body {
     margin-bottom: 60px;
     background-color: #f2f3f4;
 }
+
+.fullscreen {
+    width: 100vw;
+    height: 100vh;
+    background-color: #f2f3f4;
+    padding: 20px; /* Add padding to prevent chart from touching edges */
+}

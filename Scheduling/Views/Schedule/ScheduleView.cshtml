@@ -1,0 +1,167 @@
+﻿@using System.Globalization;
+@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, List<Sector> Sectors, int month, int year)
+@{
+    ViewData["Title"] = "Schedules";
+
+    var currentYear = Model.year;
+    var selectedMonth = Model.month;
+    var sectors = ViewBag.Sectors as List<Sector>;
+    var daysInMonth = DateTime.DaysInMonth(currentYear, selectedMonth);
+}
+
+<div class="px-3 px-sm-5" id="viewSchedule">
+    <h2>@ViewData["Title"]</h2>
+
+    <div class="row mb-3">
+        <div class="col-10">
+            <div class="row justify-content-between">
+                <div class="col-auto">
+                    <div class="row">
+                        <div class="col-auto mb-2">
+                            <form asp-action="ScheduleView" id="scheduleViewForm">
+                                <label for="departmentId" class="form-label">Department</label>
+                                <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                                </select>
+                                <input name="month" id="month" hidden/>
+                                <input name="year" id="year" hidden/>
+                            </form>
+                        </div>
+                        <!-- Month Selection -->
+                        <div class="col-auto mb-2 visually-hidden">
+                            <label for="monthSelect" class="form-label">Month</label>
+                            <input type="text" class="form-control" id="monthPicker">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto align-self-end">
+                </div>
+            </div>
+        </div>
+        <div class="col-2 align-self-star text-end">
+            <a class="btn btn-light border fullscreenBtn" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></a>
+        </div>
+    </div>
+
+    <div id="scheduleTable">
+        <partial name="_ScheduleView" />
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // $.fn.bootstrapDP = $.fn.datepicker.noConflict();
+        let cancelSort = false;
+        let previousValue;
+
+        $(document).ready(function (){
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
+            $('#monthPicker').datepicker({
+                format: "MM yyyy",
+                minViewMode: 1,
+                maxViewMode: 2,
+                autoclose: true
+            }).datepicker('setDate', new Date(@Model.year,@(Model.month - 1))).on("changeDate", function (e) {
+                let selectedDate = e.date;
+                let month = selectedDate.getMonth() + 1; // getMonth() returns month from 0 to 11
+                let year = selectedDate.getFullYear();
+                loadSchedule(month, year);
+            });
+
+            adjustTableColumns();
+            $(window).on('resize', adjustTableColumns); // Optional: handle resizing
+
+            $('.fullscreenBtn').on('click', function () {
+                const scheduleContainer = $("#viewSchedule").get(0); // Get the native DOM element
+
+                if (!document.fullscreenElement) {
+                    $(this).html('<i class="bi bi-arrows-angle-contract"></i>');
+                    $(this).attr("title", "Exit fullscreen");
+                    $(scheduleContainer).addClass('fullscreen');
+                    adjustTableColumns();
+                    scheduleContainer.requestFullscreen().catch(err => {
+                        console.error(`Error attempting to enable fullscreen mode: ${err.message}`);
+                    });
+                } else {
+                    $(this).html('<i class="bi bi-arrows-fullscreen"></i>');
+                    $(this).attr("title", "Fullscreen");
+                    document.exitFullscreen();
+                    $(scheduleContainer).removeClass('fullscreen');
+                    adjustTableColumns();
+                }
+            });
+
+            setInterval(() => {
+                // Your code to run every 1 minute
+                console.log("Running refresh");
+                let date = $('#monthPicker').datepicker("getDate");
+                loadSchedule(date.getMonth() + 1, date.getFullYear());
+            }, 60000);
+        });
+
+        function adjustTableColumns() {
+            const table = $('#schedule');
+            const columns = table.find('thead th');
+            const totalColumns = columns.length;
+            const firstColumnWidth = 230; // px
+            const availableWidth = table.width() - firstColumnWidth;
+            const otherColumnWidth = Math.floor(availableWidth / (totalColumns - 1));
+
+            columns.each(function (index) {
+                if (index === 0) {
+                    $(this).css('width', firstColumnWidth + 'px');
+                } else {
+                    $(this).css('width', otherColumnWidth + 'px');
+                }
+            });
+        }
+
+        $("#departmentId").on("change", function () {
+            let date = $('#monthPicker').datepicker("getDate");
+            loadSchedule(date.getMonth() + 1, date.getFullYear());
+        });
+
+        $(document).on("click", "#prevBtn", function () {
+            let $datepicker = $('#monthPicker');
+            let currentDate = $datepicker.datepicker('getDate');
+
+            if (currentDate) {
+                let prevMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+                $datepicker.datepicker('setDate', prevMonthDate);
+                $datepicker.datepicker('update'); // Triggers changeDate event
+            }
+        });
+
+        $(document).on("click", "#nextBtn", function () {
+            let $datepicker = $('#monthPicker');
+            let currentDate = $datepicker.datepicker('getDate');
+
+            if (currentDate) {
+                let nextMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
+                $datepicker.datepicker('setDate', nextMonthDate);
+                $datepicker.datepicker('update'); // Triggers changeDate event
+            }
+        });
+
+        function loadSchedule(month, year) {
+            let departmentId = $("#departmentId").val();
+
+            $.ajax({
+                url: '/Schedule/LoadScheduleView',
+                type: 'GET',
+                data: {
+                    month: month,
+                    year: year,
+                    departmentId: departmentId
+                },
+                success: function (response) {
+                    $("#scheduleTable").html(response);
+                    adjustTableColumns();
+                },
+                error: function () {
+                    alert("Error loading schedule.");
+                }
+            });
+        }
+    </script>
+}
