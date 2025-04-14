@@ -48,7 +48,7 @@ namespace Scheduling.Controllers
                 ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
             }
 
-            ViewBag.LeaveTypes = new SelectList(_db.Leave_types.Where(l => l.Leave_type_ID < 999).ToList(), "Leave_type_ID", "Leave_type_name");
+            ViewBag.LeaveTypes = new SelectList(_db.Leave_types.ToList(), "Leave_type_ID", "Leave_type_name");
 
             return View();
         }
@@ -91,7 +91,7 @@ namespace Scheduling.Controllers
             await _db.SaveChangesAsync();
 
             // Redirect to Schedule page
-            return RedirectToAction("Manage", "Schedule", new { month = request.Date_start.Month, year = request.Date_start.Year });
+            return RedirectToAction("Index", "Schedule", new { month = request.Date_start.Month, year = request.Date_start.Year });
         }
 
         public async Task<IActionResult> Cancel(int Id)
@@ -157,7 +157,9 @@ namespace Scheduling.Controllers
 
         public async Task<IActionResult> Approve(int Id)
         {
-            var leave = await _db.Leaves.FindAsync(Id);
+            var leave = await _db.Leaves
+                .Include(l => l.User)
+                .FirstOrDefaultAsync(l => l.Leave_ID == Id);
             if (leave == null) return NotFound();
 
             leave.Status = "Approved";
@@ -171,7 +173,9 @@ namespace Scheduling.Controllers
 
         public async Task<IActionResult> Deny(int Id)
         {
-            var leave = await _db.Leaves.FindAsync(Id);
+            var leave = await _db.Leaves
+                .Include(l => l.User)
+                .FirstOrDefaultAsync(l => l.Leave_ID == Id);
             if (leave == null) return NotFound();
 
             leave.Status = "Denied";

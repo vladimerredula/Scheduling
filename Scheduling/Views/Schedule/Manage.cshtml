@@ -55,24 +55,27 @@
                 <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col">
-                                <label class="form-label">Leave type</label>
-                                <select name="Leave_type_ID" id="Leave_type_ID" class="form-select">
+                            <label class="form-label">Leave type</label><span class="text-danger" title="Required">*</span>
+                            <select name="Leave_type_ID" id="Leave_type_ID" class="form-select" data-val="true" data-val-required="The Leave type field is required." required>
                                     <option value="" disabled selected>Choose..</option>
                                     @foreach (var leave in leaves)
                                     {
                                         <option value="@leave.Leave_type_ID">@leave.Leave_type_name</option>
                                     }
                                 </select>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Leave_type_ID" data-valmsg-replace="true"></span>
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col">
-                                <label class="form-label">Start</label>
-                                <input class="form-control" type="text" name="Date_start" id="Date_start" placeholder="mm/dd/yyyyy" />
+                            <label class="form-label">Start</label><span class="text-danger" title="Required">*</span>
+                            <input class="form-control" type="text" name="Date_start" id="Date_start" placeholder="mm/dd/yyyyy" data-val="true" data-val-required="The Date start field is required." required />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Date_start" data-valmsg-replace="true"></span>
                             </div>
                             <div class="col">
-                                <label class="form-label">End</label>
-                                <input class="form-control" type="text" name="Date_end" id="Date_end" placeholder="mm/dd/yyyyy" />
+                            <label class="form-label">End</label><span class="text-danger" title="Required">*</span>
+                            <input class="form-control" type="text" name="Date_end" id="Date_end" placeholder="mm/dd/yyyyy" data-val="true" data-val-required="The Date end field is required." required />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Date_end" data-valmsg-replace="true"></span>
                             </div>
                         </div>
                         <div class="row">
@@ -186,24 +189,52 @@
                 loadSchedule(month, year);
             });
 
-            $("#Date_start").datepicker({
-                format: "mm/dd/yyyy",
-                orientation: "bottom auto",
-                autoclose: true,
-                todayHighlight: true
-            }).on("changeDate", function (e) {
-                let selectedDate = e.date;
-                let endDate = $("#Date_end");
-                if (endDate.val() == "") {
-                    endDate.focus();
+            $("#Date_start").on("click", function () {
+                $(this)[0].showPicker();
+            });
+
+            $("#Date_start").on("change", function () {
+                let startDateVal = new Date($(this).val());
+                let endDate = $("#Date_end").val();
+
+                if (endDate) {
+                    let endDateVal = new Date(endDate);
+                    if (endDateVal < startDateVal) {
+                        $(this)
+                            .closest("form")
+                            .validate()
+                            .showErrors({
+                                "Date_start": "Start date cannot be later than the end date."
+                            });
+                        $(this).val("");
+                }
+                } else {
+                    $(this).blur();
+                    $("#Date_end").focus();
+                    $("#Date_end")[0].showPicker();
                 }
             });
 
-            $("#Date_end").datepicker({
-                format: "mm/dd/yyyy",
-                orientation: "bottom auto",
-                autoclose: true,
-                todayHighlight: true
+            $("#Date_end").on("click", function () {
+                $(this)[0].showPicker();
+            });
+
+            $("#Date_end").on("change", function () {
+                let endDateVal = new Date($(this).val());
+                let startDate = $("#Date_start").val();
+
+                if (startDate) {
+                    let startDateVal = new Date(startDate);
+                    if (endDateVal < startDateVal) {
+                        $(this)
+                            .closest("form")
+                            .validate()
+                            .showErrors({
+                                "Date_end": "End date cannot be earlier than the start date."
+                            });
+                        $(this).val("");
+                    }
+                }
             });
 
             initializeSortable(); // Initial call to initialize sortable functionality

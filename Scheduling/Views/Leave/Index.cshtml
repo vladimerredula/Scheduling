@@ -14,7 +14,7 @@
     </p>
 
     <div class="card p-3 border-0 shadow-sm">
-        @if (!User.IsInRole("member") && !User.IsInRole("shiftLeader"))
+        @if (User.IsInRole("admin") || User.IsInRole("topManager"))
         {
             <div class="row mb-3">
                 <div class="col-auto">
@@ -131,7 +131,7 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col">
-                            <label asp-for="Comment" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <label asp-for="Comment" class="form-label"></label>
                             <textarea asp-for="Comment" class="form-control"></textarea>
                             <span asp-validation-for="Comment" class="text-danger"></span>
                         </div>
@@ -200,6 +200,53 @@
         });
 
         $(document).ready(function () {
+            $("#Date_start").on("click", function () {
+                $(this)[0].showPicker();
+            });
+
+            $("#Date_start").on("change", function () {
+                let startDateVal = new Date($(this).val());
+                let endDate = $("#Date_end").val();
+
+                if (endDate) {
+                    let endDateVal = new Date(endDate);
+                    if (endDateVal < startDateVal) {
+                        $(this)
+                            .closest("form")
+                            .validate()
+                            .showErrors({
+                                "Date_start": "Start date cannot be later than the end date."
+                            });
+                        $(this).val("");
+                    }
+                } else {
+                    $(this).blur();
+                    $("#Date_end").focus();
+                    $("#Date_end")[0].showPicker();
+                }
+            });
+
+            $("#Date_end").on("click", function () {
+                $(this)[0].showPicker();
+            });
+
+            $("#Date_end").on("change", function () {
+                let endDateVal = new Date($(this).val());
+                let startDate = $("#Date_start").val();
+
+                if (startDate) {
+                    let startDateVal = new Date(startDate);
+                    if (endDateVal < startDateVal) {
+                        $(this)
+                            .closest("form")
+                            .validate()
+                            .showErrors({
+                                "Date_end": "End date cannot be earlier than the start date."
+                            });
+                        $(this).val("");
+                    }
+                }
+            });
         });
 
         $("#departmentId").on("change", function() {

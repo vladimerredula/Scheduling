@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "Schedules";
 
-    var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
     var leaves = ViewBag.LeaveTypes as List<Leave_type> ?? new List<Leave_type>();
 }
 
@@ -25,112 +24,21 @@
                             <label for="monthSelect" class="form-label">Month</label>
                             <input type="text" class="form-control" id="monthPicker">
                         </div>
+                        <div class="col-auto mb-2 align-self-end">
+                            <input type="text" id="searchBox" class="form-control" placeholder="Search Employee..." />
+                        </div>
                     </div>
                 </div>
                 <div class="col-auto align-self-end">
-                    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply leave</a>
+                    <a class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
                 </div>
             </div>
         </div>
         <div class="col-2"></div>
     </div>
 
-    <div class="row">
-        <div class="col-12 col-xxl-10 mb-3">
-            <!-- Table with Regular Members and Dates -->
-            <div class="card p-3">
-                <div id="loading-spinner" class="position-absolute top-50 start-50 z-3 d-none">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-                <div id="scheduleTable">
-                    <partial name="_ScheduleTable" />
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-xxl-2">
-            <div class="row mb-3">
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card p-4">
-                        <small class="text-body-secondary mb-3">Leave applications</small>
-                        <p><span class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Pending</p>
-                        <p><span class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Approved by manager</p>
-                        <small class="text-body-secondary mb-3">Reflected leaves</small>
-                        <p><span class="bg-primary-subtle border border-2 border-primary-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Business trip</p>
-                        <p><span class="bg-info border border-2 border-info rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Paid leave</p>
-                        <p><span class="bg-primary border border-2 border-primary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</p>
-                        <p class="mb-0"><span class="bg-secondary border border-2 border-secondary rounded-1 opacity-75">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
-                    </div>
-                </div>
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card py-2 px-4">
-                        <table class="table text-center mb-3">
-                            <thead>
-                                <tr>
-                                    <th colspan="2">4/2 pattern</th>
-                                </tr>
-                                <tr>
-                                    <th>Shift</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>A</td>
-                                    <td>7:15 - 16:45</td>
-                                </tr>
-                                <tr>
-                                    <td>B</td>
-                                    <td>12:45 - 22:15</td>
-                                </tr>
-                                <tr>
-                                    <td>C</td>
-                                    <td>22:00 - 7:30</td>
-                                </tr>
-                                <tr>
-                                    <td>J</td>
-                                    <td>09:00 - 18:00</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card py-2 px-4">
-                        <table class="table text-center">
-                            <thead>
-                                <tr>
-                                    <th colspan="2">5/2 pattern</th>
-                                </tr>
-                                <tr>
-                                    <th>Shift</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>A*</td>
-                                    <td>7:15 - 16:15</td>
-                                </tr>
-                                <tr>
-                                    <td>B*</td>
-                                    <td>13:15 - 22:15</td>
-                                </tr>
-                                <tr>
-                                    <td>C*</td>
-                                    <td>22:15 - 7:15</td>
-                                </tr>
-                                <tr>
-                                    <td>J</td>
-                                    <td>09:00 - 18:00</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div id="scheduleTable">
+        <partial name="_ScheduleTable" />
     </div>
 </div>
 
@@ -146,24 +54,27 @@
                 <div class="modal-body">
                     <div class="row mb-3">
                         <div class="col">
-                            <label class="form-label">Leave type</label>
-                            <select name="Leave_type_ID" id="Leave_type_ID" class="form-select">
+                            <label class="form-label">Leave type</label><span class="text-danger" title="Required">*</span>
+                            <select name="Leave_type_ID" id="Leave_type_ID" class="form-select" data-val="true" data-val-required="The Leave type field is required." required>
                                 <option value="" disabled selected>Choose..</option>
                                 @foreach (var leave in leaves)
                                 {
                                     <option value="@leave.Leave_type_ID">@leave.Leave_type_name</option>
                                 }
                             </select>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Leave_type_ID" data-valmsg-replace="true"></span>
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col">
-                            <label class="form-label">Start</label>
-                            <input class="form-control" type="text" name="Date_start" id="Date_start" placeholder="mm/dd/yyyyy" />
+                            <label class="form-label">Start</label><span class="text-danger" title="Required">*</span>
+                            <input class="form-control" type="date" name="Date_start" id="Date_start" placeholder="mm/dd/yyyyy" data-val="true" data-val-required="The Date start field is required." required />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Date_start" data-valmsg-replace="true"></span>
                         </div>
                         <div class="col">
-                            <label class="form-label">End</label>
-                            <input class="form-control" type="text" name="Date_end" id="Date_end" placeholder="mm/dd/yyyyy" />
+                            <label class="form-label">End</label><span class="text-danger" title="Required">*</span>
+                            <input class="form-control" type="date" name="Date_end" id="Date_end" placeholder="mm/dd/yyyyy" data-val="true" data-val-required="The Date end field is required." required />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Date_end" data-valmsg-replace="true"></span>
                         </div>
                     </div>
                     <div class="row">
@@ -257,7 +168,14 @@
 </div>
 
 @section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
     <script>
+        // $.fn.bootstrapDP = $.fn.datepicker.noConflict();
+        let cancelSort = false;
+        let previousValue;
+
         $(document).ready(function (){
             $('[data-bs-toggle="tooltip"]').tooltip();
 
@@ -273,30 +191,120 @@
                 loadSchedule(month, year);
             });
 
-            $("#Date_start").datepicker({
-                format: "mm/dd/yyyy",
-                orientation: "bottom auto",
-                autoclose: true,
-                todayHighlight: true
-            }).on("changeDate", function (e) {
-                let selectedDate = e.date;
-                let endDate = $("#Date_end");
-                if (endDate.val() == "") {
-                    endDate.focus();
+            $("#Date_start").on("click", function () {
+                $(this)[0].showPicker();
+            });
+
+            $("#Date_start").on("change", function () {
+                let startDateVal = new Date($(this).val());
+                let endDate = $("#Date_end").val();
+
+                if (endDate) {
+                    let endDateVal = new Date(endDate);
+                    if (endDateVal < startDateVal) {
+                        $(this)
+                            .closest("form")
+                            .validate()
+                            .showErrors({
+                                "Date_start": "Start date cannot be later than the end date."
+                            });
+                        $(this).val("");
+                    }
+                } else {
+                    $(this).blur();
+                    $("#Date_end").focus();
+                    $("#Date_end")[0].showPicker();
                 }
             });
 
-            $("#Date_end").datepicker({
-                format: "mm/dd/yyyy",
-                orientation: "bottom auto",
-                autoclose: true,
-                todayHighlight: true
+            $("#Date_end").on("click", function () {
+                $(this)[0].showPicker();
             });
+
+            $("#Date_end").on("change", function () {
+                let endDateVal = new Date($(this).val());
+                let startDate = $("#Date_start").val();
+
+                if (startDate) {
+                    let startDateVal = new Date(startDate);
+                    if (endDateVal < startDateVal) {
+                        $(this)
+                            .closest("form")
+                            .validate()
+                            .showErrors({
+                                "Date_end": "End date cannot be earlier than the start date."
+                            });
+                        $(this).val("");
+                    }
+                }
+            });
+
+            adjustTableColumns();
+            $(window).on('resize', adjustTableColumns); // Optional: handle resizing
+            filterTable();
+        });
+
+        // Search functionality
+        $("#searchBox").on("input", function () {
+            filterTable();
+        });
+
+        function filterTable() {
+            let searchValue = $("#searchBox").val().toLowerCase();
+
+            // Filter rows based on the search value
+            $(".sector tr").filter(function () {
+                let name = $(this).find("td:first").text().toLowerCase();
+                $(this).toggle(name.includes(searchValue));
+            });
+        }
+
+        function adjustTableColumns() {
+            const table = $('#schedule');
+            const columns = table.find('thead th');
+            const totalColumns = columns.length;
+            const firstColumnWidth = 230; // px
+            const availableWidth = table.width() - firstColumnWidth;
+            const otherColumnWidth = Math.floor(availableWidth / (totalColumns - 1));
+
+            columns.each(function (index) {
+                if (index === 0) {
+                    $(this).css('width', firstColumnWidth + 'px');
+                } else {
+                    $(this).css('width', otherColumnWidth + 'px');
+                }
+            });
+        }
+
+        $(document).on('focus', 'select', function () {
+            previousValue = $(this).val(); // Store the current value
         });
 
         $("#departmentId").on("change", function () {
             let date = $('#monthPicker').datepicker("getDate");
             loadSchedule(date.getMonth() + 1, date.getFullYear());
+        });
+
+        $(document).on("click", "#prevBtn", function () {
+            let $datepicker = $('#monthPicker');
+            let currentDate = $datepicker.datepicker('getDate');
+
+            if (currentDate) {
+                let prevMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+                $datepicker.datepicker('setDate', prevMonthDate);
+                $datepicker.datepicker('update'); // Triggers changeDate event
+            }
+        });
+
+        $(document).on("click", "#nextBtn", function () {
+            let $datepicker = $('#monthPicker');
+            let currentDate = $datepicker.datepicker('getDate');
+
+            if (currentDate) {
+                let nextMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
+                $datepicker.datepicker('setDate', nextMonthDate);
+                $datepicker.datepicker('update'); // Triggers changeDate event
+            }
         });
 
         function showSpinner() {
