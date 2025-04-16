@@ -6,42 +6,58 @@
     var selectedMonth = Model.month;
     var sectors = ViewBag.Sectors as List<Sector>;
     var daysInMonth = DateTime.DaysInMonth(currentYear, selectedMonth);
-    bool isRegularUser = !User.IsInRole("admin") && !User.IsInRole("manager");
+    var schedules = Model.Schedules;
+    var holidays = Model.Holidays;
+    var leaves = Model.Leaves;
+    var users = Model.Users;
+    var companyHolidayDates = holidays.Where(h => h.Type == "Company").Select(h => h.Date).ToHashSet();
+    var userIds = users.Select(u => u.Personnel_ID).ToHashSet();
+
+    // Auth roles
+    bool isRegularUser = User.IsInRole("member") || User.IsInRole("shiftLeader");
+    bool isManager = User.IsInRole("manager");
+    bool isTopManager = User.IsInRole("topManager");
+    bool isAdmin = User.IsInRole("admin");
+    int userId = int.Parse(User.FindFirst("Personnelid")?.Value);
 }
 
 <div class="row">
     <div class="col mb-3">
-        <!-- Table with Regular Members and Dates -->
         <div class="card p-3">
+
+            <!-- Spinner -->
             <div id="loading-spinner" class="position-absolute top-50 start-50 z-3 d-none">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
             </div>
+
+            <!-- Month Header Navigation -->
             <div class="row justify-content-between mb-3">
                 <div class="col-auto">
                     <a class="btn btn-light border" id="prevBtn"><i class="bi bi-arrow-bar-left"></i> Previous</a>
                 </div>
-                <div class="col">
-                    <h3 class="text-center">
-                        @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)
-                    </h3>
+                <div class="col text-center">
+                    <h3>@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)</h3>
                 </div>
                 <div class="col-auto">
                     <a class="btn btn-light border" id="nextBtn">Next <i class="bi bi-arrow-bar-right"></i></a>
                 </div>
             </div>
 
-            <div class="table-responsive" style="max-height: calc(100vh - 325px);">
-                <table id="schedule" class="table table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
+            <!-- Schedule Table -->
+            <div class="table-responsive" style="max-height: calc(100vh - 325px);" id="printableTable">
+                <table id="schedule" class="table table-sm table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
+
+                    <!-- Table Header -->
                     <thead class="text-center sticky-top z-2">
                         <tr>
-                            <th class="border border-secondary">Name</th>
+                            <th class="border border-secondary align-content-center">Name</th>
                             @for (int day = 1; day <= daysInMonth; day++)
                             {
                                 var date = new DateTime(currentYear, selectedMonth, day);
-                                var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
-                                var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
+                                var isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+                                var holiday = holidays.FirstOrDefault(h => h.Date == date);
                                 var holidayClass = holiday != null
                                 ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
                                 : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
@@ -62,82 +78,96 @@
                         @foreach (var sector in Model.Users.GroupBy(u => u.Sector_ID))
                         {
                             <tbody class="sector">
-                                <tr>
+                                <tr class="sectorName">
                                     <th class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">@Model.Sectors?.FirstOrDefault(s => s.Sector_ID == sector.Key)?.Sector_name</th>
                                 </tr>
                                 @foreach (var user in sector)
                                 {
                                     <tr id="user-@user.Personnel_ID" data-sector-id="@sector.Key" class="@(!isRegularUser ? "draggable" : "")">
-                                        <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle @(int.Parse(User.FindFirst("Personnelid")?.Value) == user.Personnel_ID ? "fw-semibold" : "")">
-                                            @user.First_name @user.Last_name
+                                        <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle align-content-center @(userId == user.Personnel_ID ? "fw-semibold" : "")">
+                                            @user.Full_name
                                         </td>
                                         @for (int day = 1; day <= daysInMonth; day++)
                                         {
                                             var date = new DateTime(currentYear, selectedMonth, day);
                                             var dateString = date.ToString("yyyy-MM-dd");
-                                            var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
-                                            var schedule = Model.Schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
-                                            var shiftId = schedule?.Shift_ID ?? 0;
+                                            bool isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 
-                                            var leave = Model.Leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
-                                            var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
+                                            var schedule = schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
+                                            int shiftId = schedule?.Shift_ID ?? 0;
 
-                                            bool isHoliday = holiday != null;
-                                            bool isCompanyHoliday = isHoliday && holiday?.Type == "Company";
+                                            var leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
                                             bool hasLeave = leave != null;
                                             string leavePopover = string.Empty;
 
-                                            var cellClass = isHoliday
+                                            var holiday = holidays.FirstOrDefault(h => h.Date == date);
+                                            bool isHoliday = holiday != null;
+                                            bool isCompanyHoliday = holiday?.Type == "Company";
+
+                                            bool canActOnLeave = hasLeave && (isAdmin || isManager || isTopManager || (isRegularUser && leave?.Personnel_ID == userId));
+
+                                            // Styling
+                                            string cellClass = isHoliday
                                             ? (isCompanyHoliday ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
                                             : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
+                                            string bgClass = string.Empty;
+                                            string borderColor = string.Empty;
+                                            string borderClass = string.Empty;
+                                            string action = string.Empty;
 
-                                            string bgclass = leave?.Status switch
+                                            // Leave coloring and borders
+                                            if (leave?.Status == "Approved" && leave.Leave_type?.BsColor is not null)
                                             {
                                                 leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{leave?.Leave_type?.Leave_type_name}' tabindex='0'";
-                                                "Approved" => "bg-success bg-opacity-25",
-                                                "Cancelled" => "",
-                                                "Denied" => "",
-                                                _ => "bg-" + leave?.Leave_type?.BsColor
-                                            };
+                                                bgClass = $"bg-{leave?.Leave_type?.BsColor}";
+                                            }
 
-                                            string borderClass = string.Empty;
-                                            string borderColor = leave?.Status switch
+                                            if (hasLeave && canActOnLeave)
                                             {
-                                                "Pending" => "border-warning",
-                                                "Approved" => "border-success",
-                                                "Cancelled" => "",
-                                                "Denied" => "",
-                                                _ => string.Empty
-                                            };
+                                                if (leave?.Approver_1 == null)
+                                                {
+                                                    bgClass = "bg-warning bg-opacity-25";
+                                                    borderColor = "border-warning";
+                                                }
+                                                else if (leave?.Approver_2 == null)
+                                                {
                                                     string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i>" + (leave?.Approver1?.Full_name ?? "");
                                                     string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
                                                     leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-html=\"true\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
-
-                                            if (!string.IsNullOrEmpty(borderColor) && hasLeave)
-                                            {
-                                                if (date == leave?.Date_start)
-                                                    borderClass = $"border border-2 border-end-0 {borderColor} rounded-start";
-                                                else if (date > leave?.Date_start && date < leave?.Date_end)
-                                                    borderClass = $"border border-2 border-start-0 border-end-0 {borderColor}";
-                                                else if (date == leave?.Date_end)
-                                                    borderClass = $"border border-2 border-start-0 {borderColor} rounded-end";
-                                            }
-
-                                                    // Leave actions
-                                                    if (isManager && leave?.Approver_1 == null)
-                                                        action = $"onclick=getLeave({leave?.Leave_ID})";
-                                                    else if (isTopManager && leave?.Approver_1 != null && leave?.Approver_2 == null)
-                                                        action = $"onclick=getLeave({leave?.Leave_ID})";
+                                                    bgClass = "bg-success bg-opacity-25";
+                                                    borderColor = "border-success";
                                                 }
 
-                                            var disabledSelect = (isCompanyHoliday || hasLeave || isRegularUser) ? "disabled" : "";
+                                                if (!string.IsNullOrEmpty(borderColor))
+                                                {
+                                                    if (date == leave?.Date_start && date == leave?.Date_end)
+                                                        borderClass = $"border border-2 rounded";
+                                                    else if (date == leave?.Date_start)
+                                                        borderClass = $"border border-2 border-end-0 rounded-start";
+                                                    else if (date == leave?.Date_end)
+                                                        borderClass = $"border border-2 border-start-0 rounded-end";
+                                                    else if (date > leave?.Date_start && date < leave?.Date_end)
+                                                        borderClass = $"border border-2 border-start-0 border-end-0";
+
+                                                    borderClass += $" {borderColor}";
+                                                }
+
+                                                // Leave actions
+                                                if (isManager && leave?.Approver_1 == null)
+                                                    action = $"onclick=getLeave({leave?.Leave_ID})";
+                                                else if (isTopManager && leave?.Approver_1 != null && leave?.Approver_2 == null)
+                                                    action = $"onclick=getLeave({leave?.Leave_ID})";
+                                            }
+
+                                            // Disable selector for holidays, leaves, or regular users
+                                            string disabledSelect = (isCompanyHoliday || hasLeave || isRegularUser) ? "disabled" : "";
 
                                             <td id="cell-@user.Personnel_ID-@dateString"
                                             class="p-1 @cellClass position-relative border-bottom border-end border-secondary">
 
                                                 <select data-date="@dateString"
-                                                class="form-control px-1 position-relative text-center"
+                                                class="form-control p-1 position-relative text-center"
                                                 onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
                                                 style="background-color: transparent; border: none; z-index: 1;@(isCompanyHoliday ? "color: transparent;" : "")"
                                                 @(disabledSelect)>
@@ -168,7 +198,7 @@
                                                 </select>
 
                                                 <p id="p-@user.Personnel_ID-@dateString"
-                                                class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @borderClass @(hasLeave ? bgclass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
+                                                    class="position-absolute start-0 top-0 w-100 h-100 text-center @borderClass @(hasLeave ? bgClass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
                                                     @Html.Raw(action) @Html.Raw(leavePopover)
                                                     style="z-index: 1;@(action != string.Empty ? "cursor: pointer;" : "")">
                                                 </p>
@@ -187,6 +217,7 @@
                         }
                     </tbody>
 
+                    <!-- Footer Totals -->
                     <tfoot class="sticky-bottom z-2">
                         @foreach (var shift in Model.Shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
                         {
@@ -199,9 +230,8 @@
                                     s.Shift_ID == shift.Shift_ID &&
                                     s.Comment != "cancelled" &&
                                     s.Date == date &&
-                                    Model.Users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID) &&
-                                    !Model.Holidays.Where(h => h.Type == "Company").Select(h => h.Date).Contains(date)
-                                    );
+                                    Model.Users.Any(u => u.Personnel_ID == s.Personnel_ID) &&
+                                    !Model.Holidays.Any(h => h.Type == "Company" && h.Date == date));
 
                                     var bgColor = count switch
                                     {
@@ -212,7 +242,7 @@
                                     };
 
                                     <td class="border-bottom border-end border-secondary text-center @bgColor"
-                                    id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
+                                        id="shift-@shift.Shift_name-@date:yyyy-MM-dd">
                                         @count
                                     </td>
                                 }
@@ -224,6 +254,7 @@
         </div>
     </div>
     <div class="col-12 col-xxl-2" id="legendsAndShifts" style="display:none;">
+        @* Leave Legends *@
         <div class="row mb-3">
             <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
                 <div class="card p-4">
@@ -237,59 +268,28 @@
                     <p class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
                 </div>
             </div>
-            @if (Model.Shifts.Where(s => s.Pattern == "4/2") is var shifts4 && shifts4 != null && shifts4.Count() > 0)
+
+            @* Shift Patterns *@
+            @foreach (var pattern in new[] { "4/2", "5/2" })
             {
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card py-2 px-4">
-                        <table class="table table-sm text-center mb-3">
+                var shifts = Model.Shifts.Where(s => s.Pattern == pattern).ToList();
+                if (shifts.Any())
+                {
+                    <div class="card py-2 px-4 mb-3">
+                        <table class="table table-sm text-center">
                             <thead>
-                                <tr>
-                                    <th colspan="2">4/2 pattern</th>
-                                </tr>
-                                <tr>
-                                    <th>Shift</th>
-                                    <th>Time</th>
-                                </tr>
+                                <tr><th colspan="2">@pattern pattern</th></tr>
+                                <tr><th>Shift</th><th>Time</th></tr>
                             </thead>
                             <tbody>
-                                @foreach (var shift in shifts4)
+                                @foreach (var shift in shifts)
                                 {
-                                    <tr>
-                                        <td>@shift.Shift_name</td>
-                                        <td>@shift.Time_start - @shift.Time_end</td>
-                                    </tr>
+                                    <tr><td>@shift.Shift_name</td><td>@shift.Time_start - @shift.Time_end</td></tr>
                                 }
                             </tbody>
                         </table>
                     </div>
-                </div>
-            }
-            @if (Model.Shifts.Where(s => s.Pattern == "5/2") is var shifts5 && shifts5 != null && shifts5.Count() > 0)
-            {
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card py-2 px-4">
-                        <table class="table table-sm text-center mb-3">
-                            <thead>
-                                <tr>
-                                    <th colspan="2">5/2 pattern</th>
-                                </tr>
-                                <tr>
-                                    <th>Shift</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var shift in shifts5)
-                                {
-                                    <tr>
-                                        <td>@shift.Shift_name</td>
-                                        <td>@shift.Time_start - @shift.Time_end</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                }
             }
         </div>
     </div>

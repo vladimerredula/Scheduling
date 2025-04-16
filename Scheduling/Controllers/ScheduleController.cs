@@ -19,6 +19,13 @@ namespace Scheduling.Controllers
 
         public async Task<IActionResult> Index(int month = 0, int year = 0, int departmentId = 0)
         {
+            var user = await ThisUser();
+
+            if (user?.Personnel_ID == 999)
+            {
+                return RedirectToAction(nameof(ScheduleView));
+            }
+
             if (month == 0)
                 month = DateTime.Now.Month;
 
@@ -27,7 +34,6 @@ namespace Scheduling.Controllers
 
             if (departmentId == 0)
             {
-                var user = await ThisUser();
                 departmentId = user.Department_ID.Value;
             }
 
@@ -73,11 +79,15 @@ namespace Scheduling.Controllers
             var schedules = _db.Schedules
                     .Include(s => s.User)
                     .Include(s => s.Shift)
-                    .Where(s => s.Date.Month == month && s.Date.Year == year)
+                .Where(s =>
+                    s.Date.Month == month &&
+                    s.Date.Year == year &&
+                    s.User.Department_ID == departmentId)
                     .ToList();
 
             var leaves = _db.Leaves
                 .Include(l => l.Leave_type)
+                .Include(l => l.Approver1)
                 .Where(l => 
                     ((l.Date_start.Year == year && l.Date_start.Month == month) || 
                     (l.Date_end.Year == year && l.Date_end.Month == month)) &&
@@ -94,7 +104,7 @@ namespace Scheduling.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "admin,manager")]
+        [Authorize(Roles = "admin,manager,topManager")]
         public async Task<IActionResult> AssignShift(int userId, int shiftId, DateTime date)
         {
             var existingSchedule = await _db.Schedules
@@ -144,7 +154,7 @@ namespace Scheduling.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "admin,manager")]
+        [Authorize(Roles = "admin,manager,topManager")]
         public async Task<IActionResult> RemoveShift(int scheduleId)
         {
             var schedule = await _db.Schedules.FindAsync(scheduleId);
@@ -158,8 +168,9 @@ namespace Scheduling.Controllers
 
         [HttpGet]
         [Authorize]
-        public IActionResult GetScheduleByMonth(int month, int year, int departmentId)
+        public async Task<IActionResult> GetScheduleByMonth(int month, int year, int departmentId)
         {
+            var user = await ThisUser();
             var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
             var holidays = _db.Holidays.ToList();
             var sectors = _db.Sectors.Where(s => s.Department_ID == departmentId).ToList();
@@ -202,10 +213,15 @@ namespace Scheduling.Controllers
             var schedules = _db.Schedules
                 .Include(s => s.User)
                 .Include(s => s.Shift)
-                .Where(s => s.Date.Month == month && s.Date.Year == year)
+                .Where(s =>
+                    s.Date.Month == month &&
+                    s.Date.Year == year &&
+                    s.User.Department_ID == departmentId)
                 .ToList();
 
             var leaves = _db.Leaves
+                .Include(l => l.Leave_type)
+                .Include(l => l.Approver1)
                 .Where(l =>
                     ((l.Date_start.Year == year && l.Date_start.Month == month) ||
                     (l.Date_end.Year == year && l.Date_end.Month == month)) &&
@@ -340,15 +356,19 @@ namespace Scheduling.Controllers
             var schedules = _db.Schedules
                 .Include(s => s.User)
                 .Include(s => s.Shift)
-                .Where(s => s.Date.Month == month && s.Date.Year == year)
+                .Where(s => 
+                    s.Date.Month == month && 
+                    s.Date.Year == year && 
+                    s.User.Department_ID == departmentId)
                 .ToList();
 
             var leaves = _db.Leaves
                 .Include(l => l.Leave_type)
+                .Include(l => l.Approver1)
                 .Where(l =>
                     ((l.Date_start.Year == year && l.Date_start.Month == month) ||
                     (l.Date_end.Year == year && l.Date_end.Month == month)) &&
-                    l.Status == "Reflected")
+                    l.Status == "Approved")
                 .ToList();
 
             ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
@@ -417,6 +437,7 @@ namespace Scheduling.Controllers
 
             var leaves = _db.Leaves
                 .Include(l => l.Leave_type)
+                .Include(l => l.Approver1)
                 .Where(l =>
                     ((l.Date_start.Year == year && l.Date_start.Month == month) ||
                     (l.Date_end.Year == year && l.Date_end.Month == month)) &&

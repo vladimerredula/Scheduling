@@ -6,30 +6,37 @@
     var selectedMonth = Model.month;
     var sectors = ViewBag.Sectors as List<Sector>;
     var daysInMonth = DateTime.DaysInMonth(currentYear, selectedMonth);
-    bool isRegularUser = User.IsInRole("member") || User.IsInRole("shiftLeader");
+    var schedules = Model.Schedules;
+    var holidays = Model.Holidays;
+    var shifts = Model.Shifts;
+    var leaves = Model.Leaves;
+    var users = Model.Users;
+    var companyHolidayDates = holidays.Where(h => h.Type == "Company").Select(h => h.Date).ToHashSet();
+    var userIds = users.Select(u => u.Personnel_ID).ToHashSet();
 }
-
 
 <div class="row">
     <div class="col mb-3">
-        <!-- Table with Regular Members and Dates -->
         <div class="card p-3">
             <div id="loading-spinner" class="position-absolute top-50 start-50 z-3 d-none">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
             </div>
+
             <div class="row justify-content-between mb-3">
                 <div class="col-auto">
-                    <a class="btn btn-light border" id="prevBtn"><i class="bi bi-arrow-bar-left"></i> Previous</a>
+                    <a class="btn btn-light border" id="prevBtn">
+                        <i class="bi bi-arrow-bar-left"></i> Previous
+                    </a>
                 </div>
                 <div class="col">
-                    <h3 class="text-center">
-                        @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)
-                    </h3>
+                    <h3 class="text-center">@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)</h3>
                 </div>
                 <div class="col-auto">
-                    <a class="btn btn-light border" id="nextBtn">Next <i class="bi bi-arrow-bar-right"></i></a>
+                    <a class="btn btn-light border" id="nextBtn">
+                        Next <i class="bi bi-arrow-bar-right"></i>
+                    </a>
                 </div>
             </div>
 
@@ -37,12 +44,13 @@
                 <table id="schedule" class="table table-sm table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
                     <thead class="text-center sticky-top z-2">
                         <tr>
-                            <th class="border border-secondary align-content-center">Name</th>
+                            <th class="border border-secondary">Name</th>
                             @for (int day = 1; day <= daysInMonth; day++)
                             {
                                 var date = new DateTime(currentYear, selectedMonth, day);
                                 var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
-                                var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
+                                var holiday = holidays.FirstOrDefault(h => h.Date == date);
+
                                 var holidayClass = holiday != null
                                 ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
                                 : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
@@ -60,49 +68,46 @@
                     </thead>
 
                     <tbody>
-                        @foreach (var sector in Model.Users.GroupBy(u => u.Sector_ID))
+                        @foreach (var sector in users.GroupBy(u => u.Sector_ID))
                         {
                         <tbody class="sector">
                             <tr class="sectorName">
-                                <td class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)"><small class="m-0 fw-bold">@Model.Sectors?.FirstOrDefault(s => s.Sector_ID == sector.Key)?.Sector_name</small></td>
+                                <td class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">
+                                    <small class="fw-bold">
+                                            @Model.Sectors?.FirstOrDefault(s => s.Sector_ID == sector.Key)?.Sector_name
+                                    </small>
+                                </td>
                             </tr>
+
                                 @foreach (var user in sector)
                                 {
                                 <tr>
-                                    <td class="border border-top-0 border-secondary text-nowrap text-start align-content-center">
-                                            @user.Full_name
-                                    </td>
+                                    <td class="border border-top-0 border-secondary text-nowrap text-start">@user.Full_name</td>
+
                                         @for (int day = 1; day <= daysInMonth; day++)
                                         {
                                             var date = new DateTime(currentYear, selectedMonth, day);
-                                            var dateString = date.ToString("yyyy-MM-dd");
+                                            var dateStr = date.ToString("yyyy-MM-dd");
                                             var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
-                                            var schedule = Model.Schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
-                                            var shiftId = schedule?.Shift_ID ?? 0;
-                                            var shift = Model.Shifts.FirstOrDefault(s => s.Shift_ID == shiftId);
+                                            var schedule = schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
+                                            var shift = shifts.FirstOrDefault(s => s.Shift_ID == (schedule?.Shift_ID ?? 0));
+                                            var leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
+                                            var holiday = holidays.FirstOrDefault(h => h.Date == date);
 
-                                            var leave = Model.Leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
-                                            var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
-
-                                            bool isHoliday = holiday != null;
-                                            bool isCompanyHoliday = isHoliday && holiday?.Type == "Company";
-                                            bool hasLeave = leave != null;
-
-                                            var cellClass = isHoliday
+                                            bool isCompanyHoliday = holiday?.Type == "Company";
+                                            string cellClass = holiday != null
                                             ? (isCompanyHoliday ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
                                             : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
                                             string leavePopover = leave != null ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{leave?.Leave_type?.Leave_type_name}' tabindex='0'" : "";
 
-                                        <td id="cell-@user.Personnel_ID-@dateString"
-                                            class="p-0 @cellClass position-relative border-bottom border-end border-secondary">
+                                            string bgClass = leave != null ? "bg-" + leave.Leave_type?.BsColor : "visually-hidden";
+
+                                        <td id="cell-@user.Personnel_ID-@dateStr" class="p-0 @cellClass position-relative border-bottom border-end border-secondary">
+                                            <p class="p-1 m-0 text-center">@(isCompanyHoliday || leave != null ? "" : shift?.Shift_name)</p>
 
                                             <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @bgClass" @Html.Raw(leavePopover) style="z-index: 1;"></p>
 
-                                            <p id="p-@user.Personnel_ID-@dateString"
-                                               class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @(hasLeave ? bgclass : "visually-hidden")"
-                                               style="z-index: 1;">
-                                            </p>
                                                 @if (schedule?.Comment == "cancelled")
                                                 {
                                                 <svg class="position-absolute top-0 start-0 w-100 h-100">
@@ -119,20 +124,19 @@
                     </tbody>
 
                     <tfoot class="sticky-bottom z-2">
-                        @foreach (var shift in Model.Shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
+                        @foreach (var shift in shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
                         {
                             <tr>
                                 <td class="border-end border-secondary fw-semibold text-end">Shift @shift.Shift_name</td>
                                 @for (int day = 1; day <= daysInMonth; day++)
                                 {
                                     var date = new DateTime(currentYear, selectedMonth, day);
-                                    var count = Model.Schedules.Count(s =>
-                                    s.Shift_ID == shift.Shift_ID &&
-                                    s.Comment != "cancelled" &&
-                                    s.Date == date &&
-                                    Model.Users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID) &&
-                                    !Model.Holidays.Where(h => h.Type == "Company").Select(h => h.Date).Contains(date)
-                                    );
+                                    var count = schedules.Count(s =>
+                                        s.Shift_ID == shift.Shift_ID &&
+                                        s.Comment != "cancelled" &&
+                                        s.Date == date &&
+                                        userIds.Contains(s.Personnel_ID) &&
+                                        !companyHolidayDates.Contains(date));
 
                                     var bgColor = count switch
                                     {
@@ -142,8 +146,7 @@
                                         _ => "bg-success text-white"
                                     };
 
-                                    <td class="border-bottom border-end border-secondary text-center @bgColor"
-                                        id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
+                                    <td class="border-bottom border-end border-secondary text-center @bgColor" id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
                                         @count
                                     </td>
                                 }
