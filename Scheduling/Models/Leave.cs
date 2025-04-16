@@ -14,17 +14,20 @@ namespace Scheduling.Models
         [Display(Name = "Date end")]
         public DateTime Date_end { get; set; }
         public string? Comment { get; set; }
-        public string? Status { get; set; } // "Pending", "Approved", "Denied", "Reflected", "Cancelled"
-        public DateTime? Date_approved { get; set; }
-        public DateTime? Date_reflected { get; set; }
+        public string? Status { get; set; } // "Pending", "Approved", "Denied", "Cancelled"
+        public DateTime? Date_approved_1 { get; set; }
+        public DateTime? Date_approved_2 { get; set; }
 
         [ForeignKey("User")]
         public int Personnel_ID { get; set; }
         public User? User { get; set; }
 
-        [ForeignKey("Approver")]
-        public int? Approved_by { get; set; }
-        public User? Approver { get; set; }
+        [ForeignKey("Approver1")]
+        public int? Approver_1 { get; set; }
+        public User? Approver1 { get; set; }
+        [ForeignKey("Approver2")]
+        public int? Approver_2 { get; set; }
+        public User? Approver2 { get; set; }
 
         [ForeignKey("Leave_type")]
         [Display(Name = "Leave type")]

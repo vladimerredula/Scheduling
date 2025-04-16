@@ -77,7 +77,7 @@
                             @Html.DisplayFor(modelItem => item.Status)
                         </td>
                         <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
-                            @Html.DisplayFor(modelItem => item.Approver.Full_name)
+                            @Html.DisplayFor(modelItem => item.Approver1.Full_name)
                         </td>
                         <td class="text-nowrap @(item.Status == "Cancelled" ? "text-secondary" : "")">
                             @if (item.Status == "Pending")

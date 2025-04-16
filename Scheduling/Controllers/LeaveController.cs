@@ -24,7 +24,8 @@ namespace Scheduling.Controllers
                 ViewBag.Leaves = _db.Leaves
                     .Include(l => l.User)
                     .Include(l => l.Leave_type)
-                    .Include(l => l.Approver)
+                    .Include(l => l.Approver1)
+                    .Include(l => l.Approver2)
                     .Where(l => l.Personnel_ID == GetPersonnelID())
                     .ToList();
             } else if (User.IsInRole("manager")) {
@@ -33,7 +34,8 @@ namespace Scheduling.Controllers
                 ViewBag.Leaves = _db.Leaves
                     .Include(l => l.User)
                     .Include(l => l.Leave_type)
-                    .Include(l => l.Approver)
+                    .Include(l => l.Approver1)
+                    .Include(l => l.Approver2)
                     .Where(l => l.User.Department_ID == user.Department_ID)
                     .ToList();
             } else if (User.IsInRole("topManager") || User.IsInRole("admin"))
@@ -41,7 +43,8 @@ namespace Scheduling.Controllers
                 ViewBag.Leaves = _db.Leaves
                     .Include(l => l.User)
                     .Include(l => l.Leave_type)
-                    .Include(l => l.Approver)
+                    .Include(l => l.Approver1)
+                    .Include(l => l.Approver2)
                     .Where(l => l.User.Department_ID == departmentId)
                     .ToList();
 
@@ -137,7 +140,8 @@ namespace Scheduling.Controllers
             var leave = _db.Leaves
                 .Include(l => l.Leave_type)
                 .Include(l => l.User)
-                .Include(l => l.Approver)
+                .Include(l => l.Approver1)
+                .Include(l => l.Approver2)
                 .FirstOrDefault(l => l.Leave_ID == Id);
 
             if (leave == null) return NotFound();
@@ -150,7 +154,9 @@ namespace Scheduling.Controllers
                 Leave_type_name = leave?.Leave_type?.Leave_type_name,
                 Date_start = leave?.Date_start_string,
                 Date_end = leave?.Date_end_string,
-                Approver = leave?.Approver?.Full_name,
+                Approver_1 = leave?.Approver1?.Full_name,
+                Approver_2 = leave?.Approver2?.Full_name,
+                Status = leave?.Status,
                 Comment = leave?.Comment
             });
         }
@@ -162,9 +168,18 @@ namespace Scheduling.Controllers
                 .FirstOrDefaultAsync(l => l.Leave_ID == Id);
             if (leave == null) return NotFound();
 
+            if (leave.Approver_1 != null)
+            {
             leave.Status = "Approved";
-            leave.Approved_by = int.Parse(User.FindFirstValue("Personnelid"));
-            leave.Date_approved = DateTime.Now.Date;
+                leave.Date_approved_2 = DateTime.Now.Date;
+                leave.Approver_2 = int.Parse(User.FindFirstValue("Personnelid"));
+            }
+            else
+            {
+                leave.Date_approved_1 = DateTime.Now.Date;
+                leave.Approver_1 = int.Parse(User.FindFirstValue("Personnelid"));
+            }
+
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
 
