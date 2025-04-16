@@ -69,8 +69,10 @@ namespace Scheduling.Controllers
                         role = "shiftLeader";
                         break;
                     case 3:
-                    case 4:
                         role = "manager";
+                        break;
+                    case 4:
+                        role = "topManager";
                         break;
                     default:
                         role = userdetails.Privilege_ID.ToString();
