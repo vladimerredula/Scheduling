@@ -115,12 +115,12 @@
                                                     borderClass = $"border border-2 border-start-0 {borderColor} rounded-end";
                                             }
 
-                                            var action = !isRegularUser
-                                            ? leave?.Status == "Pending"
-                                            ? $"onclick=getLeave({leave.Leave_ID})"
-                                            : leave?.Status == "Approved"
-                                            ? $"onclick=reflectLeave({leave.Leave_ID})" : string.Empty
-                                            : string.Empty;
+                                                    // Leave actions
+                                                    if (isManager && leave?.Approver_1 == null)
+                                                        action = $"onclick=getLeave({leave?.Leave_ID})";
+                                                    else if (isTopManager && leave?.Approver_1 != null && leave?.Approver_2 == null)
+                                                        action = $"onclick=getLeave({leave?.Leave_ID})";
+                                                }
 
                                             var disabledSelect = (isCompanyHoliday || hasLeave || isRegularUser) ? "disabled" : "";
 
@@ -161,7 +161,7 @@
                                                 <p id="p-@user.Personnel_ID-@dateString"
                                                 class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @borderClass @(hasLeave ? bgclass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
                                                 @Html.Raw(action)
-                                                style="z-index: 1;@(leave?.Status == "Pending" && !User.IsInRole("member") ? "cursor: pointer;" : "")">
+                                                    style="z-index: 1;@(action != string.Empty ? "cursor: pointer;" : "")">
                                                 </p>
                                                 @if (schedule?.Comment == "cancelled")
                                                 {

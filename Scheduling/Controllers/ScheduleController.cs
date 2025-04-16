@@ -77,6 +77,7 @@ namespace Scheduling.Controllers
                     .ToList();
 
             var leaves = _db.Leaves
+                .Include(l => l.Leave_type)
                 .Where(l => 
                     ((l.Date_start.Year == year && l.Date_start.Month == month) || 
                     (l.Date_end.Year == year && l.Date_end.Month == month)) &&

@@ -105,6 +105,52 @@ namespace Scheduling.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        public async Task<IActionResult> Edit(int id, [Bind("Leave_ID,Personnel_ID,Leave_type_ID,Status,Date_start,Date_end")] Leave leave)
+        {
+            if (id != leave.Leave_ID)
+            {
+                return RedirectToAction(nameof(Leaves));
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var existingLeaves = _db.Leaves
+                        .Where(l => l.Personnel_ID == leave.Personnel_ID && l.Leave_ID != leave.Leave_ID && (l.Status != "Denied" && l.Status != "Cancelled" && l.Status != "Withdrawn"))
+                        .AsEnumerable()
+                        .Any(l => Overlaps(l.Date_start, l.Date_end, leave.Date_start, leave.Date_end));
+
+                    if (existingLeaves)
+                    {
+                        ModelState.AddModelError("Leave_ID", "Existing leave overlaps for this date.");
+                        return View(nameof(Leaves), leave);
+                    }
+
+                    _db.Leaves.Update(leave);
+                    await _db.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unable to update Leave: {id} - {ex}");
+                }
+
+                return RedirectToAction(nameof(Leaves));
+            }
+
+            ViewBag.Leaves = await _db.Leaves
+                    .Include(l => l.User)
+                    .Include(l => l.Leave_type)
+                    .Include(l => l.Approver1)
+                    .Include(l => l.Approver2)
+                    .Where(l => l.Personnel_ID == GetPersonnelID())
+                    .ToListAsync();
+
+            ViewBag.LeaveTypes = new SelectList(_db.Leave_types.ToList(), "Leave_type_ID", "Leave_type_name");
+
+            return View(nameof(Leaves), leave);
+        }
+
         public async Task<IActionResult> Apply(Leave request)
         {
             var existingLeaves = _db.Leaves
@@ -202,7 +248,7 @@ namespace Scheduling.Controllers
 
             if (leave.Approver_1 != null)
             {
-            leave.Status = "Approved";
+                leave.Status = "Approved";
                 leave.Date_approved_2 = DateTime.Now.Date;
                 leave.Approver_2 = int.Parse(User.FindFirstValue("Personnelid"));
             }
@@ -218,7 +264,7 @@ namespace Scheduling.Controllers
             return RedirectToAction("DepartmentLeaves", new { departmentId = leave?.User?.Department_ID });
         }
 
-        public async Task<IActionResult> Deny(int Id)
+        public async Task<IActionResult> Deny(int Id, string Comment)
         {
             var leave = await _db.Leaves
                 .Include(l => l.User)
@@ -226,35 +272,74 @@ namespace Scheduling.Controllers
             if (leave == null) return NotFound();
 
             leave.Status = "Denied";
-            leave.Approved_by = int.Parse(User.FindFirstValue("Personnelid"));
+            leave.Comment = Comment;
+
+            if (leave.Approver_1 != null)
+            {
+                leave.Date_approved_2 = DateTime.Now.Date;
+                leave.Approver_2 = int.Parse(User.FindFirstValue("Personnelid"));
+            } else
+            {
+                leave.Date_approved_1 = DateTime.Now.Date;
+                leave.Approver_1 = int.Parse(User.FindFirstValue("Personnelid"));
+            }
+
+            _db.Leaves.Update(leave);
+            await _db.SaveChangesAsync();
+
+            return RedirectToAction("DepartmentLeaves", new { departmentId = leave?.User?.Department_ID });
+        }
+
+        public async Task<IActionResult> Approve1(int Id)
+        {
+            var leave = await _db.Leaves
+                .Include(l => l.User)
+                .FirstOrDefaultAsync(l => l.Leave_ID == Id);
+            if (leave == null) return NotFound();
+
+            if (leave.Approver_1 != null)
+            {
+                leave.Status = "Approved";
+                leave.Date_approved_2 = DateTime.Now.Date;
+                leave.Approver_2 = int.Parse(User.FindFirstValue("Personnelid"));
+            }
+            else
+            {
+                leave.Date_approved_1 = DateTime.Now.Date;
+                leave.Approver_1 = int.Parse(User.FindFirstValue("Personnelid"));
+            }
+
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
 
             return RedirectToAction("Index", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
         }
 
-        public async Task<IActionResult> AssignCompanyLeave(int userId, DateTime date)
+        public async Task<IActionResult> Deny1(int Id, string Comment)
         {
-            var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
+            var leave = await _db.Leaves
+                .Include(l => l.User)
+                .FirstOrDefaultAsync(l => l.Leave_ID == Id);
+            if (leave == null) return NotFound();
 
-            var leave = new Leave
+            leave.Status = "Denied";
+            leave.Comment = Comment;
+
+            if (leave.Approver_1 != null)
             {
-                Leave_type_ID = 999,
-                Personnel_ID = userId,
-                Date_start = date,
-                Date_end = date,
-                Date_approved = DateTime.Now.Date,
-                Approved_by = personnelId,
-                Comment = "Assigned by manager",
-                Date_reflected = DateTime.Now.Date,
-                Status = "Reflected"
-            };
+                leave.Date_approved_2 = DateTime.Now.Date;
+                leave.Approver_2 = int.Parse(User.FindFirstValue("Personnelid"));
+            }
+            else
+            {
+                leave.Date_approved_1 = DateTime.Now.Date;
+                leave.Approver_1 = int.Parse(User.FindFirstValue("Personnelid"));
+            }
 
-            _db.Leaves.Add(leave);
+            _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
 
-            // Redirect to Schedule page
-            return Ok(new { success = true });
+            return RedirectToAction("Index", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
         }
 
         public int GetPersonnelID()

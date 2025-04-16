@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "Schedules";
 
-    var departments = ViewBag.Departments as List<Department> ?? new List<Department>();
     var leaves = ViewBag.LeaveTypes as List<Leave_type> ?? new List<Leave_type>();
 }
 
@@ -69,22 +68,16 @@
                         <div class="row mb-3">
                             <div class="col">
                             <label class="form-label">Start</label><span class="text-danger" title="Required">*</span>
-                            <input class="form-control" type="text" name="Date_start" id="Date_start" placeholder="mm/dd/yyyyy" data-val="true" data-val-required="The Date start field is required." required />
+                            <input class="form-control" type="date" name="Date_start" id="Date_start" placeholder="mm/dd/yyyyy" data-val="true" data-val-required="The Date start field is required." required />
                             <span class="text-danger field-validation-valid" data-valmsg-for="Date_start" data-valmsg-replace="true"></span>
                             </div>
                             <div class="col">
                             <label class="form-label">End</label><span class="text-danger" title="Required">*</span>
-                            <input class="form-control" type="text" name="Date_end" id="Date_end" placeholder="mm/dd/yyyyy" data-val="true" data-val-required="The Date end field is required." required />
+                            <input class="form-control" type="date" name="Date_end" id="Date_end" placeholder="mm/dd/yyyyy" data-val="true" data-val-required="The Date end field is required." required />
                             <span class="text-danger field-validation-valid" data-valmsg-for="Date_end" data-valmsg-replace="true"></span>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col">
-                                <label>Comment</label>
-                                <textarea name="comment" id="comment" class="form-control"></textarea>
                             </div>
-                        </div>
-                </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Confirm</button>
@@ -122,55 +115,60 @@
                 </dl>
             </div>
             <div class="modal-footer border-0">
-                <a class="btn btn-danger" id="denyBtn">Deny</a>
+                <a class="btn btn-danger" id="denyBtn" data-id="">Deny</a>
                 <a class="btn btn-success" id="approveBtn">Approve</a>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Reflect leave Modal -->
-<div class="modal fade" id="reflectModal" tabindex="-1">
+<!-- Deny modal -->
+<div class="modal fade" id="denyModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header border-0">
-                <h5 class="modal-title">Leave application</h5>
+                <h5 class="modal-title" id="denyModalLabel">Deny this leave?</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form asp-controller="Leave" asp-action="Deny1" id="denyForm">
             <div class="modal-body">
                 <dl class="row">
                     <dt class="col-sm-3 text-end">
                         Name
                     </dt>
-                    <dd class="col-sm-9" id="name">
+                        <dd class="col-sm-9" id="denyName">
                     </dd>
                     <dt class="col-sm-3 text-end">
                         Leave type
                     </dt>
-                    <dd class="col-sm-9" id="leaveType">
+                        <dd class="col-sm-9" id="denyLeaveType">
                     </dd>
                     <dt class="col-sm-3 text-end">
                         Date
                     </dt>
-                    <dd class="col-sm-9" id="date">
-                    </dd>
-                    <dt class="col-sm-3 text-end">
-                        Approved by
-                    </dt>
-                    <dd class="col-sm-9" id="approvedBy">
+                        <dd class="col-sm-9" id="denyDate">
                     </dd>
                 </dl>
+                    <div class="row">
+                        <div class="col">
+                            <label for="Comment" class="form-label">Reason</label><span class="text-danger" title="Required">*</span>
+                            <textarea name="Comment" id="Comment" class="form-control" data-val="true" data-val-required="The Reason field is required." required></textarea>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Comment" data-valmsg-replace="true"></span>
+                        </div>
+                    </div>
             </div>
             <div class="modal-footer border-0">
-                <a class="btn btn-danger">Mark as reflected</a>
+                    <input type="hidden" name="id" id="denyID" />
+                    <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">No</a>
+                    <input type="submit" value="Yes, proceed" class="btn btn-danger" />
             </div>
+            </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        // $.fn.bootstrapDP = $.fn.datepicker.noConflict();
         let cancelSort = false;
         let previousValue;
 
@@ -274,8 +272,6 @@
             const firstColumnWidth = 230; // px
             const availableWidth = table.width() - firstColumnWidth;
             const otherColumnWidth = Math.floor(availableWidth / (totalColumns - 1));
-
-            console.log(availableWidth, totalColumns);
 
             columns.each(function (index) {
                 if (index === 0) {
@@ -515,8 +511,9 @@
                     $("#date").text(`${response.date_start} to ${response.date_end}`);
                     $("#comment").text(response.comment);
 
-                    $("#approveBtn").attr("href", `/Leave/Approve/${response.leave_ID}`);
-                    $("#denyBtn").attr("href", `/Leave/Deny/${response.leave_ID}`);
+                    $("#approveBtn").attr("href", `/Leave/Approve1/${response.leave_ID}`);
+                    $("#denyBtn").attr("data-id", response.leave_ID);
+                    // $("#denyBtn").attr("href", `/Leave/Deny1/${response.leave_ID}`);
                 },
                 error: function () {
                     alert('An error occurred while assigning the shift.');
@@ -524,6 +521,17 @@
             });
             $("#approveModal").modal("show");
         }
+
+        $("#denyBtn").on("click", function () {
+            console.log("Yes");
+            $("#denyName").text($("#name").text());
+            $("#denyLeaveType").text($("#leaveType").text());
+            $("#denyDate").text($("#date").text());
+            $("#denyID").val($(this).data("id"));
+
+            // Show the modal
+            $("#denyModal").modal("show");
+        });
 
         function removeLeaveBg(p) {
             $(p).removeClass("bg-secondary bg-secondary-subtle text-secondary-emphasis");
