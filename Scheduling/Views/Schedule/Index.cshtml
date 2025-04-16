@@ -9,32 +9,28 @@
 <div class="px-3 px-sm-5">
     <h2>@ViewData["Title"]</h2>
 
-    <div class="row mb-3">
-        <div class="col-10">
-            <div class="row justify-content-between">
-                <div class="col-auto">
-                    <div class="row">
-                        <div class="col-auto mb-2">
-                            <label for="departmentId" class="form-label">Department</label>
-                            <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
-                            </select>
-                        </div>
-                        <!-- Month Selection -->
-                        <div class="col-auto mb-2">
-                            <label for="monthSelect" class="form-label">Month</label>
-                            <input type="text" class="form-control" id="monthPicker">
-                        </div>
-                        <div class="col-auto mb-2 align-self-end">
-                            <input type="text" id="searchBox" class="form-control" placeholder="Search Employee..." />
-                        </div>
-                    </div>
+    <div class="row mb-3 justify-content-between">
+        <div class="col-auto">
+            <div class="row">
+                <div class="col-auto mb-2">
+                    <label for="departmentId" class="form-label">Department</label>
+                    <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                    </select>
                 </div>
-                <div class="col-auto align-self-end">
-                    <a class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
+                <!-- Month Selection -->
+                <div class="col-auto mb-2">
+                    <label for="monthSelect" class="form-label">Month</label>
+                    <input type="text" class="form-control" id="monthPicker">
+                </div>
+                <div class="col-auto mb-2 align-self-end">
+                    <input type="text" id="searchBox" class="form-control" placeholder="Search Employee..." />
                 </div>
             </div>
         </div>
-        <div class="col-2"></div>
+        <div class="col-auto align-self-end">
+            <a class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
+            <a id="toggleLegendsBtn" class="btn btn-light border">Show legends</a>
+        </div>
     </div>
 
     <div id="scheduleTable">
@@ -75,12 +71,6 @@
                             <label class="form-label">End</label><span class="text-danger" title="Required">*</span>
                             <input class="form-control" type="date" name="Date_end" id="Date_end" placeholder="mm/dd/yyyyy" data-val="true" data-val-required="The Date end field is required." required />
                             <span class="text-danger field-validation-valid" data-valmsg-for="Date_end" data-valmsg-replace="true"></span>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <label>Comment</label>
-                            <textarea name="comment" id="comment" class="form-control"></textarea>
                         </div>
                     </div>
                 </div>
@@ -239,6 +229,7 @@
                 }
             });
 
+            initializeToggleLegends();
             adjustTableColumns();
             $(window).on('resize', adjustTableColumns); // Optional: handle resizing
             filterTable();
@@ -272,6 +263,35 @@
                     $(this).css('width', firstColumnWidth + 'px');
                 } else {
                     $(this).css('width', otherColumnWidth + 'px');
+                }
+            });
+        }
+
+        function initializeToggleLegends() {
+            const toggleLegendsBtn = $("#toggleLegendsBtn");
+            const legendsAndShifts = $("#legendsAndShifts");
+
+            // Check localStorage for the saved state
+            const savedState = localStorage.getItem("legendsAndShiftsVisible");
+
+            if (savedState === "hidden") {
+                legendsAndShifts.hide();
+                toggleLegendsBtn.text("Show legends");
+            } else {
+                legendsAndShifts.show();
+                toggleLegendsBtn.text("Hide legends");
+            }
+
+            // Toggle button click event
+            toggleLegendsBtn.off("click").on("click", function () { // Use .off() to prevent duplicate event bindings
+                legendsAndShifts.toggle(); // Toggle visibility
+
+                if (legendsAndShifts.is(":visible")) {
+                    toggleLegendsBtn.text("Hide legends");
+                    localStorage.setItem("legendsAndShiftsVisible", "visible"); // Save state
+                } else {
+                    toggleLegendsBtn.text("Show legends");
+                    localStorage.setItem("legendsAndShiftsVisible", "hidden"); // Save state
                 }
             });
         }
@@ -330,7 +350,7 @@
                 success: function (response) {
                     $("#scheduleTable").html(response);
                     hideSpinner();
-                    initializeSortable(); // Re-initialize sortable functionality
+                    initializeToggleLegends();
                 },
                 error: function () {
                     alert("Error loading schedule.");

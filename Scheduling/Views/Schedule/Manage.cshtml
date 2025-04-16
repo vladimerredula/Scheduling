@@ -167,33 +167,6 @@
 
 @section Scripts {
     <script>
-        const toggleLegendsBtn = $("#toggleLegendsBtn");
-        const legendsAndShifts = $("#legendsAndShifts");
-
-        // Check localStorage for the saved state
-        const savedState = localStorage.getItem("legendsAndShiftsVisible");
-
-        if (savedState === "hidden") {
-            legendsAndShifts.hide();
-            toggleLegendsBtn.text("Show legends");
-        } else {
-            legendsAndShifts.show();
-            toggleLegendsBtn.text("Hide legends");
-        }
-
-        // Toggle button click event
-        toggleLegendsBtn.on("click", function () {
-            legendsAndShifts.toggle(); // Toggle visibility
-
-            if (legendsAndShifts.is(":visible")) {
-                toggleLegendsBtn.text("Hide legends");
-                localStorage.setItem("legendsAndShiftsVisible", "visible"); // Save state
-            } else {
-                toggleLegendsBtn.text("Show legends");
-                localStorage.setItem("legendsAndShiftsVisible", "hidden"); // Save state
-            }
-        });
-
         let cancelSort = false;
         let previousValue;
 
@@ -260,6 +233,7 @@
                 }
             });
 
+            initializeToggleLegends(); // Initialize the toggle legends button
             initializeSortable(); // Initial call to initialize sortable functionality
 
             // ESC key handler to cancel drag
@@ -279,6 +253,35 @@
         $("#searchBox").on("input", function () {
             filterTable();
         });
+
+        function initializeToggleLegends() {
+            const toggleLegendsBtn = $("#toggleLegendsBtn");
+            const legendsAndShifts = $("#legendsAndShifts");
+
+            // Check localStorage for the saved state
+            const savedState = localStorage.getItem("legendsAndShiftsVisible");
+
+            if (savedState === "hidden") {
+                legendsAndShifts.hide();
+                toggleLegendsBtn.text("Show legends");
+            } else {
+                legendsAndShifts.show();
+                toggleLegendsBtn.text("Hide legends");
+            }
+
+            // Toggle button click event
+            toggleLegendsBtn.off("click").on("click", function () { // Use .off() to prevent duplicate event bindings
+                legendsAndShifts.toggle(); // Toggle visibility
+
+                if (legendsAndShifts.is(":visible")) {
+                    toggleLegendsBtn.text("Hide legends");
+                    localStorage.setItem("legendsAndShiftsVisible", "visible"); // Save state
+                } else {
+                    toggleLegendsBtn.text("Show legends");
+                    localStorage.setItem("legendsAndShiftsVisible", "hidden"); // Save state
+                }
+            });
+        }
 
         function filterTable() {
             let searchValue = $("#searchBox").val().toLowerCase();
@@ -406,7 +409,8 @@
                 success: function (response) {
                     $("#scheduleTable").html(response);
                     hideSpinner();
-                    initializeSortable(); // Re-initialize sortable functionality
+                    initializeSortable(); // Reinitialize sortable functionality
+                    initializeToggleLegends(); // Reinitialize the toggle legends button
                     adjustTableColumns();
                     filterTable();
                 },
