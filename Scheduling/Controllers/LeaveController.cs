@@ -56,6 +56,37 @@ namespace Scheduling.Controllers
             return View();
         }
 
+        public async Task<IActionResult> DepartmentLeaves(int departmentId = 1)
+        {
+            ViewBag.Leaves = await _db.Leaves
+                    .Include(l => l.User)
+                    .Include(l => l.Leave_type)
+                    .Include(l => l.Approver1)
+                    .Include(l => l.Approver2)
+                    .Where(l => l.User.Department_ID == departmentId)
+                    .ToListAsync();
+
+            ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
+            ViewBag.LeaveTypes = new SelectList(_db.Leave_types.ToList(), "Leave_type_ID", "Leave_type_name");
+
+            return View();
+        }
+
+        public async Task<IActionResult> Leaves()
+        {
+            ViewBag.Leaves = await _db.Leaves
+                    .Include(l => l.User)
+                    .Include(l => l.Leave_type)
+                    .Include(l => l.Approver1)
+                    .Include(l => l.Approver2)
+                    .Where(l => l.Personnel_ID == GetPersonnelID())
+                    .ToListAsync();
+
+            ViewBag.LeaveTypes = new SelectList(_db.Leave_types.ToList(), "Leave_type_ID", "Leave_type_name");
+
+            return View();
+        }
+
         public async Task<IActionResult> Add(Leave request)
         {
             var existingLeaves = _db.Leaves
@@ -149,6 +180,7 @@ namespace Scheduling.Controllers
             return Ok(new
             {
                 Name = leave.User.Full_name,
+                Personnel_ID = leave.Personnel_ID,
                 Leave_ID = leave.Leave_ID,
                 Leave_type_ID = leave?.Leave_type_ID,
                 Leave_type_name = leave?.Leave_type?.Leave_type_name,
@@ -183,7 +215,7 @@ namespace Scheduling.Controllers
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
 
-            return RedirectToAction("Index", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
+            return RedirectToAction("DepartmentLeaves", new { departmentId = leave?.User?.Department_ID });
         }
 
         public async Task<IActionResult> Deny(int Id)

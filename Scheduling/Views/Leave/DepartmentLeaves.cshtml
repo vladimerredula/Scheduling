@@ -1,0 +1,491 @@
+﻿@model Leave
+
+@{
+    ViewData["Title"] = "Departmental Leaves";
+
+    var leaves = ViewBag.Leaves as List<Leave> ?? new List<Leave>();
+}
+
+<div class="container">
+    <h1 class="mb-4">@ViewData["Title"]</h1>
+
+    @if (User.IsInRole("admin") || User.IsInRole("topManager"))
+    {
+        <div class="row mb-3">
+            <div class="col-auto">
+                <form asp-action="DepartmentLeaves" id="changeDepartment">
+                    <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                    </select>
+                </form>
+            </div>
+        </div>
+    }
+
+    <ul class="nav nav-tabs leavesTab" id="leavesTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fs-5" id="pending" data-bs-toggle="tab" data-bs-target="#content-1" role="tab" aria-controls="0">Requests</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fs-5" id="approved" data-bs-toggle="tab" data-bs-target="#content-2" role="tab" aria-controls="1">Approved</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fs-5" id="denied" data-bs-toggle="tab" data-bs-target="#content-3" role="tab" aria-controls="2">Denied</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fs-5" id="cancelled" data-bs-toggle="tab" data-bs-target="#content-4" role="tab" aria-controls="3">Cancelled</button>
+        </li>
+    </ul>
+    <div class="tab-content rounded-bottom p-3 bg-white shadow-sm">
+        <div class="tab-pane" id="content-1" role="tabpanel" aria-labelledby="pending">
+            <table class="datatable table table-hover">
+                <thead>
+                    <tr>
+                        <th>
+                            @Html.DisplayNameFor(model => model.User.Full_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_start)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_end)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Status)
+                        </th>
+                        <th>
+                            1st Approver
+                        </th>
+                        <th>
+                            2nd Approver
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in leaves.Where(l => l.Status == "Pending"))
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.User.Full_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_start_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_end_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Status)
+                            </td>
+                            <td>
+                                @if (item?.Approver_1 != null)
+                                {
+                                    <i class="bi bi-check-circle text-success"></i> @Html.DisplayFor(modelItem => item.Approver1.Full_name)
+                                }
+                            </td>
+                            <td>
+                                @if (item?.Approver_2 != null)
+                                {
+                                    <i class="bi bi-check-circle text-success"></i> @Html.DisplayFor(modelItem => item.Approver2.Full_name)
+                                }
+                            </td>
+                            <td class="text-nowrap align-content-center">
+                                @if ((User.IsInRole("manager") || User.IsInRole("admin")) && item?.Approver_1 == null)
+                                {
+                                    <a class="btn btn-sm btn-outline-success" asp-action="Approve" asp-route-id="@item?.Leave_ID">Approve</a>
+                                    <a class="btn btn-sm btn-outline-danger" href="javascript:void(0)" onclick="denyLeave(@item?.Leave_ID)">Deny</a>
+                                }
+                                else if (User.IsInRole("manager") && item?.Approver_1 != null)
+                                {
+                                    <span class="text-secondary">Pending for second approval</span>
+                                }
+                                else if ((User.IsInRole("topManager") || User.IsInRole("admin")) && item?.Approver_1 != null && item?.Approver_2 == null)
+                                {
+                                    <a class="btn btn-sm btn-outline-success" asp-action="Approve" asp-route-id="@item?.Leave_ID">Approve</a>
+                                    <a class="btn btn-sm btn-outline-danger" href="javascript:void(0)" onclick="denyLeave(@item?.Leave_ID)">Deny</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="tab-pane" id="content-2" role="tabpanel" aria-labelledby="approved">
+            <table class="datatable table table-hover">
+                <thead>
+                    <tr>
+                        <th>
+                            @Html.DisplayNameFor(model => model.User.Full_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_start)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_end)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Status)
+                        </th>
+                        <th>
+                            1st Approver
+                        </th>
+                        <th>
+                            2nd Approver
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in leaves.Where(l => l.Status == "Approved"))
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.User.Full_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_start_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_end_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Status)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Approver1.Full_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Approver2.Full_name)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="tab-pane" id="content-3" role="tabpanel" aria-labelledby="denied">
+            <table class="datatable table table-hover">
+                <thead>
+                    <tr>
+                        <th>
+                            @Html.DisplayNameFor(model => model.User.Full_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_start)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_end)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Status)
+                        </th>
+                        <th>
+                            Denied by
+                        </th>
+                        <th>
+                            Comment
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in leaves.Where(l => l.Status == "Denied"))
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.User.Full_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_start_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_end_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Status)
+                            </td>
+                            @if (item?.Approver_2 != null)
+                            {
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Approver2.Full_name)
+                                </td>
+                            }
+                            else if (item?.Approver_1 != null)
+                            {
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Approver1.Full_name)
+                                </td>
+                            }
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Comment)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="tab-pane" id="content-4" role="tabpanel" aria-labelledby="cancelled">
+            <table class="datatable table table-hover">
+                <thead>
+                    <tr>
+                        <th>
+                            @Html.DisplayNameFor(model => model.User.Full_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_start)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_end)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Status)
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in leaves.Where(l => l.Status == "Cancelled" || l.Status == "Withdrawn"))
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.User.Full_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_start_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_end_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Status)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Deny modal -->
+<div class="modal fade" id="denyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="denyModalLabel">Deny this leave?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="Deny">
+                <div class="modal-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">
+                            @Html.DisplayNameFor(model => model.User.Full_name)
+                        </dt>
+                        <dd class="col-sm-9" id="name">
+                        </dd>
+                        <dt class="col-sm-3">
+                            @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                        </dt>
+                        <dd class="col-sm-9" id="leave_type_name">
+                        </dd>
+                        <dt class="col-sm-3">
+                            @Html.DisplayNameFor(model => model.Date_start)
+                        </dt>
+                        <dd class="col-sm-9" id="date_start">
+                        </dd>
+                        <dt class="col-sm-3">
+                            @Html.DisplayNameFor(model => model.Date_end)
+                        </dt>
+                        <dd class="col-sm-9" id="date_end">
+                        </dd>
+                    </dl>
+                    <div class="row">
+                        <div class="col">
+                            <label asp-for="Comment" class="form-label">Reason</label><span class="text-danger" title="Required">*</span>
+                            <textarea asp-for="Comment" class="form-control" data-val="true" data-val-required="The Reason field is required." required></textarea>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Comment" data-valmsg-replace="true"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <input type="hidden" name="id" id="denyID" />
+                    <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">No</a>
+                    <input type="submit" value="Yes, proceed" class="btn btn-danger" />
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $("table.datatable").DataTable({
+            responsive: true,
+            fixedHeader: true,
+            order: [[1, 'asc']]
+        });
+
+        $(document).ready(function () {
+            var tabs = document.getElementsByClassName('nav nav-tabs')
+
+            // Selecting all nav tabs and showing the first tab open
+            for (var i = 0; i < tabs.length; i++) {
+                var firstEl = tabs[i].querySelector('li:first-child button')
+                if (firstEl == null) {
+                    continue
+                }
+                var tab = new bootstrap.Tab(firstEl)
+                tab.show()
+            }
+        });
+
+        $("#departmentId").on("change", function() {
+            $("#changeDepartment").submit();
+        });
+
+        function addLeave() {
+            $(".modal-title").text("Add Leave");
+
+            $("#modalButton").text("Create");
+
+            $("#leaveForm").attr("action", "/Leave/Add");
+
+            clearModal();
+
+            // Show the modal
+            $("#leaveModal").modal("show");
+        }
+
+        function editLeave(id) {
+            clearModal();
+
+            $.ajax({
+                url: "/Leave/GetLeave",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    console.log(data);
+                    // Iterate over the properties of the data object and set the corresponding form field values
+                    $.each(data, function (key, value) {
+                        var elementId = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize the first letter
+                        $("#" + elementId).val(value);
+                    });
+
+                    // Set the action attribute of the form
+                    $("#leaveForm").attr("action", "/Leave/Edit/" + data["leave_ID"]);
+                    $("#leaveModalLabel").text("Edit leave");
+                    $("#modalButton").text("Update");
+
+                    // Show the modal
+                    $("#leaveModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response.status, response.responseJSON.message);
+                    alert("Error: " + response.responseJSON.message);
+                }
+            });
+        };
+
+        function denyLeave(id) {
+            $.ajax({
+                url: "/Leave/GetLeave",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    // Iterate over the properties of the data object and set the corresponding form field values
+                    $.each(data, function (key, value) {
+                        var $element = $("#" + key);
+                        if ($element.length) {
+                            if (key == "date") {
+                                $element.text(formatDate(value));
+                            } else {
+                                $element.text(value);
+                            }
+                        }
+                    });
+
+                    $("#denyID").val(data["leave_ID"]);
+
+                    // Show the modal
+                    $("#denyModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response.status, response.responseJSON.message);
+                    alert("Error: " + response.responseJSON.message);
+                }
+            });
+        }
+
+        function cancelLeave(id) {
+            $.ajax({
+                url: "/Leave/GetLeave",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    // Iterate over the properties of the data object and set the corresponding form field values
+                    $.each(data, function (key, value) {
+                        var $element = $("#" + key);
+                        if ($element.length) {
+                            if (key == "date") {
+                                $element.text(formatDate(value));
+                            } else {
+                                $element.text(value);
+                            }
+                        }
+                    });
+
+                    $("#cancelID").val(data["leave_ID"]);
+
+                    // Show the modal
+                    $("#cancelModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response.status, response.responseJSON.message);
+                    alert("Error: " + response.responseJSON.message);
+                }
+            });
+        }
+
+        $("#modalButton").on("click", function() {
+            $("#leaveForm").submit();
+        });
+
+        function clearModal() {
+            $('input[type="text"]').val('');
+            // $('select').prop('selectedIndex', "");
+
+            $(".field-validation-error").text("");
+        }
+
+        function formatDate(dateString) {
+            var date = new Date(dateString);
+            var day = ("0" + date.getDate()).slice(-2);
+            var month = ("0" + (date.getMonth() + 1)).slice(-2);
+            var year = date.getFullYear();
+            return year + "-" + month + "-" + day; // Format: YYYY/MM/DD
+        }
+    </script>
+}

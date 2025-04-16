@@ -41,11 +41,23 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Schedule" asp-action="Index">Schedule</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Leave" asp-action="Index">Leaves</a>
-                            </li>
-                            @if (User.IsInRole("admin") || User.IsInRole("manager"))
+                            @if (User.IsInRole("member") || User.IsInRole("shiftLeader"))
                             {
+                                        <li class="nav-item">
+                                            <a class="nav-link text-dark" asp-controller="Leave" asp-action="Leaves">Leaves</a>
+                                        </li>
+                            }
+                            @if (User.IsInRole("admin") || User.IsInRole("manager") || User.IsInRole("topManager"))
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link text-dark dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="leaveDropdownMenu">
+                                        Leaves
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="leaveDropdownMenu">
+                                        <li><a asp-controller="Leave" asp-action="Leaves" class="dropdown-item">My leaves</a></li>
+                                        <li><a asp-controller="Leave" asp-action="DepartmentLeaves" class="dropdown-item">Departmental leaves</a></li>
+                                    </ul>
+                                </li>
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-area="" asp-controller="Holiday" asp-action="Index">Holidays</a>
                                 </li>
@@ -59,25 +71,11 @@
                     <ul class="navbar-nav navbar-right">
                         @if (User.Identity.IsAuthenticated)
                         {
-                            @* <li class="nav-item dropdown" id="notifDropdown">
-                                <a class="nav-link position-relative me-2 p-1" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" id="notification">
-                                    <i class="fs-5 bi bi-bell-fill"></i>
-                                    <div id="notificationCount" hidden>
-                                        <span class="position-absolute bottom-50 start-50 p-2 bg-danger border border-light rounded-circle">
-                                            <span class="visually-hidden">New alerts</span>
-                                        </span>
-                                    </div>
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notification" style="min-width:350px;max-width:370px;" id="notificationList">
-                                </ul>
-                            </li> *@
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="userDropdownMenu">
                                     @firstName @lastName
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdownMenu">
-                                    @* <li><a class="dropdown-item" data-bs-toggle="popover" data-bs-offset="0,30" data-bs-trigger="hover focus" data-bs-content="In progress"><i class="bi bi-person-circle"></i> My Profile</a></li> *@
-                                    @* <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#changePassModal"><i class="bi bi-person-fill-gear"></i> Change password</a></li> *@
                                     <li><a asp-controller="Access" asp-action="Logout" class="dropdown-item"><i class="bi bi-box-arrow-left"></i> Logout</a></li>
                                 </ul>
                             </li>
