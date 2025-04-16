@@ -47,8 +47,13 @@
                                 ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
                                 : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
-                                <th class="border border-start-0 border-secondary p-1 @holidayClass">
-                                    <p class="m-0">@day</p><small class="fw-light font-monospace">@date.ToString("ddd")</small>
+                                var holidayPopover = holiday != null
+                                ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{holiday.Name}' tabindex='0'"
+                                : "";
+
+                                <th class="border border-start-0 border-secondary p-1 @holidayClass" @Html.Raw(holidayPopover)>
+                                    <p class="m-0">@day</p>
+                                    <small class="fw-light font-monospace">@date.ToString("ddd")</small>
                                 </th>
                             }
                         </tr>
@@ -87,12 +92,12 @@
                                             ? (isCompanyHoliday ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
                                             : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
-                                            string bgclass = "bg-" + leave?.Leave_type?.BsColor;
+                                            string leavePopover = leave != null ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{leave?.Leave_type?.Leave_type_name}' tabindex='0'" : "";
 
                                         <td id="cell-@user.Personnel_ID-@dateString"
                                             class="p-0 @cellClass position-relative border-bottom border-end border-secondary">
 
-                                            <p class="p-1 m-0 position-relative text-center">@(isCompanyHoliday || hasLeave ? "" : shift?.Shift_name)</p>
+                                            <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @bgClass" @Html.Raw(leavePopover) style="z-index: 1;"></p>
 
                                             <p id="p-@user.Personnel_ID-@dateString"
                                                class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @(hasLeave ? bgclass : "visually-hidden")"

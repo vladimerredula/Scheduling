@@ -46,8 +46,13 @@
                                 ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
                                 : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
-                                <th class="border border-start-0 border-secondary p-1 @holidayClass">
-                                    <p class="m-0">@day</p><small class="fw-light font-monospace">@date.ToString("ddd")</small>
+                                var holidayPopover = holiday != null
+                                ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{holiday.Name}' tabindex='0'"
+                                : "";
+
+                                <th class="border border-start-0 border-secondary p-1 @holidayClass" @Html.Raw(holidayPopover)>
+                                    <p class="m-0">@day</p>
+                                    <small class="fw-light font-monospace">@date.ToString("ddd")</small>
                                 </th>
                             }
                         </tr>
@@ -80,6 +85,7 @@
                                             bool isHoliday = holiday != null;
                                             bool isCompanyHoliday = isHoliday && holiday?.Type == "Company";
                                             bool hasLeave = leave != null;
+                                            string leavePopover = string.Empty;
 
                                             var cellClass = isHoliday
                                             ? (isCompanyHoliday ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
@@ -88,7 +94,7 @@
 
                                             string bgclass = leave?.Status switch
                                             {
-                                                "Pending" => "bg-warning bg-opacity-25",
+                                                leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{leave?.Leave_type?.Leave_type_name}' tabindex='0'";
                                                 "Approved" => "bg-success bg-opacity-25",
                                                 "Cancelled" => "",
                                                 "Denied" => "",
@@ -104,6 +110,9 @@
                                                 "Denied" => "",
                                                 _ => string.Empty
                                             };
+                                                    string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i>" + (leave?.Approver1?.Full_name ?? "");
+                                                    string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
+                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-html=\"true\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
 
                                             if (!string.IsNullOrEmpty(borderColor) && hasLeave)
                                             {
@@ -160,7 +169,7 @@
 
                                                 <p id="p-@user.Personnel_ID-@dateString"
                                                 class="position-absolute m-0 p-2 start-0 top-0 w-100 h-100 text-center @borderClass @(hasLeave ? bgclass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
-                                                @Html.Raw(action)
+                                                    @Html.Raw(action) @Html.Raw(leavePopover)
                                                     style="z-index: 1;@(action != string.Empty ? "cursor: pointer;" : "")">
                                                 </p>
                                                 @if (schedule?.Comment == "cancelled")
