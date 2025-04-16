@@ -10,7 +10,7 @@
 }
 
 <div class="row">
-    <div class="col-12 col-xxl-10 mb-3">
+    <div class="col mb-3">
         <!-- Table with Regular Members and Dates -->
         <div class="card p-3">
             <div id="loading-spinner" class="position-absolute top-50 start-50 z-3 d-none">
@@ -214,18 +214,18 @@
             </div>
         </div>
     </div>
-    <div class="col-12 col-xxl-2">
+    <div class="col-12 col-xxl-2" id="legendsAndShifts" style="display:none;">
         <div class="row mb-3">
             <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
                 <div class="card p-4">
-                    <small class="text-body-secondary mb-3">Leave applications</small>
-                    <small class="mb-2"><span class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Pending</small>
-                    <small class="mb-2"><span class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Approved by manager</small>
-                    <small class="text-body-secondary mb-3">Reflected leaves</small>
-                    <small class="mb-2"><span class="bg-primary-subtle border border-2 border-primary-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Business trip</small>
-                    <small class="mb-2"><span class="bg-info border border-2 border-info rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Paid leave</small>
-                    <small class="mb-2"><span class="bg-primary border border-2 border-primary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</small>
-                    <small class="mb-2"><span class="bg-secondary border border-2 border-secondary rounded-1 opacity-75">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</small>
+                    <small class="text-body-secondary mb-2">Leave applications</small>
+                    <p class="mb-2"><small class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</p>
+                    <p class="mb-3"><small class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</p>
+                    <small class="text-body-secondary mb-2">Reflected leaves</small>
+                    <p class="mb-2"><span class="bg-primary-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Business trip</p>
+                    <p class="mb-2"><span class="bg-info rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Paid leave</p>
+                    <p class="mb-2"><span class="bg-primary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</p>
+                    <p class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
                 </div>
             </div>
             @if (Model.Shifts.Where(s => s.Pattern == "4/2") is var shifts4 && shifts4 != null && shifts4.Count() > 0)

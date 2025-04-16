@@ -12,9 +12,7 @@
 <div class="px-3 px-sm-5" id="viewSchedule">
     <h2>@ViewData["Title"]</h2>
 
-    <div class="row mb-3">
-        <div class="col-10">
-            <div class="row justify-content-between">
+    <div class="row mb-3 justify-content-between">
                 <div class="col-auto">
                     <div class="row">
                         <div class="col-auto mb-2">
@@ -34,13 +32,14 @@
                     </div>
                 </div>
                 <div class="col-auto align-self-end">
+            <a class="btn btn-light border fullscreenBtn" title="Fullscreen">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrows-angle-expand" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707m4.344-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707" />
+                </svg>
+            </a>
+            <a id="toggleLegendsBtn" class="btn btn-light border">Show legends</a>
                 </div>
             </div>
-        </div>
-        <div class="col-2 align-self-star text-end">
-            <a class="btn btn-light border fullscreenBtn" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></a>
-        </div>
-    </div>
 
     <div id="scheduleTable">
         <partial name="_ScheduleView" />
@@ -49,7 +48,33 @@
 
 @section Scripts {
     <script>
-        // $.fn.bootstrapDP = $.fn.datepicker.noConflict();
+        const toggleLegendsBtn = $("#toggleLegendsBtn");
+        const legendsAndShifts = $("#legendsAndShifts");
+
+        // Check localStorage for the saved state
+        const savedState = localStorage.getItem("legendsAndShiftsVisible");
+
+        if (savedState === "hidden") {
+            legendsAndShifts.hide();
+            toggleLegendsBtn.text("Show legends");
+        } else {
+            legendsAndShifts.show();
+            toggleLegendsBtn.text("Hide legends");
+        }
+
+        // Toggle button click event
+        toggleLegendsBtn.on("click", function () {
+            legendsAndShifts.toggle(); // Toggle visibility
+
+            if (legendsAndShifts.is(":visible")) {
+                toggleLegendsBtn.text("Hide legends");
+                localStorage.setItem("legendsAndShiftsVisible", "visible"); // Save state
+            } else {
+                toggleLegendsBtn.text("Show legends");
+                localStorage.setItem("legendsAndShiftsVisible", "hidden"); // Save state
+            }
+        });
+
         let cancelSort = false;
         let previousValue;
 
@@ -75,7 +100,11 @@
                 const scheduleContainer = $("#viewSchedule").get(0); // Get the native DOM element
 
                 if (!document.fullscreenElement) {
-                    $(this).html('<i class="bi bi-arrows-angle-contract"></i>');
+                    $(this).html(`
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrows-angle-contract" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M.172 15.828a.5.5 0 0 0 .707 0l4.096-4.096V14.5a.5.5 0 1 0 1 0v-3.975a.5.5 0 0 0-.5-.5H1.5a.5.5 0 0 0 0 1h2.768L.172 15.121a.5.5 0 0 0 0 .707M15.828.172a.5.5 0 0 0-.707 0l-4.096 4.096V1.5a.5.5 0 1 0-1 0v3.975a.5.5 0 0 0 .5.5H14.5a.5.5 0 0 0 0-1h-2.768L15.828.879a.5.5 0 0 0 0-.707"/>
+                        </svg>
+                    `);
                     $(this).attr("title", "Exit fullscreen");
                     $(scheduleContainer).addClass('fullscreen');
                     adjustTableColumns();
@@ -83,7 +112,11 @@
                         console.error(`Error attempting to enable fullscreen mode: ${err.message}`);
                     });
                 } else {
-                    $(this).html('<i class="bi bi-arrows-fullscreen"></i>');
+                    $(this).html(`
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrows-angle-expand" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707m4.344-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707"/>
+                        </svg>
+                    `);
                     $(this).attr("title", "Fullscreen");
                     document.exitFullscreen();
                     $(scheduleContainer).removeClass('fullscreen');

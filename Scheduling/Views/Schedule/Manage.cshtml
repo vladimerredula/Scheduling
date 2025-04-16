@@ -9,9 +9,7 @@
 <div class="px-3 px-sm-5">
     <h2>@ViewData["Title"]</h2>
 
-    <div class="row mb-3">
-        <div class="col-10">
-            <div class="row justify-content-between">
+    <div class="row mb-3 justify-content-between">
                 <div class="col-auto">
                     <div class="row">
                         <div class="col-auto mb-2">
@@ -30,12 +28,12 @@
                     </div>
                 </div>
                 <div class="col-auto align-self-end">
-                    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
+            <a class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
+            <a id="toggleLegendsBtn" class="btn btn-light border">Show legends</a>
+            <!-- <a class="btn btn-light border me-1" onclick="printSchedule()" title="Print Schedule"><i class="bi bi-printer"></i></a>
+            <a class="btn btn-light border" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></a> -->
                 </div>
             </div>
-        </div>
-        <div class="col-2"></div>
-    </div>
     
     <div id="scheduleTable">
         <partial name="_ScheduleTable" />
@@ -169,6 +167,33 @@
 
 @section Scripts {
     <script>
+        const toggleLegendsBtn = $("#toggleLegendsBtn");
+        const legendsAndShifts = $("#legendsAndShifts");
+
+        // Check localStorage for the saved state
+        const savedState = localStorage.getItem("legendsAndShiftsVisible");
+
+        if (savedState === "hidden") {
+            legendsAndShifts.hide();
+            toggleLegendsBtn.text("Show legends");
+        } else {
+            legendsAndShifts.show();
+            toggleLegendsBtn.text("Hide legends");
+        }
+
+        // Toggle button click event
+        toggleLegendsBtn.on("click", function () {
+            legendsAndShifts.toggle(); // Toggle visibility
+
+            if (legendsAndShifts.is(":visible")) {
+                toggleLegendsBtn.text("Hide legends");
+                localStorage.setItem("legendsAndShiftsVisible", "visible"); // Save state
+            } else {
+                toggleLegendsBtn.text("Show legends");
+                localStorage.setItem("legendsAndShiftsVisible", "hidden"); // Save state
+            }
+        });
+
         let cancelSort = false;
         let previousValue;
 
