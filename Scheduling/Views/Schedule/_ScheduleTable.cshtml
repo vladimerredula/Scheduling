@@ -58,7 +58,10 @@
                                 var date = new DateTime(currentYear, selectedMonth, day);
                                 var isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
                                 var holiday = holidays.FirstOrDefault(h => h.Date == date);
-                                var holidayClass = holiday != null
+
+                                var holidayClass = date.Date == DateTime.Today
+                                ? "bg-primary text-white"
+                                : holiday != null
                                 ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
                                 : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
