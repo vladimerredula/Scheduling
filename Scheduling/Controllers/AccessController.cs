@@ -22,7 +22,7 @@ namespace Scheduling.Controllers
 
             if (claimUser.Identity.IsAuthenticated)
             {
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Schedule");
             }
 
             return View("Login");
