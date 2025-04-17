@@ -171,8 +171,7 @@
         let previousValue;
 
         $(document).ready(function (){
-            $('[data-bs-toggle="tooltip"]').tooltip();
-            $('[data-bs-toggle="popover"]').popover();
+            initializePopovers();
 
             $('#monthPicker').datepicker({
                 format: "MM yyyy",
@@ -254,6 +253,11 @@
         $("#searchBox").on("input", function () {
             filterTable();
         });
+
+        function initializePopovers() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+            $('[data-bs-toggle="popover"]').popover();
+        }
 
         function initializeToggleLegends() {
             const toggleLegendsBtn = $("#toggleLegendsBtn");
@@ -414,6 +418,7 @@
                     initializeToggleLegends(); // Reinitialize the toggle legends button
                     adjustTableColumns();
                     filterTable();
+                    initializePopovers();
                 },
                 error: function () {
                     alert("Error loading schedule.");

@@ -52,8 +52,7 @@
         let previousValue;
 
         $(document).ready(function (){
-            $('[data-bs-toggle="tooltip"]').tooltip();
-            $('[data-bs-toggle="popover"]').popover();
+            initializePopovers();
 
             $('#monthPicker').datepicker({
                 format: "MM yyyy",
@@ -122,6 +121,11 @@
                     $(this).css('width', otherColumnWidth + 'px');
                 }
             });
+        }
+
+        function initializePopovers() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+            $('[data-bs-toggle="popover"]').popover();
         }
 
         function initializeToggleLegends() {
@@ -195,6 +199,7 @@
                     $("#scheduleTable").html(response);
                     adjustTableColumns();
                     initializeToggleLegends(); // Reinitialize the toggle legends button
+                    initializePopovers();
                 },
                 error: function () {
                     alert("Error loading schedule.");

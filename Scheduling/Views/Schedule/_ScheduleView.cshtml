@@ -99,7 +99,7 @@
                                             ? (isCompanyHoliday ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
                                             : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
-                                            string leavePopover = leave != null ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{leave?.Leave_type?.Leave_type_name}' tabindex='0'" : "";
+                                            string leavePopover = leave != null ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'" : "";
 
                                             string bgClass = leave != null ? "bg-" + leave.Leave_type?.BsColor : "visually-hidden";
 

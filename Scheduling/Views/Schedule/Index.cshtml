@@ -167,8 +167,7 @@
         let previousValue;
 
         $(document).ready(function (){
-            $('[data-bs-toggle="tooltip"]').tooltip();
-            $('[data-bs-toggle="popover"]').popover();
+            initializePopovers();
 
             $('#monthPicker').datepicker({
                 format: "MM yyyy",
@@ -239,7 +238,12 @@
         // Search functionality
         $("#searchBox").on("input", function () {
             filterTable();
-        });
+            });
+
+        function initializePopovers() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+            $('[data-bs-toggle="popover"]').popover();
+        }
 
         function filterTable() {
             let searchValue = $("#searchBox").val().toLowerCase();
@@ -352,6 +356,7 @@
                     $("#scheduleTable").html(response);
                     hideSpinner();
                     initializeToggleLegends();
+                    initializePopovers();
                 },
                 error: function () {
                     alert("Error loading schedule.");

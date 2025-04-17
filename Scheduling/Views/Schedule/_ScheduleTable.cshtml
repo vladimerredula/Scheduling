@@ -119,7 +119,7 @@
                                             // Leave coloring and borders
                                             if (leave?.Status == "Approved" && leave.Leave_type?.BsColor is not null)
                                             {
-                                                leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{leave?.Leave_type?.Leave_type_name}' tabindex='0'";
+                                                leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'";
                                                 bgClass = $"bg-{leave?.Leave_type?.BsColor}";
                                             }
 
@@ -127,14 +127,15 @@
                                             {
                                                 if (leave?.Approver_1 == null)
                                                 {
+                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
                                                     bgClass = "bg-warning bg-opacity-25";
                                                     borderColor = "border-warning";
                                                 }
                                                 else if (leave?.Approver_2 == null)
                                                 {
-                                                    string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i>" + (leave?.Approver1?.Full_name ?? "");
+                                                    string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i> Approved by " + (leave?.Approver1?.Full_name ?? "");
                                                     string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
-                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-html=\"true\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
+                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-html=\"true\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
                                                     bgClass = "bg-success bg-opacity-25";
                                                     borderColor = "border-success";
                                                 }
@@ -262,7 +263,7 @@
                     <p class="mb-2"><small class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</p>
                     <p class="mb-3"><small class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</p>
                     <small class="text-body-secondary mb-2">Reflected leaves</small>
-                    <p class="mb-2"><span class="bg-primary-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> Business trip</p>
+                    <p class="mb-2"><span class="bg-primary-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Business trip</p>
                     <p class="mb-2"><span class="bg-info rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Paid leave</p>
                     <p class="mb-2"><span class="bg-primary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</p>
                     <p class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
