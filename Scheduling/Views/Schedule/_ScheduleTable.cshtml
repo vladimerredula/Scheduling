@@ -4,7 +4,6 @@
 @{
     var currentYear = Model.year;
     var selectedMonth = Model.month;
-    var sectors = ViewBag.Sectors as List<Sector>;
     var daysInMonth = DateTime.DaysInMonth(currentYear, selectedMonth);
     var schedules = Model.Schedules;
     var holidays = Model.Holidays;
@@ -62,8 +61,8 @@
                                 var holidayClass = date.Date == DateTime.Today
                                 ? "bg-primary text-white"
                                 : holiday != null
-                                ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
-                                : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
+                                    ? (holiday.Type == "Company" ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
+                                    : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
                                 var holidayPopover = holiday != null
                                 ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{holiday.Name}' tabindex='0'"
@@ -87,7 +86,7 @@
                                 @foreach (var user in sector)
                                 {
                                     <tr id="user-@user.Personnel_ID" data-sector-id="@sector.Key" class="@(!isRegularUser ? "draggable" : "")">
-                                        <td class="border border-top-0 border-secondary text-nowrap text-start drag-handle align-content-center @(userId == user.Personnel_ID ? "fw-semibold" : "")">
+                                        <td class="border border-top-0 border-secondary text-nowrap text-start ps-2 drag-handle align-content-center @(userId == user.Personnel_ID ? "fw-semibold" : "")">
                                             @user.Full_name
                                         </td>
                                         @for (int day = 1; day <= daysInMonth; day++)
@@ -123,7 +122,7 @@
                                             if (leave?.Status == "Approved" && leave.Leave_type?.BsColor is not null)
                                             {
                                                 leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'";
-                                                bgClass = $"bg-{leave?.Leave_type?.BsColor}";
+                                                bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient";
                                             }
 
                                             if (hasLeave && canActOnLeave)
@@ -266,9 +265,9 @@
                     <p class="mb-2"><small class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</p>
                     <p class="mb-3"><small class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</p>
                     <small class="text-body-secondary mb-2">Reflected leaves</small>
-                    <p class="mb-2"><span class="bg-primary-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Business trip</p>
+                    <p class="mb-2"><span class="bg-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Business trip</p>
                     <p class="mb-2"><span class="bg-info rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Paid leave</p>
-                    <p class="mb-2"><span class="bg-primary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</p>
+                    <p class="mb-2"><span class="bg-info-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</p>
                     <p class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
                 </div>
             </div>
