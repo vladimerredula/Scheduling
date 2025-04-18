@@ -1,10 +1,9 @@
 ﻿@using System.Globalization;
-@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, List<Sector> Sectors, int month, int year)
+@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
 
 @{
     var currentYear = Model.year;
     var selectedMonth = Model.month;
-    var sectors = ViewBag.Sectors as List<Sector>;
     var daysInMonth = DateTime.DaysInMonth(currentYear, selectedMonth);
     var schedules = Model.Schedules;
     var holidays = Model.Holidays;
@@ -76,7 +75,7 @@
                             <tr class="sectorName">
                                 <td class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">
                                     <small class="fw-bold">
-                                            @Model.Sectors?.FirstOrDefault(s => s.Sector_ID == sector.Key)?.Sector_name
+                                            @sector?.FirstOrDefault()?.Sector?.Sector_name
                                     </small>
                                 </td>
                             </tr>

@@ -39,7 +39,6 @@ namespace Scheduling.Controllers
 
             var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
             var holidays = _db.Holidays.ToList();
-            var sectors = _db.Sectors.Where(s => s.Department_ID == departmentId).ToList();
 
             var userOrder = _db.Employee_orders
                 .Include(o => o.User)
@@ -98,9 +97,9 @@ namespace Scheduling.Controllers
             ViewBag.LeaveTypes = _db.Leave_types.ToList();
 
             if (User.IsInRole("member") || User.IsInRole("shiftLeader"))
-                return View((users, shifts, schedules, leaves, holidays, sectors, month, year));
+                return View((users, shifts, schedules, leaves, holidays, month, year));
             else
-                return View("Manage", (users, shifts, schedules, leaves, holidays, sectors, month, year));
+                return View("Manage", (users, shifts, schedules, leaves, holidays, month, year));
         }
 
         [HttpPost]
@@ -173,7 +172,6 @@ namespace Scheduling.Controllers
             var user = await ThisUser();
             var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
             var holidays = _db.Holidays.ToList();
-            var sectors = _db.Sectors.Where(s => s.Department_ID == departmentId).ToList();
 
             var userOrder = _db.Employee_orders
                 .Include(o => o.User)
@@ -230,7 +228,65 @@ namespace Scheduling.Controllers
 
             ViewBag.LeaveTypes = _db.Leave_types.ToList();
 
-            return PartialView("_ScheduleTable", (users, shifts, schedules, leaves, holidays, sectors, month, year));
+            return PartialView("_ScheduleTable", (users, shifts, schedules, leaves, holidays, month, year));
+        }
+
+            var userOrder = _db.Employee_orders
+                .Include(o => o.User)
+                .Where(o =>
+                    o.User.Department_ID == departmentId &&
+                    (o.Year < year || (o.Year == year && o.Month <= month))) // Filter for orders earlier or equal to the selected month and year
+                .OrderBy(o => o.Year)  // Order by Year first to get the latest orders
+                .ThenBy(o => o.Month)  // Then by Month within the same year
+                .ThenBy(o => o.Order_index) // Optional: If you want to order by Order_index
+                .Select(o => o.Personnel_ID)
+                .ToList();
+
+            var baseQuery = _db.Users
+                .Include(u => u.Sector)
+                .Where(u =>
+                    u.Privilege_ID != 0 &&
+                    u.Privilege_ID != 4 &&
+                    u.Department_ID == departmentId &&
+                    u.Status == 1)
+                .ToList(); // Execute once, filter and sort in memory
+
+            var usersInOrder = baseQuery
+                .Where(u => userOrder.Contains(u.Personnel_ID))
+                .OrderBy(u => userOrder.IndexOf(u.Personnel_ID))
+                .ToList();
+
+            var usersNotInOrder = baseQuery
+                .Where(u => !userOrder.Contains(u.Personnel_ID))
+                .OrderBy(u => u?.Sector?.Order)
+                .ThenByDescending(u => u.Privilege_ID)
+                .ThenBy(u => u.First_name)
+                .ThenBy(u => u.Last_name)
+                .ToList();
+
+            var users = usersInOrder.Concat(usersNotInOrder).ToList();
+
+            var schedules = _db.Schedules
+                .Include(s => s.User)
+                .Include(s => s.Shift)
+                .Where(s =>
+                    s.Date.Month == month &&
+                    s.Date.Year == year &&
+                    s.User.Department_ID == departmentId)
+                .ToList();
+
+            var leaves = _db.Leaves
+                .Include(l => l.Leave_type)
+                .Include(l => l.Approver1)
+                .Where(l =>
+                    ((l.Date_start.Year == year && l.Date_start.Month == month) ||
+                    (l.Date_end.Year == year && l.Date_end.Month == month)) &&
+                    l.Status != "Cancelled" && l.Status != "Denied")
+                .ToList();
+
+            ViewBag.LeaveTypes = _db.Leave_types.ToList();
+
+            return PartialView("_PrintScheduleTable", (users, shifts, schedules, leaves, holidays, month, year));
         }
 
         public int GetPersonnelID()
@@ -316,7 +372,6 @@ namespace Scheduling.Controllers
 
             var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
             var holidays = _db.Holidays.ToList();
-            var sectors = _db.Sectors.Where(s => s.Department_ID == departmentId).ToList();
 
             var userOrder = _db.Employee_orders
                 .Include(o => o.User)
@@ -373,7 +428,7 @@ namespace Scheduling.Controllers
 
             ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
 
-            return View((users, shifts, schedules, leaves, holidays, sectors, month, year));
+            return View((users, shifts, schedules, leaves, holidays, month, year));
         }
 
         public async Task<IActionResult> LoadScheduleView(int month = 0, int year = 0, int departmentId = 0)
@@ -392,7 +447,6 @@ namespace Scheduling.Controllers
 
             var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
             var holidays = _db.Holidays.ToList();
-            var sectors = _db.Sectors.Where(s => s.Department_ID == departmentId).ToList();
 
             var userOrder = _db.Employee_orders
                 .Include(o => o.User)
@@ -446,7 +500,7 @@ namespace Scheduling.Controllers
 
             ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
 
-            return PartialView("_ScheduleView", (users, shifts, schedules, leaves, holidays, sectors, month, year));
+            return PartialView("_ScheduleView", (users, shifts, schedules, leaves, holidays, month, year));
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿@using System.Globalization;
-@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, List<Sector> Sectors, int month, int year)
+@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
 
 @{
     var currentYear = Model.year;
@@ -81,11 +81,11 @@
                         {
                             <tbody class="sector">
                                 <tr class="sectorName">
-                                    <th class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">@Model.Sectors?.FirstOrDefault(s => s.Sector_ID == sector.Key)?.Sector_name</th>
+                                    <th class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">@sector?.FirstOrDefault()?.Sector?.Sector_name</th>
                                 </tr>
                                 @foreach (var user in sector)
                                 {
-                                    <tr id="user-@user.Personnel_ID" data-sector-id="@sector.Key" class="@(!isRegularUser ? "draggable" : "")">
+                                    <tr id="user-@user.Personnel_ID" data-sector-id="@user.Sector_ID" class="@(!isRegularUser ? "draggable" : "")">
                                         <td class="border border-top-0 border-secondary text-nowrap text-start ps-2 drag-handle align-content-center @(userId == user.Personnel_ID ? "fw-semibold" : "")">
                                             @user.Full_name
                                         </td>
