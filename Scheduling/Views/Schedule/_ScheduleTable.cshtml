@@ -8,6 +8,7 @@
     var schedules = Model.Schedules;
     var holidays = Model.Holidays;
     var leaves = Model.Leaves;
+    var leaveTypes = ViewBag.LeaveTypes as List<Leave_type>;
     var users = Model.Users;
     var companyHolidayDates = holidays.Where(h => h.Type == "Company").Select(h => h.Date).ToHashSet();
     var userIds = users.Select(u => u.Personnel_ID).ToHashSet();
@@ -201,9 +202,9 @@
                                                 </select>
 
                                                 <p id="p-@user.Personnel_ID-@dateString"
-                                                    class="position-absolute start-0 top-0 w-100 h-100 text-center @borderClass @(hasLeave ? bgClass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
-                                                    @Html.Raw(action) @Html.Raw(leavePopover)
-                                                    style="z-index: 1;@(action != string.Empty ? "cursor: pointer;" : "")">
+                                                class="position-absolute start-0 top-0 w-100 h-100 text-center @borderClass @(hasLeave ? bgClass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
+                                                @Html.Raw(action) @Html.Raw(leavePopover)
+                                                style="z-index: 1;@(action != string.Empty ? "cursor: pointer;" : "")">
                                                 </p>
                                                 @if (schedule?.Comment == "cancelled")
                                                 {
@@ -245,7 +246,7 @@
                                     };
 
                                     <td class="border-bottom border-end border-secondary text-center @bgColor"
-                                        id="shift-@shift.Shift_name-@date:yyyy-MM-dd">
+                                    id="shift-@shift.Shift_name-@date:yyyy-MM-dd">
                                         @count
                                     </td>
                                 }
@@ -258,42 +259,42 @@
     </div>
     <div class="col-12 col-xxl-2" id="legendsAndShifts" style="display:none;">
         @* Leave Legends *@
-        <div class="row mb-3">
-            <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                <div class="card p-4">
-                    <small class="text-body-secondary mb-2">Leave applications</small>
-                    <p class="mb-2"><small class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</p>
-                    <p class="mb-3"><small class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</p>
-                    <small class="text-body-secondary mb-2">Reflected leaves</small>
-                    <p class="mb-2"><span class="bg-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Business trip</p>
-                    <p class="mb-2"><span class="bg-info rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Paid leave</p>
-                    <p class="mb-2"><span class="bg-info-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</p>
-                    <p class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
-                </div>
-            </div>
-
-            @* Shift Patterns *@
-            @foreach (var pattern in new[] { "4/2", "5/2" })
+        <div class="card p-3 mb-3">
+            <small class="text-body-secondary mb-2">Leave applications</small>
+            <p class="mb-2"><small class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</p>
+            <p class="mb-3"><small class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</p>
+            <small class="text-body-secondary mb-2">Reflected leaves</small>
+            @foreach(var leaveType in leaveTypes)
             {
-                var shifts = Model.Shifts.Where(s => s.Pattern == pattern).ToList();
-                if (shifts.Any())
-                {
-                    <div class="card py-2 px-4 mb-3">
-                        <table class="table table-sm text-center">
-                            <thead>
-                                <tr><th colspan="2">@pattern pattern</th></tr>
-                                <tr><th>Shift</th><th>Time</th></tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var shift in shifts)
-                                {
-                                    <tr><td>@shift.Shift_name</td><td>@shift.Time_start - @shift.Time_end</td></tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
+                <p class="mb-2"><span class="bg-@leaveType?.BsColor rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;@leaveType?.Leave_type_name</p>
             }
+            <p class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
         </div>
+
+        @* Shift Patterns *@
+        @foreach (var pattern in new[] { "4/2", "5/2" })
+        {
+            var shifts = Model.Shifts.Where(s => s.Pattern == pattern).ToList();
+            if (shifts.Any())
+            {
+                <div class="card py-2 px-4 mb-3">
+                    <table class="table table-sm text-center">
+                        <thead>
+                            <tr><th colspan="2">@pattern pattern</th></tr>
+                            <tr><th>Shift</th><th>Time</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var shift in shifts)
+                            {
+                                <tr>
+                                    <td>@shift.Shift_name</td>
+                                    <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
     </div>
 </div>

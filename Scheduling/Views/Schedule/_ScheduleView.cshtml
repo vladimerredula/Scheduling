@@ -9,6 +9,7 @@
     var holidays = Model.Holidays;
     var shifts = Model.Shifts;
     var leaves = Model.Leaves;
+    var leaveTypes = ViewBag.LeaveTypes as List<Leave_type>;
     var users = Model.Users;
     var companyHolidayDates = holidays.Where(h => h.Type == "Company").Select(h => h.Date).ToHashSet();
     var userIds = users.Select(u => u.Personnel_ID).ToHashSet();
@@ -163,10 +164,11 @@
             <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
                 <div class="card p-4">
                     <small class="text-body-secondary mb-3">Reflected leaves</small>
-                    <small class="mb-2"><span class="bg-warning rounded-1 opacity-75">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Business trip</small>
-                    <small class="mb-2"><span class="bg-info rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Paid leave</small>
-                    <small class="mb-2"><span class="bg-info-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</small>
-                    <small class="mb-2"><span class="bg-secondary rounded-1 opacity-75">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</small>
+                    @foreach (var leaveType in leaveTypes)
+                    {
+                        <small class="mb-2"><span class="bg-@leaveType?.BsColor rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;@leaveType?.Leave_type_name</small>
+                    }
+                    <small class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</small>
                 </div>
             </div>
             @if (Model.Shifts.Where(s => s.Pattern == "4/2") is var shifts4 && shifts4 != null && shifts4.Count() > 0)
@@ -188,7 +190,7 @@
                                 {
                                     <tr>
                                         <td>@shift.Shift_name</td>
-                                        <td>@shift.Time_start - @shift.Time_end</td>
+                                        <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
                                     </tr>
                                 }
                             </tbody>
@@ -215,7 +217,7 @@
                                 {
                                     <tr>
                                         <td>@shift.Shift_name</td>
-                                        <td>@shift.Time_start - @shift.Time_end</td>
+                                        <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
                                     </tr>
                                 }
                             </tbody>

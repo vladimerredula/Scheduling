@@ -508,6 +508,7 @@ namespace Scheduling.Controllers
                 .ToList();
 
             ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
+            ViewBag.LeaveTypes = _db.Leave_types.ToList();
 
             return View((users, shifts, schedules, leaves, holidays, month, year));
         }
@@ -576,10 +577,10 @@ namespace Scheduling.Controllers
                 .Where(l =>
                     ((l.Date_start.Year == year && l.Date_start.Month == month) ||
                     (l.Date_end.Year == year && l.Date_end.Month == month)) &&
-                    l.Status == "Reflected")
+                    l.Status == "Approved")
                 .ToList();
 
-            ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
+            ViewBag.LeaveTypes = _db.Leave_types.ToList();
 
             return PartialView("_ScheduleView", (users, shifts, schedules, leaves, holidays, month, year));
         }

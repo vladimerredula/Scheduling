@@ -140,7 +140,7 @@
                             <td class="text-nowrap align-content-center">
                                 @if (item?.Date_start > DateTime.Now)
                                 {
-                                    <a class="btn btn-sm btn-light border text-danger" href="javascript:void(0)" onclick="withdrawLeave(@item?.Leave_ID)">Withdraw</a>
+                                    <a class="btn btn-sm btn-light border text-danger" href="javascript:void(0)" onclick="withdrawLeave(@item?.Leave_ID)">Request to withdraw</a>
                                 }
                             </td>
                         </tr>
@@ -390,7 +390,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header border-0">
-                <h5 class="modal-title" id="withdrawModalLabel">Are you sure you want to withdraw this leave?</h5>
+                <h5 class="modal-title" id="withdrawModalLabel">Request to withdraw this leave?</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">

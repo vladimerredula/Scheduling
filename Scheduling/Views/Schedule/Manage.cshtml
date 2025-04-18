@@ -167,6 +167,9 @@
 </div>
 
 @section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
     <script>
         let cancelSort = false;
         let previousValue;
