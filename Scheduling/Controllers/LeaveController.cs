@@ -167,6 +167,12 @@ namespace Scheduling.Controllers
 
             request.Personnel_ID = personnelId;
             request.Status = "Pending";
+
+            if (User.IsInRole("manager") || User.IsInRole("topManager"))
+            {
+                request.Approver_1 = personnelId;
+            }
+
             _db.Leaves.Add(request);
             await _db.SaveChangesAsync();
 
