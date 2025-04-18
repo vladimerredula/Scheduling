@@ -30,6 +30,7 @@ namespace Scheduling.Controllers
                 _db.Holidays.AddAsync(holiday);
                 await _db.SaveChangesAsync();
 
+                TempData["toastMessage"] = "Successfully added Holiday!-success";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -54,9 +55,11 @@ namespace Scheduling.Controllers
                 {
                     _db.Holidays.Update(holiday);
                     await _db.SaveChangesAsync();
+                    TempData["toastMessage"] = "Successfully updated Holiday!-success";
                 }
                 catch (Exception ex)
                 {
+                    TempData["toastMessage"] = "Unable to update Holiday.-danger";
                     Console.WriteLine($"Unable to update Holiday: {id} - {ex}");
                 }
 
@@ -84,9 +87,11 @@ namespace Scheduling.Controllers
             {
                 _db.Holidays.Remove(holiday);
                 await _db.SaveChangesAsync();
+                TempData["toastMessage"] = "Successfully deleted Holiday!-success";
             }
             catch (Exception ex)
             {
+                TempData["toastMessage"] = "Unable to delete Holiday.-danger";
                 Console.WriteLine($"Unable to delete Holiday: {id} - {ex}");
             }
 

@@ -108,6 +108,17 @@
     <!-- Data Tables -->
     <script src="~/js/datatables.min.js" asp-append-version="true"></script>
 
+    <script>
+        $(document).ready(function () {
+            let tempMessage = '@TempData["toastMessage"]';
+
+            if (tempMessage && tempMessage !== 'null') {
+                let [message, type] = tempMessage.split("-");
+                showToast(message, type || "success");
+            }
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

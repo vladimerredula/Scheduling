@@ -195,7 +195,7 @@
                 },
                 error: function (response) {
                     console.error("Error:", response.status, response.responseJSON.message);
-                    alert("Error: " + response.responseJSON.message);
+                    showToast("Holiday not found", "danger");
                 }
             });
         };
@@ -225,7 +225,7 @@
                 },
                 error: function (response) {
                     console.error("Error:", response.status, response.responseJSON.message);
-                    alert("Error: " + response.responseJSON.message);
+                    showToast("Holiday not found", "danger");
                 }
             });
         }
