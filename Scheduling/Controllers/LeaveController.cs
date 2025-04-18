@@ -176,6 +176,22 @@ namespace Scheduling.Controllers
             _db.Leaves.Add(request);
             await _db.SaveChangesAsync();
 
+            var referrerUrl = Request.Headers["Referer"].ToString();
+            if (!string.IsNullOrEmpty(referrerUrl))
+            {
+                // Parse the referrer URL to extract controller information if needed
+                // This step assumes the referrer URL is in the standard routing format
+                Uri referrerUri = new Uri(referrerUrl);
+                var segments = referrerUri.Segments;
+                string previousController = segments.Length > 1 ? segments[1].Trim('/') : string.Empty;
+                string previousAction = segments.Length > 2 ? segments[2].Trim('/') : string.Empty;
+
+                if (previousAction == "Calendar")
+                {
+                    return RedirectToAction(previousAction, previousController); // redirect back to the page where request came from
+                }
+            }
+
             // Redirect to Schedule page
             return RedirectToAction("Index", "Schedule", new { month = request.Date_start.Month, year = request.Date_start.Year });
         }
