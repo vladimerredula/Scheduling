@@ -35,9 +35,9 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        @if (int.Parse(User.FindFirstValue("Personnelid")) != 999)
-                        {
+                    @if (int.Parse(User.FindFirstValue("Personnelid")) != 999)
+                    {
+                        <ul class="navbar-nav flex-grow-1">
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Schedule" asp-action="Index">Schedule</a>
                             </li>
@@ -65,8 +65,11 @@
                                     <a class="nav-link text-dark" asp-area="" asp-controller="Shift" asp-action="Index">Shifts</a>
                                 </li>
                             }
-                        }
-                    </ul>
+                        </ul>
+                        <ul class="navbar-nav navbar-right me-3">
+                            <li class="nav-item"><a class="nav-link" role="button" href="http://dcl.faradaygroup.local/" target="_blank" rel="noopener noreferrer"><i class="bi bi-ui-checks"></i> DailyChecklist</a></li>
+                        </ul>
+                    }
 
                     <ul class="navbar-nav navbar-right">
                         @if (User.Identity.IsAuthenticated)
