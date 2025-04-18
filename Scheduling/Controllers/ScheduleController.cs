@@ -102,6 +102,87 @@ namespace Scheduling.Controllers
                 return View("Manage", (users, shifts, schedules, leaves, holidays, month, year));
         }
 
+        public async Task<IActionResult> Calendar(int month = 0, int year = 0)
+        {
+            var user = await ThisUser();
+
+            if (user?.Personnel_ID == 999)
+            {
+                return RedirectToAction(nameof(ScheduleView));
+            }
+
+            if (month == 0)
+                month = DateTime.Now.Month;
+
+            if (year == 0)
+                year = DateTime.Now.Year;
+
+            var holidays = _db.Holidays.ToList();
+
+            var schedules = _db.Schedules
+                .Include(s => s.User)
+                .Include(s => s.Shift)
+                .Where(s =>
+                    s.Date.Month == month &&
+                    s.Date.Year == year &&
+                    s.Personnel_ID == user.Personnel_ID)
+                .ToList();
+
+            var shifts = _db.Shifts.Where(s => s.Department_ID == user.Department_ID).ToList();
+
+            var leaves = _db.Leaves
+                .Include(l => l.Leave_type)
+                .Include(l => l.Approver1)
+                .Where(l =>
+                    ((l.Date_start.Year == year && l.Date_start.Month == month) ||
+                    (l.Date_end.Year == year && l.Date_end.Month == month)) &&
+                    l.Status != "Cancelled" && l.Status != "Denied" &&
+                    l.Personnel_ID == user.Personnel_ID)
+                .ToList();
+
+            ViewBag.LeaveTypes = _db.Leave_types.ToList();
+
+            return View((schedules, shifts, leaves, holidays, month, year));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetCalendar(int month = 0, int year = 0)
+        {
+            if (month == 0)
+                month = DateTime.Now.Month;
+
+            if (year == 0)
+                year = DateTime.Now.Year;
+
+            var holidays = _db.Holidays.ToList();
+            var user = await ThisUser();
+
+            var schedules = _db.Schedules
+                .Include(s => s.User)
+                .Include(s => s.Shift)
+                .Where(s =>
+                    s.Date.Month == month &&
+                    s.Date.Year == year &&
+                    s.Personnel_ID == user.Personnel_ID)
+                .ToList();
+
+            var shifts = _db.Shifts.Where(s => s.Department_ID == user.Department_ID).ToList();
+
+            var leaves = _db.Leaves
+                .Include(l => l.Leave_type)
+                .Include(l => l.Approver1)
+                .Where(l =>
+                    ((l.Date_start.Year == year && l.Date_start.Month == month) ||
+                    (l.Date_end.Year == year && l.Date_end.Month == month)) &&
+                    l.Status != "Cancelled" && l.Status != "Denied" &&
+                    l.Personnel_ID == user.Personnel_ID)
+                .ToList();
+
+            ViewBag.LeaveTypes = _db.Leave_types.ToList();
+
+            return PartialView("_CalendarTable", (schedules, shifts, leaves, holidays, month, year));
+        }
+
         [HttpPost]
         [Authorize(Roles = "admin,manager,topManager")]
         public async Task<IActionResult> AssignShift(int userId, int shiftId, DateTime date)

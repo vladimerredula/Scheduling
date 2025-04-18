@@ -1,0 +1,234 @@
+﻿@model (List<Schedule> Schedules, List<Shift> Shifts, List<Leave> Leaves, List<Holiday> Holidays, int Month, int Year)
+
+@{
+    var year = Model.Year;
+    var month = Model.Month;
+    var userSchedules = Model.Schedules;
+    var firstDay = new DateTime(year, month, 1);
+    var daysInMonth = DateTime.DaysInMonth(year, month);
+    var startDayOfWeek = (int)firstDay.DayOfWeek;
+    var weeks = (int)Math.Ceiling((startDayOfWeek + daysInMonth) / 7.0);
+    var today = DateTime.Today;
+
+    var prevMonth = firstDay.AddMonths(-1);
+    var prevMonthDays = DateTime.DaysInMonth(prevMonth.Year, prevMonth.Month);
+}
+
+<div class="row">
+    <div class="col mb-3">
+        <div class="card p-3">
+            <!-- Month Header Navigation -->
+            <div class="row justify-content-between mb-3">
+                <div class="col-auto">
+                    <a class="btn btn-light border" id="prevBtn"><i class="bi bi-arrow-bar-left"></i> Previous</a>
+                </div>
+                <div class="col text-center">
+                    <h4 class="text-center">
+                        @firstDay.ToString("MMMM yyyy")
+                    </h4>
+                </div>
+                <div class="col-auto">
+                    <a class="btn btn-light border" id="nextBtn">Next <i class="bi bi-arrow-bar-right"></i></a>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered border-secondary-subtle text-center" id="calendar">
+                    <thead class="table-light">
+                        <tr class="text-nowrap">
+                            <th>Sun</th>
+                            <th>Mon</th>
+                            <th>Tue</th>
+                            <th>Wed</th>
+                            <th>Thu</th>
+                            <th>Fri</th>
+                            <th>Sat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int week = 0; week < weeks; week++)
+                        {
+                            <tr>
+                                @for (int day = 0; day < 7; day++)
+                                {
+                                    int cellDay = week * 7 + day - startDayOfWeek + 1;
+
+                                    if (cellDay < 1)
+                                    {
+                                        var prevDate = new DateTime(prevMonth.Year, prevMonth.Month, prevMonthDays + cellDay);
+                                        <td class="text-muted bg-light" style="height:100px;">
+                                            <p class="text-start">@prevDate.Day</p>
+                                        </td>
+                                    }
+                                    else if (cellDay > daysInMonth)
+                                    {
+                                        var nextDate = new DateTime(year, month, 1).AddMonths(1).AddDays(cellDay - daysInMonth - 1);
+                                        <td class="text-muted bg-light" style="height:100px;">
+                                            <p class="text-start">@nextDate.Day</p>
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        var date = new DateTime(year, month, cellDay);
+                                        var dateString = date.ToString("yyyy-MM-dd");
+                                        bool isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+
+                                        var schedule = Model.Schedules.FirstOrDefault(s => s.Date == date);
+                                        int shiftId = schedule?.Shift_ID ?? 0;
+
+                                        var leave = Model.Leaves.FirstOrDefault(l => date >= l.Date_start && date <= l.Date_end);
+                                        bool hasLeave = leave != null;
+                                        string leavePopover = string.Empty;
+
+                                        var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
+                                        bool isHoliday = holiday != null;
+                                        bool isCompanyHoliday = holiday?.Type == "Company";
+
+                                        // Styling
+                                        string cellClass = isHoliday
+                                        ? (isCompanyHoliday ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
+                                        : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
+
+                                        string bgClass = string.Empty;
+                                        string borderColor = string.Empty;
+                                        string borderClass = string.Empty;
+
+                                        // Leave coloring and borders
+                                        if (leave?.Status == "Approved" && leave.Leave_type?.BsColor is not null)
+                                        {
+                                            leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'";
+                                            bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient";
+                                        }
+
+                                        if (hasLeave)
+                                        {
+                                            if (leave?.Approver_1 == null)
+                                            {
+                                                leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
+                                                bgClass = "bg-warning bg-opacity-25";
+                                                borderColor = "border-warning";
+                                            }
+                                            else if (leave?.Approver_2 == null)
+                                            {
+                                                string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i> Approved by " + (leave?.Approver1?.Full_name ?? "");
+                                                string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
+                                                leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-html=\"true\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
+                                                bgClass = "bg-success bg-opacity-25";
+                                                borderColor = "border-success";
+                                            }
+
+                                            if (!string.IsNullOrEmpty(borderColor))
+                                            {
+                                                if (date == leave?.Date_start && date == leave?.Date_end)
+                                                    borderClass = $"border border-2 rounded";
+                                                else if (date == leave?.Date_start)
+                                                    borderClass = $"border border-2 border-end-0 rounded-start";
+                                                else if (date == leave?.Date_end)
+                                                    borderClass = $"border border-2 border-start-0 rounded-end";
+                                                else if (date > leave?.Date_start && date < leave?.Date_end)
+                                                    borderClass = $"border border-2 border-start-0 border-end-0";
+
+                                                borderClass += $" {borderColor}";
+                                            }
+                                        }
+
+                                        <td class="p-1 pt-4 @cellClass position-relative" style="height:100px;">
+                                            <p class="position-absolute start-0 top-0 w-100 h-100 text-start p-2 @borderClass @(hasLeave ? bgClass : "")" @Html.Raw(leavePopover)>
+                                                @cellDay
+                                            </p>
+                                            @if (isCompanyHoliday)
+                                            {
+                                                <p class="">@holiday?.Name</p>
+                                            }
+
+                                            @if (!isCompanyHoliday)
+                                            {
+                                                <p class="fs-3">@schedule?.Shift?.Shift_name</p>
+                                            }
+                                            @if (schedule?.Comment == "cancelled")
+                                            {
+                                                <svg class="position-absolute top-0 start-0 w-100 h-100">
+                                                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
+                                                    <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
+                                                </svg>
+                                            }
+                                        </td>
+                                    }
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xxl-2" id="legendsAndShifts" style="display:none;">
+        <div class="row mb-3">
+            <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
+                <div class="card p-4">
+                    <small class="text-body-secondary mb-2">Leave applications</small>
+                    <small class="mb-2"><small class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</small>
+                    <small class="mb-3"><small class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</small>
+                    <small class="text-body-secondary mb-2">Reflected leaves</small>
+                    <small class="mb-2"><span class="bg-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Business trip</small>
+                    <small class="mb-2"><span class="bg-info rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Paid leave</small>
+                    <small class="mb-2"><span class="bg-info-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</small>
+                    <small class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</small>
+                </div>
+            </div>
+            @if (Model.Shifts.Where(s => s.Pattern == "4/2") is var shifts4 && shifts4 != null && shifts4.Count() > 0)
+            {
+                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
+                    <div class="card py-2 px-4">
+                        <table class="table table-sm text-center mb-3">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">4/2 pattern</th>
+                                </tr>
+                                <tr>
+                                    <th>Shift</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var shift in shifts4)
+                                {
+                                    <tr>
+                                        <td>@shift.Shift_name</td>
+                                        <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+            @if (Model.Shifts.Where(s => s.Pattern == "5/2") is var shifts5 && shifts5 != null && shifts5.Count() > 0)
+            {
+                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
+                    <div class="card py-2 px-4">
+                        <table class="table table-sm text-center mb-3">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">5/2 pattern</th>
+                                </tr>
+                                <tr>
+                                    <th>Shift</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var shift in shifts5)
+                                {
+                                    <tr>
+                                        <td>@shift.Shift_name</td>
+                                        <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
