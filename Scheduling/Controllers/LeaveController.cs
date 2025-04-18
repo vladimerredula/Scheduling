@@ -17,198 +17,88 @@ namespace Scheduling.Controllers
             _db = context;
         }
 
-        public async Task<IActionResult> Index(int departmentId = 1)
+        public IActionResult Index(int departmentId = 1)
         {
-            if (User.IsInRole("member") || User.IsInRole("shiftLeader"))
-            {
-                ViewBag.Leaves = _db.Leaves
-                    .Include(l => l.User)
-                    .Include(l => l.Leave_type)
-                    .Include(l => l.Approver1)
-                    .Include(l => l.Approver2)
-                    .Where(l => l.Personnel_ID == GetPersonnelID())
-                    .ToList();
-            } else if (User.IsInRole("manager")) {
-                var user = await ThisUser();
-
-                ViewBag.Leaves = _db.Leaves
-                    .Include(l => l.User)
-                    .Include(l => l.Leave_type)
-                    .Include(l => l.Approver1)
-                    .Include(l => l.Approver2)
-                    .Where(l => l.User.Department_ID == user.Department_ID)
-                    .ToList();
-            } else if (User.IsInRole("topManager") || User.IsInRole("admin"))
-            {
-                ViewBag.Leaves = _db.Leaves
-                    .Include(l => l.User)
-                    .Include(l => l.Leave_type)
-                    .Include(l => l.Approver1)
-                    .Include(l => l.Approver2)
-                    .Where(l => l.User.Department_ID == departmentId)
-                    .ToList();
-
-                ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
-            }
-
-            ViewBag.LeaveTypes = new SelectList(_db.Leave_types.ToList(), "Leave_type_ID", "Leave_type_name");
-
-            return View();
+            return RedirectToAction(nameof(Leaves));
         }
 
         public async Task<IActionResult> DepartmentLeaves(int departmentId = 1)
         {
-            ViewBag.Leaves = await _db.Leaves
-                    .Include(l => l.User)
-                    .Include(l => l.Leave_type)
-                    .Include(l => l.Approver1)
-                    .Include(l => l.Approver2)
-                    .Where(l => l.User.Department_ID == departmentId)
-                    .ToListAsync();
-
-            ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
-            ViewBag.LeaveTypes = new SelectList(_db.Leave_types.ToList(), "Leave_type_ID", "Leave_type_name");
+            await PopulateLeaveViewBagsAsync(departmentId);
 
             return View();
         }
 
         public async Task<IActionResult> Leaves()
         {
-            ViewBag.Leaves = await _db.Leaves
-                    .Include(l => l.User)
-                    .Include(l => l.Leave_type)
-                    .Include(l => l.Approver1)
-                    .Include(l => l.Approver2)
-                    .Where(l => l.Personnel_ID == GetPersonnelID())
-                    .ToListAsync();
-
-            ViewBag.LeaveTypes = new SelectList(_db.Leave_types.ToList(), "Leave_type_ID", "Leave_type_name");
+            await PopulateLeaveViewBagsAsync();
 
             return View();
         }
 
-        public async Task<IActionResult> Add(Leave request)
+        public async Task<IActionResult> Add(Leave leave)
         {
-            var existingLeaves = _db.Leaves
-                .Where(l => l.Personnel_ID == request.Personnel_ID && l.Status != "Denied")
-                .AsEnumerable()
-                .Any(l => Overlaps(l.Date_start, l.Date_end, request.Date_start, request.Date_end));
-
-            if (existingLeaves)
+            if (HasOverlappingLeave(leave))
             {
-                ModelState.AddModelError("Leave_ID", "Existing leave overlaps for this date.");
-                return View("Index", request);
+                ModelState.AddModelError(string.Empty, "Existing leave overlaps for these dates.");
+                await PopulateLeaveViewBagsAsync();
+                return View(nameof(Leaves), leave);
             }
 
-            await Save(request);
+            try
+            {
+                var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
+                leave.Personnel_ID = personnelId;
+                leave.Status = "Pending";
+                _db.Leaves.Add(leave);
+                await _db.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Index));
+                TempData["toastMessage"] = "Successfully added leave request!-success";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unable to save Leave: {ex}");
+                TempData["toastMessage"] = "Unable to request leave.-danger";
+            }
+
+            return RedirectToAction(nameof(Leaves));
         }
 
         public async Task<IActionResult> Edit(int id, [Bind("Leave_ID,Personnel_ID,Leave_type_ID,Status,Date_start,Date_end")] Leave leave)
         {
             if (id != leave.Leave_ID)
-            {
                 return RedirectToAction(nameof(Leaves));
+
+            if (!ModelState.IsValid)
+            {
+                await PopulateLeaveViewBagsAsync();
+                return View(nameof(Leaves), leave);
             }
 
-            if (ModelState.IsValid)
+            if (HasOverlappingLeave(leave))
             {
-                try
-                {
-                    var existingLeaves = _db.Leaves
-                        .Where(l => l.Personnel_ID == leave.Personnel_ID && l.Leave_ID != leave.Leave_ID && (l.Status != "Denied" && l.Status != "Cancelled" && l.Status != "Withdrawn"))
-                        .AsEnumerable()
-                        .Any(l => Overlaps(l.Date_start, l.Date_end, leave.Date_start, leave.Date_end));
-
-                    if (existingLeaves)
-                    {
-                        ModelState.AddModelError("Leave_ID", "Existing leave overlaps for this date.");
-                        return View(nameof(Leaves), leave);
-                    }
-
-                    _db.Leaves.Update(leave);
-                    await _db.SaveChangesAsync();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Unable to update Leave: {id} - {ex}");
-                }
-
-                return RedirectToAction(nameof(Leaves));
+                ModelState.AddModelError(string.Empty, "Existing leave overlaps for these dates.");
+                await PopulateLeaveViewBagsAsync();
+                return View(nameof(Leaves), leave);
             }
 
-            ViewBag.Leaves = await _db.Leaves
-                    .Include(l => l.User)
-                    .Include(l => l.Leave_type)
-                    .Include(l => l.Approver1)
-                    .Include(l => l.Approver2)
-                    .Where(l => l.Personnel_ID == GetPersonnelID())
-                    .ToListAsync();
+            try
+            {
+                _db.Leaves.Update(leave);
+                await _db.SaveChangesAsync();
 
-            ViewBag.LeaveTypes = new SelectList(_db.Leave_types.ToList(), "Leave_type_ID", "Leave_type_name");
+                TempData["toastMessage"] = "Successfully updated leave request!-success";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unable to update Leave: {id} - {ex}");
+                TempData["toastMessage"] = "Unable to update leave.-danger";
+            }
 
-            return View(nameof(Leaves), leave);
+            return RedirectToAction(nameof(Leaves));
         }
 
         public async Task<IActionResult> Apply(Leave request)
-        {
-            var existingLeaves = _db.Leaves
-                .Where(l => l.Personnel_ID == request.Personnel_ID && l.Status != "Denied")
-                .AsEnumerable()
-                .Any(l => Overlaps(l.Date_start, l.Date_end, request.Date_start, request.Date_end));
-
-            if (existingLeaves)
-            {
-                return BadRequest("Existing leave overlaps for this date.");
-            }
-
-            var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
-
-            request.Personnel_ID = personnelId;
-            request.Status = "Pending";
-
-            if (User.IsInRole("manager") || User.IsInRole("topManager"))
-            {
-                request.Approver_1 = personnelId;
-            }
-
-            _db.Leaves.Add(request);
-            await _db.SaveChangesAsync();
-
-            var referrerUrl = Request.Headers["Referer"].ToString();
-            if (!string.IsNullOrEmpty(referrerUrl))
-            {
-                // Parse the referrer URL to extract controller information if needed
-                // This step assumes the referrer URL is in the standard routing format
-                Uri referrerUri = new Uri(referrerUrl);
-                var segments = referrerUri.Segments;
-                string previousController = segments.Length > 1 ? segments[1].Trim('/') : string.Empty;
-                string previousAction = segments.Length > 2 ? segments[2].Trim('/') : string.Empty;
-
-                if (previousAction == "Calendar")
-                {
-                    return RedirectToAction(previousAction, previousController); // redirect back to the page where request came from
-                }
-            }
-
-            // Redirect to Schedule page
-            return RedirectToAction("Index", "Schedule", new { month = request.Date_start.Month, year = request.Date_start.Year });
-        }
-
-        public async Task<IActionResult> Cancel(int Id)
-        {
-            var leave = await _db.Leaves.FindAsync(Id);
-            if (leave == null) return NotFound();
-
-            leave.Status = "Cancelled";
-            _db.Leaves.Update(leave);
-            await _db.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        public async Task<bool> Save(Leave request)
         {
             try
             {
@@ -216,21 +106,76 @@ namespace Scheduling.Controllers
 
                 request.Personnel_ID = personnelId;
                 request.Status = "Pending";
+
+                if (User.IsInRole("manager") || User.IsInRole("topManager"))
+                {
+                    request.Approver_1 = personnelId;
+                    request.Date_approved_1 = DateTime.Today;
+                }
+
                 _db.Leaves.Add(request);
                 await _db.SaveChangesAsync();
 
-                return true;
+                TempData["toastMessage"] = "Successfully added leave request!-success";
             }
             catch (Exception ex)
             {
-                return false;
+                Console.WriteLine($"Unable to add Leave request: {ex}");
+                TempData["toastMessage"] = "Unable to add leave.-danger";
             }
+
+            // Try to redirect back to the previous page (Calendar only)
+            string referrerUrl = Request.Headers["Referer"].ToString();
+            if (Uri.TryCreate(referrerUrl, UriKind.Absolute, out var referrerUri))
+            {
+                var segments = referrerUri.Segments
+                    .Select(s => s.Trim('/'))
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToArray();
+
+                if (segments.Length >= 2 && segments[1].Equals("Calendar", StringComparison.OrdinalIgnoreCase))
+                {
+                    string controller = segments[0];
+                    return RedirectToAction("Calendar", controller);
+                }
+            }
+
+            // Default redirect to schedule if no valid referrer
+            return RedirectToAction("Index", "Schedule", new
+            {
+                month = request.Date_start.Month,
+                year = request.Date_start.Year
+            });
+        }
+
+        public async Task<IActionResult> Cancel(int Id)
+        {
+            var leave = await _db.Leaves.FindAsync(Id);
+            if (leave == null)
+            {
+                TempData["toastMessage"] = "Leave not found-danger";
+                return RedirectToAction(nameof(Leaves));
+            }
+
+            leave.Status = "Cancelled";
+            _db.Leaves.Update(leave);
+            await _db.SaveChangesAsync();
+
+            TempData["toastMessage"] = "Successfully cancelled leave request!-success";
+
+            return RedirectToAction(nameof(Leaves));
         }
 
         // Check if the dates overlap
-        public bool Overlaps(DateTime start1, DateTime end1, DateTime start2, DateTime end2)
+        private bool HasOverlappingLeave(Leave leave)
         {
-            return start1 <= end2 && start2 <= end1;
+            return _db.Leaves.Any(l =>
+                l.Personnel_ID == leave.Personnel_ID &&
+                l.Leave_ID != leave.Leave_ID &&
+                (l.Status == "Pending" || l.Status == "Approved") &&
+                l.Date_start.Date <= leave.Date_end.Date &&
+                leave.Date_start.Date <= l.Date_end.Date
+            );
         }
 
         [HttpPost]
@@ -266,24 +211,47 @@ namespace Scheduling.Controllers
             var leave = await _db.Leaves
                 .Include(l => l.User)
                 .FirstOrDefaultAsync(l => l.Leave_ID == Id);
-            if (leave == null) return NotFound();
 
-            if (leave.Approver_1 != null)
+            if (leave == null)
             {
-                leave.Status = "Approved";
-                leave.Date_approved_2 = DateTime.Now.Date;
-                leave.Approver_2 = int.Parse(User.FindFirstValue("Personnelid"));
-            }
-            else
-            {
-                leave.Date_approved_1 = DateTime.Now.Date;
-                leave.Approver_1 = int.Parse(User.FindFirstValue("Personnelid"));
+                TempData["toastMessage"] = "Leave not found-danger";
+                return RedirectToAction(nameof(DepartmentLeaves));
             }
 
-            _db.Leaves.Update(leave);
-            await _db.SaveChangesAsync();
+            var approverId = int.Parse(User.FindFirstValue("Personnelid"));
+            var today = DateTime.Today;
 
-            return RedirectToAction("DepartmentLeaves", new { departmentId = leave?.User?.Department_ID });
+            try
+            {
+                if (leave.Approver_1 != null)
+                {
+                    // Final approval
+                    leave.Status = "Approved";
+                    leave.Approver_2 = approverId;
+                    leave.Date_approved_2 = today;
+                }
+                else
+                {
+                    // First level approval
+                    leave.Approver_1 = approverId;
+                    leave.Date_approved_1 = today;
+                }
+
+                _db.Leaves.Update(leave);
+                await _db.SaveChangesAsync();
+
+                TempData["toastMessage"] = "Successfully approved leave request!-success";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unable to approve Leave request: {ex}");
+                TempData["toastMessage"] = "Unable to approve leave.-danger";
+            }
+
+            return RedirectToAction(nameof(DepartmentLeaves), new 
+            { 
+                departmentId = leave?.User?.Department_ID 
+            });
         }
 
         public async Task<IActionResult> Deny(int Id, string Comment)
@@ -291,25 +259,44 @@ namespace Scheduling.Controllers
             var leave = await _db.Leaves
                 .Include(l => l.User)
                 .FirstOrDefaultAsync(l => l.Leave_ID == Id);
-            if (leave == null) return NotFound();
 
-            leave.Status = "Denied";
-            leave.Comment = Comment;
+            if (leave == null)
+                return NotFound();
 
-            if (leave.Approver_1 != null)
+            var approverId = int.Parse(User.FindFirstValue("Personnelid"));
+            var today = DateTime.Today;
+
+            try
             {
-                leave.Date_approved_2 = DateTime.Now.Date;
-                leave.Approver_2 = int.Parse(User.FindFirstValue("Personnelid"));
-            } else
+                leave.Status = "Denied";
+                leave.Comment = Comment;
+
+                if (leave.Approver_1 != null)
+                {
+                    leave.Approver_2 = approverId;
+                    leave.Date_approved_2 = today;
+                }
+                else
+                {
+                    leave.Approver_1 = approverId;
+                    leave.Date_approved_1 = today;
+                }
+
+                _db.Leaves.Update(leave);
+                await _db.SaveChangesAsync();
+
+                TempData["toastMessage"] = "Successfully denied leave request!-success";
+            }
+            catch (Exception ex)
             {
-                leave.Date_approved_1 = DateTime.Now.Date;
-                leave.Approver_1 = int.Parse(User.FindFirstValue("Personnelid"));
+                Console.WriteLine($"Unable to deny Leave request: {ex}");
+                TempData["toastMessage"] = "Unable to deny leave.-danger";
             }
 
-            _db.Leaves.Update(leave);
-            await _db.SaveChangesAsync();
-
-            return RedirectToAction("DepartmentLeaves", new { departmentId = leave?.User?.Department_ID });
+            return RedirectToAction("DepartmentLeaves", new
+            {
+                departmentId = leave.User?.Department_ID
+            });
         }
 
         public async Task<IActionResult> Approve1(int Id)
@@ -317,24 +304,48 @@ namespace Scheduling.Controllers
             var leave = await _db.Leaves
                 .Include(l => l.User)
                 .FirstOrDefaultAsync(l => l.Leave_ID == Id);
-            if (leave == null) return NotFound();
 
-            if (leave.Approver_1 != null)
+            if (leave == null)
             {
-                leave.Status = "Approved";
-                leave.Date_approved_2 = DateTime.Now.Date;
-                leave.Approver_2 = int.Parse(User.FindFirstValue("Personnelid"));
-            }
-            else
-            {
-                leave.Date_approved_1 = DateTime.Now.Date;
-                leave.Approver_1 = int.Parse(User.FindFirstValue("Personnelid"));
+                TempData["toastMessage"] = "Leave not found-danger";
+                return RedirectToAction("Index", "Schedule");
             }
 
-            _db.Leaves.Update(leave);
-            await _db.SaveChangesAsync();
+            var approverId = int.Parse(User.FindFirstValue("Personnelid"));
+            var today = DateTime.Today;
 
-            return RedirectToAction("Index", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
+            try
+            {
+                if (leave.Approver_1 != null)
+                {
+                    // Final approval
+                    leave.Status = "Approved";
+                    leave.Approver_2 = approverId;
+                    leave.Date_approved_2 = today;
+                }
+                else
+                {
+                    // First level approval
+                    leave.Approver_1 = approverId;
+                    leave.Date_approved_1 = today;
+                }
+
+                _db.Leaves.Update(leave);
+                await _db.SaveChangesAsync();
+
+                TempData["toastMessage"] = "Successfully approved leave request!-success";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unable to approve Leave request: {ex}");
+                TempData["toastMessage"] = "Unable to approve leave.-danger";
+            }
+
+            return RedirectToAction("Index", "Schedule", new { 
+                month = leave.Date_start.Month, 
+                year = leave.Date_start.Year, 
+                departmentId = leave?.User?.Department_ID 
+            });
         }
 
         public async Task<IActionResult> Deny1(int Id, string Comment)
@@ -342,26 +353,48 @@ namespace Scheduling.Controllers
             var leave = await _db.Leaves
                 .Include(l => l.User)
                 .FirstOrDefaultAsync(l => l.Leave_ID == Id);
-            if (leave == null) return NotFound();
 
-            leave.Status = "Denied";
-            leave.Comment = Comment;
-
-            if (leave.Approver_1 != null)
+            if (leave == null)
             {
-                leave.Date_approved_2 = DateTime.Now.Date;
-                leave.Approver_2 = int.Parse(User.FindFirstValue("Personnelid"));
-            }
-            else
-            {
-                leave.Date_approved_1 = DateTime.Now.Date;
-                leave.Approver_1 = int.Parse(User.FindFirstValue("Personnelid"));
+                TempData["toastMessage"] = "Leave not found-danger";
+                return RedirectToAction("Index", "Schedule");
             }
 
-            _db.Leaves.Update(leave);
-            await _db.SaveChangesAsync();
+            var approverId = int.Parse(User.FindFirstValue("Personnelid"));
+            var today = DateTime.Today;
 
-            return RedirectToAction("Index", "Schedule", new { month = leave.Date_start.Month, year = leave.Date_start.Year, departmentId = leave?.User?.Department_ID });
+            try
+            {
+                leave.Status = "Denied";
+                leave.Comment = Comment;
+
+                if (leave.Approver_1 != null)
+                {
+                    leave.Approver_2 = approverId;
+                    leave.Date_approved_2 = today;
+                }
+                else
+                {
+                    leave.Approver_1 = approverId;
+                    leave.Date_approved_1 = today;
+                }
+
+                _db.Leaves.Update(leave);
+                await _db.SaveChangesAsync();
+
+                TempData["toastMessage"] = "Successfully denied leave request!-success";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unable to deny Leave request: {ex}");
+                TempData["toastMessage"] = "Unable to deny leave.-danger";
+            }
+
+            return RedirectToAction("Index", "Schedule", new { 
+                month = leave.Date_start.Month, 
+                year = leave.Date_start.Year, 
+                departmentId = leave?.User?.Department_ID 
+            });
         }
 
         public int GetPersonnelID()
@@ -374,6 +407,46 @@ namespace Scheduling.Controllers
         public async Task<User> ThisUser()
         {
             return _db.Users.Find(GetPersonnelID());
+        }
+
+        private async Task PopulateLeaveViewBagsAsync(int? departmentId = 0)
+        {
+            if (departmentId != 0)
+            {
+                var personnelId = GetPersonnelID();
+
+                ViewBag.Leaves = await _db.Leaves
+                    .Include(l => l.User)
+                    .Include(l => l.Leave_type)
+                    .Include(l => l.Approver1)
+                    .Include(l => l.Approver2)
+                    .Where(l => l.User.Department_ID == departmentId)
+                    .ToListAsync();
+
+                ViewBag.Departments = new SelectList(
+                    _db.Departments.ToList(), 
+                    "Department_ID", 
+                    "Department_name", 
+                    departmentId
+                );
+            } else
+            {
+                var personnelId = GetPersonnelID();
+
+                ViewBag.Leaves = await _db.Leaves
+                    .Include(l => l.User)
+                    .Include(l => l.Leave_type)
+                    .Include(l => l.Approver1)
+                    .Include(l => l.Approver2)
+                    .Where(l => l.Personnel_ID == personnelId)
+                    .ToListAsync();
+            }
+
+            ViewBag.LeaveTypes = new SelectList(
+                _db.Leave_types.ToList(),
+                "Leave_type_ID",
+                "Leave_type_name"
+            );
         }
     }
 }
