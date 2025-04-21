@@ -76,7 +76,7 @@
     <script>
         $(document).ready(function (){
             initializePopovers();
-            adjustTableColumns();
+            // adjustTableColumns();
 
             $('#monthPicker').datepicker({
                 format: "MM yyyy",
@@ -141,7 +141,7 @@
             initializeToggleLegends(); // Initialize the toggle legends button
         });
         
-        $(window).on('resize', adjustTableColumns); // Optional: handle resizing
+        // $(window).on('resize', adjustTableColumns); // Optional: handle resizing
 
         $("#downloadBtn").on("click", function () {
             let date = $('#monthPicker').datepicker("getDate");
@@ -230,7 +230,7 @@
                     hideSpinner();
                     initializeToggleLegends(); // Reinitialize the toggle legends button
                     initializePopovers();
-                    adjustTableColumns();
+                    // adjustTableColumns();
                 },
                 error: function () {
                     alert("Error loading schedule.");
@@ -290,8 +290,8 @@
             let columnWidth = Math.floor(availableWidth / (totalColumns - 1));
 
             columns.each(function (index) {
-                // $(this).css('width', columnWidth + 'px');
-                $(this).attr("style", "width: " + columnWidth + "px !important;");
+                $(this).css('width', columnWidth + 'px');
+                // $(this).attr("style", "width: " + columnWidth + "px !important;");
             });
         }
     </script>
