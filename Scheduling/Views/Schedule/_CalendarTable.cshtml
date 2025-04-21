@@ -71,6 +71,7 @@
                                         var date = new DateTime(year, month, cellDay);
                                         var dateString = date.ToString("yyyy-MM-dd");
                                         bool isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+                                        var isCurrentDay = today.Date == date.Date;
 
                                         var schedule = Model.Schedules.FirstOrDefault(s => s.Date == date);
                                         int shiftId = schedule?.Shift_ID ?? 0;
@@ -84,9 +85,11 @@
                                         bool isCompanyHoliday = holiday?.Type == "Company";
 
                                         // Styling
-                                        string cellClass = isHoliday
+                                        string cellClass = isCurrentDay ? "bg-primary text-white fw-bold" : string.Empty;
+
+                                        cellClass = isHoliday
                                         ? (isCompanyHoliday ? "bg-secondary text-white bg-gradient" : "bg-secondary-subtle text-secondary-emphasis")
-                                        : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
+                                        : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : cellClass);
 
                                         string bgClass = string.Empty;
                                         string borderColor = string.Empty;
@@ -109,7 +112,7 @@
                                             }
                                             else if (leave?.Approver_2 == null)
                                             {
-                                                string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i> Approved by " + (leave?.Approver1?.Full_name ?? "");
+                                                string contentHtml = $"<i class='bi bi-check-circle me-1 text-success'></i>Approved: {leave?.Approver1?.Full_name ?? ""}</br><span class='text-secondary fw-italic'>- Needs final approval from HR</span>";
                                                 string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
                                                 leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-html=\"true\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
                                                 bgClass = "bg-success bg-opacity-25";
@@ -133,17 +136,16 @@
 
                                         <td class="p-1 pt-4 @cellClass position-relative" style="height:100px;">
                                             <p class="position-absolute start-0 top-0 w-100 h-100 text-start p-2 @borderClass @(hasLeave ? bgClass : "")" @Html.Raw(leavePopover)>
-                                                @cellDay
+                                                <span class="@(isCurrentDay ? "bg-primary rounded-circle font-monospace fw-bold p-1" : "")">@cellDay</span>
                                             </p>
                                             @if (isCompanyHoliday)
                                             {
-                                                <p class="">@holiday?.Name</p>
+                                                <p class="text-break mt-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">@holiday?.Name</p>
+                                            } else 
+                                            {
+                                                <p class="mt-1 @(isCurrentDay ? "fs-2" : "fs-3")">@schedule?.Shift?.Shift_name</p>
                                             }
 
-                                            @if (!isCompanyHoliday)
-                                            {
-                                                <p class="fs-3">@schedule?.Shift?.Shift_name</p>
-                                            }
                                             @if (schedule?.Comment == "cancelled")
                                             {
                                                 <svg class="position-absolute top-0 start-0 w-100 h-100">
