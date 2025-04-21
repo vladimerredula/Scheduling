@@ -22,6 +22,9 @@ namespace Scheduling.Controllers
 
             if (claimUser.Identity.IsAuthenticated)
             {
+                if (claimUser.IsInRole("member") || claimUser.IsInRole("shiftLeader"))
+                    return RedirectToAction("Calendar", "Schedule");
+                else
                 return RedirectToAction("Index", "Schedule");
             }
 
