@@ -22,12 +22,14 @@ namespace Scheduling.Controllers
             return RedirectToAction(nameof(Leaves));
         }
 
-        public async Task<IActionResult> DepartmentLeaves(int? departmentId = 1)
+        [Authorize(Roles = "admin,manager,topManager")]
+        public async Task<IActionResult> DepartmentLeaves(int? departmentId = 0)
         {
             if (User.IsInRole("manager"))
             {
                 var user = await ThisUser();
                 departmentId = user.Department_ID;
+
             }
 
             await PopulateLeaveViewBagsAsync(departmentId);
@@ -46,7 +48,7 @@ namespace Scheduling.Controllers
         {
             if (HasOverlappingLeave(leave))
             {
-                ModelState.AddModelError(string.Empty, "Existing leave overlaps for these dates.");
+                ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
                 await PopulateLeaveViewBagsAsync();
                 return View(nameof(Leaves), leave);
             }
@@ -83,7 +85,7 @@ namespace Scheduling.Controllers
 
             if (HasOverlappingLeave(leave))
             {
-                ModelState.AddModelError(string.Empty, "Existing leave overlaps for these dates.");
+                ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
                 await PopulateLeaveViewBagsAsync();
                 return View(nameof(Leaves), leave);
             }
@@ -106,32 +108,40 @@ namespace Scheduling.Controllers
 
         public async Task<IActionResult> Apply(Leave request)
         {
-            try
+            var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
+
+            request.Personnel_ID = personnelId;
+
+            if (!HasOverlappingLeave(request))
             {
-                var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
-
-                request.Personnel_ID = personnelId;
-                request.Status = "Pending";
-
-                if (User.IsInRole("manager") || User.IsInRole("topManager"))
+                try
                 {
-                    request.Approver_1 = personnelId;
-                    request.Date_approved_1 = DateTime.Today;
+                    request.Status = "Pending";
+
+                    if (User.IsInRole("manager") || User.IsInRole("topManager"))
+                    {
+                        request.Approver_1 = personnelId;
+                        request.Date_approved_1 = DateTime.Today;
+                    }
+
+                    _db.Leaves.Add(request);
+                    await _db.SaveChangesAsync();
+
+                    TempData["toastMessage"] = "Successfully added leave request!-success";
                 }
-
-                _db.Leaves.Add(request);
-                await _db.SaveChangesAsync();
-
-                TempData["toastMessage"] = "Successfully added leave request!-success";
-            }
-            catch (Exception ex)
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unable to add Leave request: {ex}");
+                    TempData["toastMessage"] = "Unable to add leave.-danger";
+                }
+            } 
+            else
             {
-                Console.WriteLine($"Unable to add Leave request: {ex}");
-                TempData["toastMessage"] = "Unable to add leave.-danger";
+                TempData["toastMessage"] = "Unable to apply leave. Existing leave overlaps with the dates selected.-danger";
             }
 
-            // Try to redirect back to the previous page (Calendar only)
-            string referrerUrl = Request.Headers["Referer"].ToString();
+                // Try to redirect back to the previous page (Calendar only)
+                string referrerUrl = Request.Headers["Referer"].ToString();
             if (Uri.TryCreate(referrerUrl, UriKind.Absolute, out var referrerUri))
             {
                 var segments = referrerUri.Segments
@@ -415,12 +425,26 @@ namespace Scheduling.Controllers
             return _db.Users.Find(GetPersonnelID());
         }
 
-        private async Task PopulateLeaveViewBagsAsync(int? departmentId = 0)
+        private async Task PopulateLeaveViewBagsAsync(int? departmentId = null)
         {
-            if (departmentId != 0)
+            if (departmentId == 0)
             {
-                var personnelId = GetPersonnelID();
+                ViewBag.Leaves = await _db.Leaves
+                    .Include(l => l.User)
+                    .Include(l => l.Leave_type)
+                    .Include(l => l.Approver1)
+                    .Include(l => l.Approver2)
+                    .ToListAsync();
 
+                ViewBag.Departments = new SelectList(
+                    _db.Departments.ToList(), 
+                    "Department_ID", 
+                    "Department_name", 
+                    departmentId
+                );
+            }
+            else if (departmentId != null && departmentId != 0)
+            {
                 ViewBag.Leaves = await _db.Leaves
                     .Include(l => l.User)
                     .Include(l => l.Leave_type)
@@ -430,12 +454,13 @@ namespace Scheduling.Controllers
                     .ToListAsync();
 
                 ViewBag.Departments = new SelectList(
-                    _db.Departments.ToList(), 
-                    "Department_ID", 
-                    "Department_name", 
+                    _db.Departments.ToList(),
+                    "Department_ID",
+                    "Department_name",
                     departmentId
                 );
-            } else
+            }
+            else
             {
                 var personnelId = GetPersonnelID();
 
