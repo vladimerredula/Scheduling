@@ -22,8 +22,14 @@ namespace Scheduling.Controllers
             return RedirectToAction(nameof(Leaves));
         }
 
-        public async Task<IActionResult> DepartmentLeaves(int departmentId = 1)
+        public async Task<IActionResult> DepartmentLeaves(int? departmentId = 1)
         {
+            if (User.IsInRole("manager"))
+            {
+                var user = await ThisUser();
+                departmentId = user.Department_ID;
+            }
+
             await PopulateLeaveViewBagsAsync(departmentId);
 
             return View();
