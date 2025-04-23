@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Scheduling.Models;
+using Scheduling.Services;
 using System.Security.Claims;
 
 namespace Scheduling.Controllers
@@ -11,13 +12,15 @@ namespace Scheduling.Controllers
     public class LeaveController : Controller
     {
         private readonly ApplicationDbContext _db;
+        private readonly LogService<LeaveController> _log;
 
-        public LeaveController(ApplicationDbContext context)
+        public LeaveController(ApplicationDbContext context, LogService<LeaveController> logger)
         {
             _db = context;
+            _log = logger;
         }
 
-        public IActionResult Index(int departmentId = 1)
+        public IActionResult Index()
         {
             return RedirectToAction(nameof(Leaves));
         }
@@ -29,7 +32,6 @@ namespace Scheduling.Controllers
             {
                 var user = await ThisUser();
                 departmentId = user.Department_ID;
-
             }
 
             await PopulateLeaveViewBagsAsync(departmentId);
@@ -49,7 +51,9 @@ namespace Scheduling.Controllers
             if (HasOverlappingLeave(leave))
             {
                 ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
+
                 await PopulateLeaveViewBagsAsync();
+                await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
                 return View(nameof(Leaves), leave);
             }
 
@@ -59,13 +63,15 @@ namespace Scheduling.Controllers
                 leave.Personnel_ID = personnelId;
                 leave.Status = "Pending";
                 _db.Leaves.Add(leave);
+
                 await _db.SaveChangesAsync();
+                await _log.LogInfoAsync($"Added leave request", leave);
 
                 TempData["toastMessage"] = "Successfully added leave request!-success";
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unable to save Leave: {ex}");
+                await _log.LogErrorAsync("Unable to add leave request", ex);
                 TempData["toastMessage"] = "Unable to request leave.-danger";
             }
 
@@ -75,7 +81,11 @@ namespace Scheduling.Controllers
         public async Task<IActionResult> Edit(int id, [Bind("Leave_ID,Personnel_ID,Leave_type_ID,Status,Date_start,Date_end")] Leave leave)
         {
             if (id != leave.Leave_ID)
+            {
+                TempData["toastMessage"] = "Leave IDs didn't match.-danger";
+                await _log.LogWarningAsync($"Leave IDs didn't match: {id} and {leave.Leave_ID}");
                 return RedirectToAction(nameof(Leaves));
+            }
 
             if (!ModelState.IsValid)
             {
@@ -86,6 +96,7 @@ namespace Scheduling.Controllers
             if (HasOverlappingLeave(leave))
             {
                 ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
+                await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
                 await PopulateLeaveViewBagsAsync();
                 return View(nameof(Leaves), leave);
             }
@@ -94,12 +105,13 @@ namespace Scheduling.Controllers
             {
                 _db.Leaves.Update(leave);
                 await _db.SaveChangesAsync();
+                await _log.LogInfoAsync($"Updated leave request", leave);
 
                 TempData["toastMessage"] = "Successfully updated leave request!-success";
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unable to update Leave: {id} - {ex}");
+                await _log.LogErrorAsync($"Unable to update leave with ID: {id}", ex);
                 TempData["toastMessage"] = "Unable to update leave.-danger";
             }
 
@@ -126,22 +138,24 @@ namespace Scheduling.Controllers
 
                     _db.Leaves.Add(request);
                     await _db.SaveChangesAsync();
+                    await _log.LogInfoAsync($"Added leave request", request);
 
                     TempData["toastMessage"] = "Successfully added leave request!-success";
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Unable to add Leave request: {ex}");
+                    await _log.LogErrorAsync($"Unable to add leave request", ex);
                     TempData["toastMessage"] = "Unable to add leave.-danger";
                 }
             } 
             else
             {
                 TempData["toastMessage"] = "Unable to apply leave. Existing leave overlaps with the dates selected.-danger";
+                await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
             }
 
-                // Try to redirect back to the previous page (Calendar only)
-                string referrerUrl = Request.Headers["Referer"].ToString();
+            // Try to redirect back to the previous page (Calendar only)
+            string referrerUrl = Request.Headers["Referer"].ToString();
             if (Uri.TryCreate(referrerUrl, UriKind.Absolute, out var referrerUri))
             {
                 var segments = referrerUri.Segments
@@ -170,12 +184,14 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
+                await _log.LogWarningAsync($"Leave ID: {Id} was not found");
                 return RedirectToAction(nameof(Leaves));
             }
 
             leave.Status = "Cancelled";
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
+            await _log.LogInfoAsync($"Cancelled leave request", leave);
 
             TempData["toastMessage"] = "Successfully cancelled leave request!-success";
 
@@ -231,6 +247,7 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
+                await _log.LogWarningAsync($"Leave ID: {Id} was not found");
                 return RedirectToAction(nameof(DepartmentLeaves));
             }
 
@@ -255,6 +272,7 @@ namespace Scheduling.Controllers
 
                 _db.Leaves.Update(leave);
                 await _db.SaveChangesAsync();
+                await _log.LogInfoAsync($"Approved leave request", leave);
 
                 TempData["toastMessage"] = "Successfully approved leave request!-success";
             }
@@ -277,7 +295,11 @@ namespace Scheduling.Controllers
                 .FirstOrDefaultAsync(l => l.Leave_ID == Id);
 
             if (leave == null)
-                return NotFound();
+            {
+                TempData["toastMessage"] = "Leave not found-danger";
+                await _log.LogWarningAsync($"Leave ID: {Id} was not found");
+                return RedirectToAction("DepartmentLeaves");
+            }
 
             var approverId = int.Parse(User.FindFirstValue("Personnelid"));
             var today = DateTime.Today;
@@ -300,12 +322,13 @@ namespace Scheduling.Controllers
 
                 _db.Leaves.Update(leave);
                 await _db.SaveChangesAsync();
+                await _log.LogInfoAsync($"Denied leave request", leave);
 
                 TempData["toastMessage"] = "Successfully denied leave request!-success";
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unable to deny Leave request: {ex}");
+                await _log.LogErrorAsync($"Unable to deny leave request", ex);
                 TempData["toastMessage"] = "Unable to deny leave.-danger";
             }
 
@@ -324,6 +347,7 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
+                await _log.LogWarningAsync($"Leave ID: {Id} was not found");
                 return RedirectToAction("Index", "Schedule");
             }
 
@@ -348,12 +372,13 @@ namespace Scheduling.Controllers
 
                 _db.Leaves.Update(leave);
                 await _db.SaveChangesAsync();
+                await _log.LogInfoAsync($"Approved leave request", leave);
 
                 TempData["toastMessage"] = "Successfully approved leave request!-success";
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unable to approve Leave request: {ex}");
+                await _log.LogErrorAsync($"Unable to approve leave request", ex);
                 TempData["toastMessage"] = "Unable to approve leave.-danger";
             }
 
@@ -373,6 +398,7 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
+                await _log.LogWarningAsync($"Leave ID: {Id} was not found");
                 return RedirectToAction("Index", "Schedule");
             }
 
@@ -397,12 +423,13 @@ namespace Scheduling.Controllers
 
                 _db.Leaves.Update(leave);
                 await _db.SaveChangesAsync();
+                await _log.LogInfoAsync($"Denied leave request", leave);
 
                 TempData["toastMessage"] = "Successfully denied leave request!-success";
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unable to deny Leave request: {ex}");
+                await _log.LogErrorAsync($"Unable to deny leave request", ex);
                 TempData["toastMessage"] = "Unable to deny leave.-danger";
             }
 

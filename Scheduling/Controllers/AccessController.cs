@@ -4,16 +4,19 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Scheduling.ViewModels;
+using Scheduling.Services;
 
 namespace Scheduling.Controllers
 {
     public class AccessController : Controller
     {
         private readonly ApplicationDbContext _db;
+        private readonly LogService<AccessController> _log;
 
-        public AccessController(ApplicationDbContext dbContext)
+        public AccessController(ApplicationDbContext dbContext, LogService<AccessController> logger)
         {
             _db = dbContext;
+            _log = logger;
         }
 
         public IActionResult Index()
@@ -104,6 +107,8 @@ namespace Scheduling.Controllers
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity), properties);
 
+                await _log.LogInfoAsync("Logged in");
+
                 return RedirectToAction("Index", "Access");
             }
 
@@ -116,6 +121,8 @@ namespace Scheduling.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             HttpContext.Session.Clear();
+
+            await _log.LogInfoAsync("Logged out");
 
             return RedirectToAction("Index", "Access");
         }

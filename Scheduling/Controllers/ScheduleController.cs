@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Scheduling.Models;
+using Scheduling.Services;
 using System.Security.Claims;
 
 namespace Scheduling.Controllers
@@ -11,10 +12,12 @@ namespace Scheduling.Controllers
     public class ScheduleController : Controller
     {
         private readonly ApplicationDbContext _db;
+        private readonly LogService<ScheduleController> _log;
 
-        public ScheduleController(ApplicationDbContext context)
+        public ScheduleController(ApplicationDbContext context, LogService<ScheduleController> logger)
         {
             _db = context;
+            _log = logger;
         }
 
         public async Task<IActionResult> Index(int month = 0, int year = 0, int departmentId = 0)
@@ -215,21 +218,27 @@ namespace Scheduling.Controllers
             var existingSchedule = await _db.Schedules
                 .FirstOrDefaultAsync(s => s.Personnel_ID == userId && s.Date == date);
 
+            var empName = await GetUserFullname(userId) ?? $"User {userId}";
+            var shift = await _db.Shifts.FirstOrDefaultAsync(s => s.Shift_ID == shiftId);
+            var shiftName = $"'{shift?.Shift_name}' shift" ?? $"Shift_ID: {shiftId}";
+
+            string dateStr = date.ToString("yyyy-MM-dd");
+
             if (existingSchedule != null)
             {
                 if (shiftId == 0)
                 {
                     _db.Schedules.Remove(existingSchedule);
-                } else
+                        await _log.LogInfoAsync($"Removed the shift of {empName} on {dateStr}");
                 {
                     if (shiftId == 999) // Cancelled shift by manager
                     {
                         existingSchedule.Comment = "cancelled";
-                    }
+                        await _log.LogInfoAsync($"Cancelled the shift of {empName} on {dateStr}");
                     else if (shiftId == 998)
                     {
                         existingSchedule.Comment = null;
-                    }
+                        await _log.LogInfoAsync($"Uncancelled the shift of {empName} on {dateStr}");
                     else
                     {
                         // Update existing schedule with new shift
@@ -237,6 +246,7 @@ namespace Scheduling.Controllers
                         existingSchedule.Comment = null;
                     }
 
+                        await _log.LogInfoAsync($"Updated the shift of {empName} on {dateStr} to {shiftName}");
                     _db.Schedules.Update(existingSchedule);
                 }
             }
@@ -251,6 +261,7 @@ namespace Scheduling.Controllers
                 };
 
                 await _db.Schedules.AddAsync(newSchedule);
+                await _log.LogInfoAsync($"Assigned {shiftName} to {empName} on {dateStr}");
             }
 
             await _db.SaveChangesAsync();
@@ -457,7 +468,6 @@ namespace Scheduling.Controllers
                 var userId = int.Parse(item.Split("-")[0]);
                 var sectorId = int.Parse(item.Split("-")[1]);
 
-
                 var employeeOrder = await _db.Employee_orders
                     .FirstOrDefaultAsync(e => e.Personnel_ID == userId && e.Year == year && e.Month == month);
 
@@ -482,6 +492,9 @@ namespace Scheduling.Controllers
 
                 index++;
             }
+
+            var displayDate = new DateTime(year, month, 1).ToString("MMMM yyyy");
+            await _log.LogInfoAsync($"Updated Employee order for {displayDate}, Order:{order}");
 
             await _db.SaveChangesAsync();
 
