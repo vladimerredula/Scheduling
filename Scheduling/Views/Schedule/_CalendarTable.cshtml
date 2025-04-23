@@ -136,7 +136,7 @@
 
                                         <td class="p-1 pt-4 @cellClass position-relative" style="height:100px;">
                                             <p class="position-absolute start-0 top-0 w-100 h-100 text-start p-2 @borderClass @(hasLeave ? bgClass : "")" @Html.Raw(leavePopover)>
-                                                <span class="@(isCurrentDay ? "bg-primary rounded-circle font-monospace fw-bold p-1" : "")">@cellDay</span>
+                                                <span class="@(isCurrentDay ? "bg-primary text-white rounded-circle font-monospace fw-bold p-1" : "")">@cellDay</span>
                                             </p>
                                             @if (isCompanyHoliday)
                                             {

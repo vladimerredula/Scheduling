@@ -38,7 +38,7 @@
                     <a class="btn btn-light border" id="prevBtn"><i class="bi bi-arrow-bar-left"></i> Previous</a>
                 </div>
                 <div class="col text-center">
-                    <h3>@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)</h3>
+                    <h3>@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth) @Model.year</h3>
                 </div>
                 <div class="col-auto">
                     <a class="btn btn-light border" id="nextBtn">Next <i class="bi bi-arrow-bar-right"></i></a>
@@ -222,7 +222,7 @@
                     </tbody>
 
                     <!-- Footer Totals -->
-                    <tfoot class="sticky-bottom z-2">
+                    <tfoot class="sticky-md-bottom z-2">
                         @foreach (var shift in Model.Shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
                         {
                             <tr>

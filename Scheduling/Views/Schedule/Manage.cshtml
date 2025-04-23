@@ -13,18 +13,18 @@
     <div class="row mb-3 justify-content-between">
                 <div class="col-auto">
                     <div class="row">
-                        <div class="col-auto mb-2">
+                <div class="col-6 col-sm-auto mb-2">
                             <label for="departmentId" class="form-label">Department</label>
                             <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
                             </select>
                         </div>
                         <!-- Month Selection -->
-                        <div class="col-auto mb-2">
+                <div class="col-6 col-sm-auto mb-2">
                             <label for="monthSelect" class="form-label">Month</label>
                             <input type="text" class="form-control" id="monthPicker">
                         </div>
-                        <div class="col-auto mb-2 align-self-end">
-                            <input type="text" id="searchBox" class="form-control" placeholder="Search Employee..." />
+                <div class="col-6 col-sm-auto mb-2 align-self-end">
+                    <input type="text" id="searchBox" class="form-control" placeholder="Search employee..." />
                         </div>
                     </div>
                 </div>
@@ -472,6 +472,7 @@
                                 cell.find("svg").remove();
                             } else {
                                 addCancelOption(dropdown);
+                                previousValue = dropdown.value;
                                 cell.find("svg").remove();
                             }
 
