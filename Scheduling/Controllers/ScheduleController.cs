@@ -25,23 +25,21 @@ namespace Scheduling.Controllers
             var user = await ThisUser();
 
             if (user?.Personnel_ID == 999)
-            {
                 return RedirectToAction(nameof(ScheduleView));
-            }
 
-            if (month == 0)
-                month = DateTime.Now.Month;
+            var today = DateTime.Now;
+            month = (month == 0) ? today.Month : month;
+            year = (year == 0) ? today.Year : year;
+            departmentId = (departmentId == 0) ? user?.Department_ID ?? 0 : departmentId;
 
-            if (year == 0)
-                year = DateTime.Now.Year;
+            var shifts = await _db.Shifts
+                .Where(s => s.Department_ID == departmentId)
+                .ToListAsync();
 
-            if (departmentId == 0)
-            {
-                departmentId = user.Department_ID.Value;
-            }
+            var holidays = await _db.Holidays.ToListAsync();
 
-            var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
-            var holidays = _db.Holidays.ToList();
+            var departments = await _db.Departments.ToListAsync();
+            var leaveTypes = await _db.Leave_types.ToListAsync();
 
             // Get relevant employee orders for the selected year and month (latest per user)
             var employeeOrders = await _db.Employee_orders
@@ -103,31 +101,34 @@ namespace Scheduling.Controllers
             // Final user list
             var users = usersInOrder.Concat(usersNotInOrder).ToList();
 
-            var schedules = _db.Schedules
-                    .Include(s => s.User)
-                    .Include(s => s.Shift)
+            // Schedules for selected month/year
+            var schedules = await _db.Schedules
+                .Include(s => s.User)
+                .Include(s => s.Shift)
                 .Where(s =>
                     s.Date.Month == month &&
                     s.Date.Year == year &&
                     s.User.Department_ID == departmentId)
-                    .ToList();
+                .ToListAsync();
 
-            var leaves = _db.Leaves
+            // Leaves within the selected month/year
+            var leaves = await _db.Leaves
                 .Include(l => l.Leave_type)
                 .Include(l => l.Approver1)
-                .Where(l => 
-                    ((l.Date_start.Year == year && l.Date_start.Month == month) || 
+                .Where(l =>
+                    ((l.Date_start.Year == year && l.Date_start.Month == month) ||
                     (l.Date_end.Year == year && l.Date_end.Month == month)) &&
                     l.Status != "Cancelled" && l.Status != "Denied")
-                .ToList();
+                .ToListAsync();
 
-            ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
-            ViewBag.LeaveTypes = _db.Leave_types.ToList();
+            ViewBag.Departments = new SelectList(departments, "Department_ID", "Department_name", departmentId);
+            ViewBag.LeaveTypes = leaveTypes;
 
-            if (User.IsInRole("member") || User.IsInRole("shiftLeader"))
-                return View((users, shifts, schedules, leaves, holidays, month, year));
-            else
-                return View("Manage", (users, shifts, schedules, leaves, holidays, month, year));
+            var model = (users, shifts, schedules, leaves, holidays, month, year);
+
+            return (User.IsInRole("member") || User.IsInRole("shiftLeader"))
+                ? View(model)
+                : View("Manage", model);
         }
 
         public async Task<IActionResult> Calendar(int month = 0, int year = 0)
@@ -139,36 +140,36 @@ namespace Scheduling.Controllers
                 return RedirectToAction(nameof(ScheduleView));
             }
 
-            if (month == 0)
-                month = DateTime.Now.Month;
+            var today = DateTime.Now;
 
-            if (year == 0)
-                year = DateTime.Now.Year;
+            if (month == 0) month = today.Month;
+            if (year == 0) year = today.Year;
 
-            var holidays = _db.Holidays.ToList();
+            var holidays = await _db.Holidays.ToListAsync();
 
-            var schedules = _db.Schedules
+            var schedules = await _db.Schedules
                 .Include(s => s.User)
                 .Include(s => s.Shift)
-                .Where(s =>
-                    s.Date.Month == month &&
-                    s.Date.Year == year &&
-                    s.Personnel_ID == user.Personnel_ID)
-                .ToList();
+                .Where(s => s.Personnel_ID == user.Personnel_ID &&
+                            s.Date.Month == month &&
+                            s.Date.Year == year)
+                .ToListAsync();
 
-            var shifts = _db.Shifts.Where(s => s.Department_ID == user.Department_ID).ToList();
+            var shifts = await _db.Shifts
+                .Where(s => s.Department_ID == user.Department_ID)
+                .ToListAsync();
 
-            var leaves = _db.Leaves
+            var leaves = await _db.Leaves
                 .Include(l => l.Leave_type)
                 .Include(l => l.Approver1)
-                .Where(l =>
-                    ((l.Date_start.Year == year && l.Date_start.Month == month) ||
-                    (l.Date_end.Year == year && l.Date_end.Month == month)) &&
-                    l.Status != "Cancelled" && l.Status != "Denied" &&
-                    l.Personnel_ID == user.Personnel_ID)
-                .ToList();
+                .Where(l => l.Personnel_ID == user.Personnel_ID &&
+                           (l.Date_start.Year == year && l.Date_start.Month == month ||
+                            l.Date_end.Year == year && l.Date_end.Month == month) &&
+                            l.Status != "Cancelled" &&
+                            l.Status != "Denied")
+                .ToListAsync();
 
-            ViewBag.LeaveTypes = _db.Leave_types.ToList();
+            ViewBag.LeaveTypes = await _db.Leave_types.ToListAsync();
 
             return View((schedules, shifts, leaves, holidays, month, year));
         }
@@ -176,37 +177,38 @@ namespace Scheduling.Controllers
         [HttpGet]
         public async Task<IActionResult> GetCalendar(int month = 0, int year = 0)
         {
-            if (month == 0)
-                month = DateTime.Now.Month;
+            var today = DateTime.Now;
 
-            if (year == 0)
-                year = DateTime.Now.Year;
+            if (month == 0) month = today.Month;
+            if (year == 0) year = today.Year;
 
-            var holidays = _db.Holidays.ToList();
             var user = await ThisUser();
 
-            var schedules = _db.Schedules
+            var holidays = await _db.Holidays.ToListAsync();
+
+            var schedules = await _db.Schedules
                 .Include(s => s.User)
                 .Include(s => s.Shift)
-                .Where(s =>
-                    s.Date.Month == month &&
-                    s.Date.Year == year &&
-                    s.Personnel_ID == user.Personnel_ID)
-                .ToList();
+                .Where(s => s.Personnel_ID == user.Personnel_ID &&
+                            s.Date.Month == month &&
+                            s.Date.Year == year)
+                .ToListAsync();
 
-            var shifts = _db.Shifts.Where(s => s.Department_ID == user.Department_ID).ToList();
+            var shifts = await _db.Shifts
+                .Where(s => s.Department_ID == user.Department_ID)
+                .ToListAsync();
 
-            var leaves = _db.Leaves
+            var leaves = await _db.Leaves
                 .Include(l => l.Leave_type)
                 .Include(l => l.Approver1)
-                .Where(l =>
-                    ((l.Date_start.Year == year && l.Date_start.Month == month) ||
-                    (l.Date_end.Year == year && l.Date_end.Month == month)) &&
-                    l.Status != "Cancelled" && l.Status != "Denied" &&
-                    l.Personnel_ID == user.Personnel_ID)
-                .ToList();
+                .Where(l => l.Personnel_ID == user.Personnel_ID &&
+                           (l.Date_start.Year == year && l.Date_start.Month == month ||
+                            l.Date_end.Year == year && l.Date_end.Month == month) &&
+                            l.Status != "Cancelled" &&
+                            l.Status != "Denied")
+                .ToListAsync();
 
-            ViewBag.LeaveTypes = _db.Leave_types.ToList();
+            ViewBag.LeaveTypes = await _db.Leave_types.ToListAsync();
 
             return PartialView("_CalendarTable", (schedules, shifts, leaves, holidays, month, year));
         }
@@ -226,33 +228,36 @@ namespace Scheduling.Controllers
 
             if (existingSchedule != null)
             {
-                if (shiftId == 0)
+                switch (shiftId)
                 {
-                    _db.Schedules.Remove(existingSchedule);
+                    case 0:
+                        _db.Schedules.Remove(existingSchedule);
                         await _log.LogInfoAsync($"Removed the shift of {empName} on {dateStr}");
-                {
-                    if (shiftId == 999) // Cancelled shift by manager
-                    {
+                        break;
+
+                    case 999:
                         existingSchedule.Comment = "cancelled";
                         await _log.LogInfoAsync($"Cancelled the shift of {empName} on {dateStr}");
-                    else if (shiftId == 998)
-                    {
+                        _db.Schedules.Update(existingSchedule);
+                        break;
+
+                    case 998:
                         existingSchedule.Comment = null;
                         await _log.LogInfoAsync($"Uncancelled the shift of {empName} on {dateStr}");
-                    else
-                    {
-                        // Update existing schedule with new shift
+                        _db.Schedules.Update(existingSchedule);
+                        break;
+
+                    default:
                         existingSchedule.Shift_ID = shiftId;
                         existingSchedule.Comment = null;
-                    }
 
                         await _log.LogInfoAsync($"Updated the shift of {empName} on {dateStr} to {shiftName}");
-                    _db.Schedules.Update(existingSchedule);
+                        _db.Schedules.Update(existingSchedule);
+                        break;
                 }
             }
             else
             {
-                // Create a new schedule
                 var newSchedule = new Schedule
                 {
                     Personnel_ID = userId,
@@ -269,28 +274,24 @@ namespace Scheduling.Controllers
             return Json(new { success = true });
         }
 
-        [HttpPost]
-        [Authorize(Roles = "admin,manager,topManager")]
-        public async Task<IActionResult> RemoveShift(int scheduleId)
-        {
-            var schedule = await _db.Schedules.FindAsync(scheduleId);
-            if (schedule != null)
-            {
-                _db.Schedules.Remove(schedule);
-                await _db.SaveChangesAsync();
-            }
-            return RedirectToAction("Manage");
-        }
-
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetScheduleByMonth(int month, int year, int departmentId)
         {
             var user = await ThisUser();
-            var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
-            var holidays = _db.Holidays.ToList();
 
-            var userOrder = _db.Employee_orders
+            var today = DateTime.Now;
+            month = (month == 0) ? today.Month : month;
+            year = (year == 0) ? today.Year : year;
+            departmentId = (departmentId == 0) ? user?.Department_ID ?? 0 : departmentId;
+
+            var shifts = await _db.Shifts
+                .Where(s => s.Department_ID == departmentId)
+                .ToListAsync();
+
+            var holidays = await _db.Holidays.ToListAsync();
+            var leaveTypes = await _db.Leave_types.ToListAsync();
+
             // Get relevant employee orders for the selected year and month (latest per user)
             var employeeOrders = await _db.Employee_orders
                 .Include(o => o.User)
@@ -351,28 +352,40 @@ namespace Scheduling.Controllers
             // Final user list
             var users = usersInOrder.Concat(usersNotInOrder).ToList();
 
-            var schedules = _db.Schedules
+            // Schedules for selected month/year
+            var schedules = await _db.Schedules
                 .Include(s => s.User)
                 .Include(s => s.Shift)
                 .Where(s =>
                     s.Date.Month == month &&
                     s.Date.Year == year &&
                     s.User.Department_ID == departmentId)
-                .ToList();
+                .ToListAsync();
 
-            var leaves = _db.Leaves
+            // Leaves within the selected month/year
+            var leaves = await _db.Leaves
                 .Include(l => l.Leave_type)
                 .Include(l => l.Approver1)
                 .Where(l =>
                     ((l.Date_start.Year == year && l.Date_start.Month == month) ||
                     (l.Date_end.Year == year && l.Date_end.Month == month)) &&
                     l.Status != "Cancelled" && l.Status != "Denied")
-                .ToList();
+                .ToListAsync();
 
-            ViewBag.LeaveTypes = _db.Leave_types.ToList();
+            ViewBag.LeaveTypes = leaveTypes;
 
-            return PartialView("_ScheduleTable", (users, shifts, schedules, leaves, holidays, month, year));
+            var model = (users, shifts, schedules, leaves, holidays, month, year);
+
+            return PartialView("_ScheduleTable", model);
         }
+
+
+        [HttpGet]
+        [Authorize]
+        public IActionResult PrintSchedule(int month, int year, int departmentId)
+        {
+            var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
+            var holidays = _db.Holidays.ToList();
 
             var userOrder = _db.Employee_orders
                 .Include(o => o.User)
@@ -434,9 +447,9 @@ namespace Scheduling.Controllers
 
         public int GetPersonnelID()
         {
-            var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
+            var value = User.FindFirstValue("Personnelid");
 
-            return personnelId;
+            return int.TryParse(value, out int personnelId) ? personnelId : 0;
         }
 
         public async Task<string> GetUsername()
@@ -445,9 +458,27 @@ namespace Scheduling.Controllers
             return user.Username;
         }
 
+        public async Task<string> GetUserFullname(int? id = null)
+        {
+            User user;
+
+            if (id.HasValue)
+                user = await GetUser(id.Value);
+            else
+                user = await ThisUser();
+
+            return user?.Full_name ?? string.Empty;
+        }
+
         public async Task<User> ThisUser()
         {
-            return _db.Users.Find(GetPersonnelID());
+            var id = GetPersonnelID();
+            return await GetUser(id);
+        }
+
+        public async Task<User> GetUser(int id)
+        {
+            return await _db.Users.FindAsync(id);
         }
 
         [HttpPost]
