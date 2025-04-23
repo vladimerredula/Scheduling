@@ -427,7 +427,7 @@
 
 @if (Model != null)
 {
-    <input type="hidden" id="action" value="@(Model.Leave_ID != 0 ? "edit" : "add")" />
+    <input type="hidden" id="action" data-id="@Model.Leave_ID" value="@(Model.Leave_ID != 0 ? "edit" : "add")" />
 }
 
 @section Scripts {
@@ -441,10 +441,10 @@
         });
 
         $(document).ready(function () {
-            var action = $("#action").val();
-            if (action != null) {
-                console.log(action);
-                if (action == "add") {
+            var action = $("#action");
+            var actionVal = action.val();
+            if (actionVal != null) {
+                if (actionVal == "add") {
                     $(".modal-title").text("Add Leave");
 
                     $("#modalButton").text("Create");
@@ -455,7 +455,7 @@
 
                     $("#modalButton").text("Update");
 
-                    $("#leaveForm").attr("action", "/Leave/Edit");
+                    $("#leaveForm").attr("action", "/Leave/Edit/" + action.data("id"));
                 }
 
                 $("#leaveModal").modal("show");
