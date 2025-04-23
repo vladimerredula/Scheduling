@@ -51,9 +51,9 @@ namespace Scheduling.Controllers
 
                 await _db.Shifts.AddAsync(shift);
                 await _db.SaveChangesAsync();
-
                 await _log.LogInfoAsync($"Added new Shift", shift);
 
+                TempData["toastMessage"] = "Successfully added shift!-success";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -81,6 +81,7 @@ namespace Scheduling.Controllers
                     _db.Shifts.Update(shift);
                     await _db.SaveChangesAsync();
                     await _log.LogInfoAsync($"Updated shift", shift);
+                    TempData["toastMessage"] = "Successfully updated shift!-success";
                 }
                 catch (Exception ex)
                 {
@@ -115,6 +116,7 @@ namespace Scheduling.Controllers
                 _db.Shifts.Remove(shift);
                 await _db.SaveChangesAsync();
                 await _log.LogInfoAsync($"Deleted shift", shift);
+                TempData["toastMessage"] = "Successfully deleted shift!-success";
             }
             catch (Exception ex)
             {
