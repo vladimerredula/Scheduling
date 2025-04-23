@@ -40,39 +40,64 @@ namespace Scheduling.Controllers
             var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
             var holidays = _db.Holidays.ToList();
 
-            var userOrder = _db.Employee_orders
+            // Get relevant employee orders for the selected year and month (latest per user)
+            var employeeOrders = await _db.Employee_orders
                 .Include(o => o.User)
                 .Where(o =>
                     o.User.Department_ID == departmentId &&
-                    (o.Year < year || (o.Year == year && o.Month <= month))) // Filter for orders earlier or equal to the selected month and year
-                .OrderBy(o => o.Year)  // Order by Year first to get the latest orders
-                .ThenBy(o => o.Month)  // Then by Month within the same year
-                .ThenBy(o => o.Order_index) // Optional: If you want to order by Order_index
-                .Select(o => o.Personnel_ID)
+                    (o.Year < year || (o.Year == year && o.Month <= month)))
+                .GroupBy(o => o.Personnel_ID)
+                .Select(g => g
+                    .OrderByDescending(o => o.Year)
+                    .ThenByDescending(o => o.Month)
+                    .First())
+                .ToListAsync();
+
+            // Map Personnel_ID to Order_index and Sector_ID
+            var orderLookup = employeeOrders
+                .OrderBy(o => o.Order_index)
+                .Select((o, index) => new
+                {
+                    PersonnelId = o.Personnel_ID,
+                    SectorId = o.Sector_ID,
+                    Index = index
+                })
                 .ToList();
 
-            var baseQuery = _db.Users
+            // Get all users in the department
+            var baseUsers = await _db.Users
                 .Include(u => u.Sector)
                 .Where(u =>
                     u.Privilege_ID != 0 &&
                     u.Privilege_ID != 4 &&
                     u.Department_ID == departmentId &&
                     u.Status == 1)
-                .ToList(); // Execute once, filter and sort in memory
+                .ToListAsync();
 
-            var usersInOrder = baseQuery
-                .Where(u => userOrder.Contains(u.Personnel_ID))
-                .OrderBy(u => userOrder.IndexOf(u.Personnel_ID))
-                .ToList();
+            // Override Sector_IDs based on latest Employee_order
+            foreach (var baseUser in baseUsers)
+            {
+                var match = orderLookup.FirstOrDefault(o => o.PersonnelId == baseUser.Personnel_ID);
+                if (match != null && match.SectorId.HasValue)
+                {
+                    baseUser.Sector_ID = match.SectorId.Value;
+                    baseUser.Sector = await _db.Sectors.FindAsync(match.SectorId.Value);
+                }
+            }
 
-            var usersNotInOrder = baseQuery
-                .Where(u => !userOrder.Contains(u.Personnel_ID))
+            // Split and sort
+            var usersInOrder = baseUsers
+                .Where(u => orderLookup.Any(o => o.PersonnelId == u.Personnel_ID))
+                .OrderBy(u => orderLookup.First(o => o.PersonnelId == u.Personnel_ID).Index);
+
+            var usersNotInOrder = baseUsers
+                .Where(u => orderLookup.All(o => o.PersonnelId != u.Personnel_ID))
                 .OrderBy(u => u?.Sector?.Order)
                 .ThenByDescending(u => u.Privilege_ID)
                 .ThenBy(u => u.First_name)
-                .ThenBy(u => u.Last_name)
-                .ToList();
+                .ThenBy(u => u.Last_name);
 
+            // Final user list
             var users = usersInOrder.Concat(usersNotInOrder).ToList();
 
             var schedules = _db.Schedules
@@ -255,38 +280,64 @@ namespace Scheduling.Controllers
             var holidays = _db.Holidays.ToList();
 
             var userOrder = _db.Employee_orders
+            // Get relevant employee orders for the selected year and month (latest per user)
+            var employeeOrders = await _db.Employee_orders
                 .Include(o => o.User)
                 .Where(o =>
                     o.User.Department_ID == departmentId &&
-                    (o.Year < year || (o.Year == year && o.Month <= month))) // Filter for orders earlier or equal to the selected month and year
-                .OrderBy(o => o.Year)  // Order by Year first to get the latest orders
-                .ThenBy(o => o.Month)  // Then by Month within the same year
-                .ThenBy(o => o.Order_index) // Optional: If you want to order by Order_index
-                .Select(o => o.Personnel_ID)
+                    (o.Year < year || (o.Year == year && o.Month <= month)))
+                .GroupBy(o => o.Personnel_ID)
+                .Select(g => g
+                    .OrderByDescending(o => o.Year)
+                    .ThenByDescending(o => o.Month)
+                    .First())
+                .ToListAsync();
+
+            // Map Personnel_ID to Order_index and Sector_ID
+            var orderLookup = employeeOrders
+                .OrderBy(o => o.Order_index)
+                .Select((o, index) => new
+                {
+                    PersonnelId = o.Personnel_ID,
+                    SectorId = o.Sector_ID,
+                    Index = index
+                })
                 .ToList();
 
-            var baseQuery = _db.Users
+            // Get all users in the department
+            var baseUsers = await _db.Users
                 .Include(u => u.Sector)
                 .Where(u =>
                     u.Privilege_ID != 0 &&
                     u.Privilege_ID != 4 &&
                     u.Department_ID == departmentId &&
                     u.Status == 1)
-                .ToList(); // Execute once, filter and sort in memory
+                .ToListAsync();
 
-            var usersInOrder = baseQuery
-                .Where(u => userOrder.Contains(u.Personnel_ID))
-                .OrderBy(u => userOrder.IndexOf(u.Personnel_ID))
-                .ToList();
+            // Override Sector_IDs based on latest Employee_order
+            foreach (var baseUser in baseUsers)
+            {
+                var match = orderLookup.FirstOrDefault(o => o.PersonnelId == baseUser.Personnel_ID);
+                if (match != null && match.SectorId.HasValue)
+                {
+                    baseUser.Sector_ID = match.SectorId.Value;
+                    baseUser.Sector = await _db.Sectors.FindAsync(match.SectorId.Value);
+                }
+            }
 
-            var usersNotInOrder = baseQuery
-                .Where(u => !userOrder.Contains(u.Personnel_ID))
+            // Split and sort
+            var usersInOrder = baseUsers
+                .Where(u => orderLookup.Any(o => o.PersonnelId == u.Personnel_ID))
+                .OrderBy(u => orderLookup.First(o => o.PersonnelId == u.Personnel_ID).Index);
+
+            var usersNotInOrder = baseUsers
+                .Where(u => orderLookup.All(o => o.PersonnelId != u.Personnel_ID))
                 .OrderBy(u => u?.Sector?.Order)
                 .ThenByDescending(u => u.Privilege_ID)
                 .ThenBy(u => u.First_name)
-                .ThenBy(u => u.Last_name)
-                .ToList();
+                .ThenBy(u => u.Last_name);
 
+            // Final user list
             var users = usersInOrder.Concat(usersNotInOrder).ToList();
 
             var schedules = _db.Schedules
@@ -454,39 +505,64 @@ namespace Scheduling.Controllers
             var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
             var holidays = _db.Holidays.ToList();
 
-            var userOrder = _db.Employee_orders
+            // Get relevant employee orders for the selected year and month (latest per user)
+            var employeeOrders = await _db.Employee_orders
                 .Include(o => o.User)
                 .Where(o =>
                     o.User.Department_ID == departmentId &&
-                    (o.Year < year || (o.Year == year && o.Month <= month))) // Filter for orders earlier or equal to the selected month and year
-                .OrderBy(o => o.Year)  // Order by Year first to get the latest orders
-                .ThenBy(o => o.Month)  // Then by Month within the same year
-                .ThenBy(o => o.Order_index) // Optional: If you want to order by Order_index
-                .Select(o => o.Personnel_ID)
+                    (o.Year < year || (o.Year == year && o.Month <= month)))
+                .GroupBy(o => o.Personnel_ID)
+                .Select(g => g
+                    .OrderByDescending(o => o.Year)
+                    .ThenByDescending(o => o.Month)
+                    .First())
+                .ToListAsync();
+
+            // Map Personnel_ID to Order_index and Sector_ID
+            var orderLookup = employeeOrders
+                .OrderBy(o => o.Order_index)
+                .Select((o, index) => new
+                {
+                    PersonnelId = o.Personnel_ID,
+                    SectorId = o.Sector_ID,
+                    Index = index
+                })
                 .ToList();
 
-            var baseQuery = _db.Users
+            // Get all users in the department
+            var baseUsers = await _db.Users
                 .Include(u => u.Sector)
                 .Where(u =>
                     u.Privilege_ID != 0 &&
                     u.Privilege_ID != 4 &&
                     u.Department_ID == departmentId &&
                     u.Status == 1)
-                .ToList(); // Execute once, filter and sort in memory
+                .ToListAsync();
 
-            var usersInOrder = baseQuery
-                .Where(u => userOrder.Contains(u.Personnel_ID))
-                .OrderBy(u => userOrder.IndexOf(u.Personnel_ID))
-                .ToList();
+            // Override Sector_IDs based on latest Employee_order
+            foreach (var baseUser in baseUsers)
+            {
+                var match = orderLookup.FirstOrDefault(o => o.PersonnelId == baseUser.Personnel_ID);
+                if (match != null && match.SectorId.HasValue)
+                {
+                    baseUser.Sector_ID = match.SectorId.Value;
+                    baseUser.Sector = await _db.Sectors.FindAsync(match.SectorId.Value);
+                }
+            }
 
-            var usersNotInOrder = baseQuery
-                .Where(u => !userOrder.Contains(u.Personnel_ID))
+            // Split and sort
+            var usersInOrder = baseUsers
+                .Where(u => orderLookup.Any(o => o.PersonnelId == u.Personnel_ID))
+                .OrderBy(u => orderLookup.First(o => o.PersonnelId == u.Personnel_ID).Index);
+
+            var usersNotInOrder = baseUsers
+                .Where(u => orderLookup.All(o => o.PersonnelId != u.Personnel_ID))
                 .OrderBy(u => u?.Sector?.Order)
                 .ThenByDescending(u => u.Privilege_ID)
                 .ThenBy(u => u.First_name)
-                .ThenBy(u => u.Last_name)
-                .ToList();
+                .ThenBy(u => u.Last_name);
 
+            // Final user list
             var users = usersInOrder.Concat(usersNotInOrder).ToList();
 
             var schedules = _db.Schedules
@@ -530,39 +606,64 @@ namespace Scheduling.Controllers
             var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
             var holidays = _db.Holidays.ToList();
 
-            var userOrder = _db.Employee_orders
+            // Get relevant employee orders for the selected year and month (latest per user)
+            var employeeOrders = await _db.Employee_orders
                 .Include(o => o.User)
                 .Where(o =>
                     o.User.Department_ID == departmentId &&
-                    (o.Year < year || (o.Year == year && o.Month <= month))) // Filter for orders earlier or equal to the selected month and year
-                .OrderBy(o => o.Year)  // Order by Year first to get the latest orders
-                .ThenBy(o => o.Month)  // Then by Month within the same year
-                .ThenBy(o => o.Order_index) // Optional: If you want to order by Order_index
-                .Select(o => o.Personnel_ID)
+                    (o.Year < year || (o.Year == year && o.Month <= month)))
+                .GroupBy(o => o.Personnel_ID)
+                .Select(g => g
+                    .OrderByDescending(o => o.Year)
+                    .ThenByDescending(o => o.Month)
+                    .First())
+                .ToListAsync();
+
+            // Map Personnel_ID to Order_index and Sector_ID
+            var orderLookup = employeeOrders
+                .OrderBy(o => o.Order_index)
+                .Select((o, index) => new
+                {
+                    PersonnelId = o.Personnel_ID,
+                    SectorId = o.Sector_ID,
+                    Index = index
+                })
                 .ToList();
 
-            var baseQuery = _db.Users
+            // Get all users in the department
+            var baseUsers = await _db.Users
                 .Include(u => u.Sector)
                 .Where(u =>
                     u.Privilege_ID != 0 &&
                     u.Privilege_ID != 4 &&
                     u.Department_ID == departmentId &&
                     u.Status == 1)
-                .ToList(); // Execute once, filter and sort in memory
+                .ToListAsync();
 
-            var usersInOrder = baseQuery
-                .Where(u => userOrder.Contains(u.Personnel_ID))
-                .OrderBy(u => userOrder.IndexOf(u.Personnel_ID))
-                .ToList();
+            // Override Sector_IDs based on latest Employee_order
+            foreach (var baseUser in baseUsers)
+            {
+                var match = orderLookup.FirstOrDefault(o => o.PersonnelId == baseUser.Personnel_ID);
+                if (match != null && match.SectorId.HasValue)
+                {
+                    baseUser.Sector_ID = match.SectorId.Value;
+                    baseUser.Sector = await _db.Sectors.FindAsync(match.SectorId.Value);
+                }
+            }
 
-            var usersNotInOrder = baseQuery
-                .Where(u => !userOrder.Contains(u.Personnel_ID))
+            // Split and sort
+            var usersInOrder = baseUsers
+                .Where(u => orderLookup.Any(o => o.PersonnelId == u.Personnel_ID))
+                .OrderBy(u => orderLookup.First(o => o.PersonnelId == u.Personnel_ID).Index);
+
+            var usersNotInOrder = baseUsers
+                .Where(u => orderLookup.All(o => o.PersonnelId != u.Personnel_ID))
                 .OrderBy(u => u?.Sector?.Order)
                 .ThenByDescending(u => u.Privilege_ID)
                 .ThenBy(u => u.First_name)
-                .ThenBy(u => u.Last_name)
-                .ToList();
+                .ThenBy(u => u.Last_name);
 
+            // Final user list
             var users = usersInOrder.Concat(usersNotInOrder).ToList();
 
             var schedules = _db.Schedules

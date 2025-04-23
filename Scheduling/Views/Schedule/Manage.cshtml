@@ -367,7 +367,7 @@
                 },
                 update: function (event, ui) {
                     let orders = $(".draggable").map(function () {
-                        return this.id.replace("user-", "") + "-" + $(this).data("sector-id"); // Extract user IDs
+                        return this.id.replace("user-", "") + "-" + $(this).parent().data("sector-id"); // Extract user IDs
                     }).get().join(',');
 
                     let date = $('#monthPicker').datepicker("getDate");

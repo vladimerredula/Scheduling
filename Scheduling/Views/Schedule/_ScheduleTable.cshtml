@@ -80,13 +80,13 @@
                     <tbody>
                         @foreach (var sector in Model.Users.GroupBy(u => u.Sector_ID))
                         {
-                            <tbody class="sector">
+                            <tbody class="sector" data-sector-id="@sector.Key">
                                 <tr class="sectorName">
                                     <th class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">@sector?.FirstOrDefault()?.Sector?.Sector_name</th>
                                 </tr>
                                 @foreach (var user in sector)
                                 {
-                                    <tr id="user-@user.Personnel_ID" data-sector-id="@user.Sector_ID" class="@(!isRegularUser ? "draggable" : "")">
+                                    <tr id="user-@user.Personnel_ID" class="@(!isRegularUser ? "draggable" : "")">
                                         <td class="border border-top-0 border-secondary text-nowrap text-start ps-2 drag-handle align-content-center @(userId == user.Personnel_ID ? "fw-semibold" : "")">
                                             @user.Full_name
                                         </td>
