@@ -107,7 +107,7 @@ namespace Scheduling.Controllers
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity), properties);
 
-                await _log.LogInfoAsync("Logged in");
+                await _log.LogInfoAsync("Logged in", usernameOverride: userdetails.Username);
 
                 return RedirectToAction("Index", "Access");
             }

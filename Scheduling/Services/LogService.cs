@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml.Bibliography;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 
@@ -23,9 +22,9 @@ namespace Scheduling.Services
             return userName ?? "Unknown";
         }
 
-        public async Task LogInfoAsync(string message, object? obj = null)
+        public async Task LogInfoAsync(string message, object? obj = null, string? usernameOverride = null)
         {
-            var username = await GetUsernameAsync();
+            var username = usernameOverride ?? await GetUsernameAsync();
 
             var log = new StringBuilder();
 
