@@ -55,14 +55,6 @@ namespace Scheduling.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var existingHoliday = await _db.Holidays.FindAsync(id);
-            if (existingHoliday == null)
-            {
-                TempData["toastMessage"] = "Holiday not found-danger";
-                await _log.LogWarningAsync($"Holiday ID: {id} was not found");
-                return RedirectToAction(nameof(Index));
-            }
-
             if (ModelState.IsValid)
             {
                 try
