@@ -240,7 +240,7 @@ namespace Scheduling.Controllers
             });
         }
 
-        public async Task<IActionResult> Approve(int Id)
+        public async Task<IActionResult> Approve(int Id, int? departmentId = null)
         {
             var leave = await _db.Leaves
                 .Include(l => l.User)
@@ -286,11 +286,11 @@ namespace Scheduling.Controllers
 
             return RedirectToAction(nameof(DepartmentLeaves), new 
             { 
-                departmentId = leave?.User?.Department_ID 
+                departmentId = departmentId != null ? departmentId : leave?.User?.Department_ID 
             });
         }
 
-        public async Task<IActionResult> Deny(int Id, string Comment)
+        public async Task<IActionResult> Deny(int Id, string Comment, int? departmentID = null)
         {
             var leave = await _db.Leaves
                 .Include(l => l.User)
@@ -336,7 +336,7 @@ namespace Scheduling.Controllers
 
             return RedirectToAction("DepartmentLeaves", new
             {
-                departmentId = leave.User?.Department_ID
+                departmentId = departmentID != null ? departmentID : leave?.User?.Department_ID
             });
         }
 

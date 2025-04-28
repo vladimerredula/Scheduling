@@ -99,7 +99,7 @@
                             <td class="text-nowrap align-content-center">
                                 @if ((User.IsInRole("manager") || User.IsInRole("admin")) && item?.Approver_1 == null)
                                 {
-                                    <a class="btn btn-sm btn-outline-success" asp-action="Approve" asp-route-id="@item?.Leave_ID">Approve</a>
+                                    <a class="btn btn-sm btn-outline-success" asp-action="Approve" asp-route-id="@item?.Leave_ID" asp-route-departmentId="@(leaves.Select(l => l?.User?.Department_ID).Distinct().Count() > 1 ? "0" : item?.User?.Department_ID)">Approve</a>
                                     <a class="btn btn-sm btn-outline-danger" href="javascript:void(0)" onclick="denyLeave(@item?.Leave_ID)">Deny</a>
                                 }
                                 else if (User.IsInRole("manager") && item?.Approver_1 != null)
@@ -108,7 +108,7 @@
                                 }
                                 else if ((User.IsInRole("topManager") || User.IsInRole("admin")) && item?.Approver_1 != null && item?.Approver_2 == null)
                                 {
-                                    <a class="btn btn-sm btn-outline-success" asp-action="Approve" asp-route-id="@item?.Leave_ID">Approve</a>
+                                    <a class="btn btn-sm btn-outline-success" asp-action="Approve" asp-route-id="@item?.Leave_ID" asp-route-departmentId="@(leaves.Select(l => l?.User?.Department_ID).Distinct().Count() > 1 ? "0" : item?.User?.Department_ID)">Approve</a>
                                     <a class="btn btn-sm btn-outline-danger" href="javascript:void(0)" onclick="denyLeave(@item?.Leave_ID)">Deny</a>
                                 }
                             </td>
@@ -330,6 +330,7 @@
                 </div>
                 <div class="modal-footer border-0">
                     <input type="hidden" name="id" id="denyID" />
+                    <input type="hidden" name="departmentID" id="departmentID" />
                     <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">No</a>
                     <input type="submit" value="Yes, proceed" class="btn btn-danger" />
                 </div>
@@ -428,7 +429,10 @@
                         }
                     });
 
+                    console.log($("#departmentId").val());
+
                     $("#denyID").val(data["leave_ID"]);
+                    $("#departmentID").val($("#departmentId").val());
 
                     // Show the modal
                     $("#denyModal").modal("show");
