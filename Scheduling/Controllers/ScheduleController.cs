@@ -125,6 +125,7 @@ namespace Scheduling.Controllers
             ViewBag.LeaveTypes = leaveTypes;
 
             var model = (users, shifts, schedules, leaves, holidays, month, year);
+            await _log.LogInfoAsync("Visited schedules");
 
             return (User.IsInRole("member") || User.IsInRole("shiftLeader"))
                 ? View(model)
@@ -170,6 +171,7 @@ namespace Scheduling.Controllers
                 .ToListAsync();
 
             ViewBag.LeaveTypes = await _db.Leave_types.ToListAsync();
+            await _log.LogInfoAsync("Visited calendar");
 
             return View((schedules, shifts, leaves, holidays, month, year));
         }
@@ -209,6 +211,7 @@ namespace Scheduling.Controllers
                 .ToListAsync();
 
             ViewBag.LeaveTypes = await _db.Leave_types.ToListAsync();
+            await _log.LogInfoAsync($"Loaded calendar for {new DateTime(year, month, 1).ToString("MMMM yyyy")}");
 
             return PartialView("_CalendarTable", (schedules, shifts, leaves, holidays, month, year));
         }
@@ -375,6 +378,7 @@ namespace Scheduling.Controllers
             ViewBag.LeaveTypes = leaveTypes;
 
             var model = (users, shifts, schedules, leaves, holidays, month, year);
+            await _log.LogInfoAsync($"Loaded schedule for {new DateTime(year, month, 1).ToString("MMMM yyyy")}");
 
             return PartialView("_ScheduleTable", model);
         }

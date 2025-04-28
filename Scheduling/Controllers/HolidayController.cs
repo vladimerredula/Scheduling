@@ -20,6 +20,7 @@ namespace Scheduling.Controllers
         public IActionResult Index()
         {
             ViewBag.Holidays = _db.Holidays.ToList();
+            _log.LogInfoAsync("Visited holiday index");
 
             return View();
         }

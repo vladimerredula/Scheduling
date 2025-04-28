@@ -35,6 +35,7 @@ namespace Scheduling.Controllers
 
                 ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
             }
+            await _log.LogInfoAsync($"Visited shifts");
 
             return View();
         }

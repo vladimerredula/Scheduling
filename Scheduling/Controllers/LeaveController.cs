@@ -35,6 +35,7 @@ namespace Scheduling.Controllers
             }
 
             await PopulateLeaveViewBagsAsync(departmentId);
+            await _log.LogInfoAsync("Visited department leaves");
 
             return View();
         }
@@ -42,6 +43,7 @@ namespace Scheduling.Controllers
         public async Task<IActionResult> Leaves()
         {
             await PopulateLeaveViewBagsAsync();
+            await _log.LogInfoAsync("Visited leaves");
 
             return View();
         }
