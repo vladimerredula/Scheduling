@@ -173,7 +173,8 @@
                                                 <select data-date="@dateString"
                                                 class="form-control p-1 position-relative text-center z-1 @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "")"
                                                 onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
-                                                style="background-color: transparent; border: none;@(isCompanyHoliday ? "color: transparent;" : "")"
+                                                style="background-color: transparent; border: none;@(isCompanyHoliday ? "color: transparent;" : "")" 
+                                                @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "") 
                                                 @(disabledSelect)>
                                                     <option value="0"></option>
                                                     @foreach (var shift in Model.Shifts)
