@@ -14,9 +14,14 @@
                 <div class="col-auto">
                     <div class="row">
                 <div class="col-6 col-sm-auto mb-2">
+                    <form asp-controller="Download" asp-action="DownloadSchedule" id="downloadForm">
+                        <input name="month" id="month" hidden />
+                        <input name="year" id="year" hidden />
+
                             <label for="departmentId" class="form-label">Department</label>
                             <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
                             </select>
+                    </form>
                         </div>
                         <!-- Month Selection -->
                 <div class="col-6 col-sm-auto mb-2">
@@ -30,6 +35,7 @@
                 </div>
                 <div class="col-auto align-self-end">
             <a class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
+            <!-- <a class="btn btn-light border" id="downloadBtn">Download</a> -->
             <a id="toggleLegendsBtn" class="btn btn-light border">Show legends</a>
             <!-- <a class="btn btn-light border me-1" onclick="printSchedule()" title="Print Schedule"><i class="bi bi-printer"></i></a>
             <a class="btn btn-light border" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></a> -->
@@ -250,7 +256,15 @@
             adjustTableColumns();
             $(window).on('resize', adjustTableColumns); // Optional: handle resizing
             filterTable();
+        });
 
+        $("#downloadBtn").on("click", function () {
+            let date = $('#monthPicker').datepicker("getDate");
+            $("#month").val(date.getMonth() + 1);
+            $("#year").val(date.getFullYear());
+
+            // console.log($("#month").val(),$("#year").val());
+            $("#downloadForm").submit();
         });
 
         // Search functionality

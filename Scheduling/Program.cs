@@ -14,6 +14,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
     ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
 
+// Add services for dependency injection
+builder.Services.AddTransient<ExcelService>();
+
 builder.Services.AddScoped(typeof(LogService<>));
 
 // Add authentication services
