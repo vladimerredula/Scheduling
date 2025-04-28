@@ -96,7 +96,7 @@
                                         string borderClass = string.Empty;
 
                                         // Leave coloring and borders
-                                        if (leave?.Status == "Approved" && leave.Leave_type?.BsColor is not null)
+                                        if (hasLeave && leave?.Status == "Approved" && shiftId != 0)
                                         {
                                             leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'";
                                             bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient";

@@ -50,7 +50,7 @@
                 <table id="schedule" class="table table-sm table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
 
                     <!-- Table Header -->
-                    <thead class="text-center sticky-top z-2">
+                    <thead class="text-center sticky-top z-3">
                         <tr>
                             <th class="border border-secondary align-content-center">Name</th>
                             @for (int day = 1; day <= daysInMonth; day++)
@@ -120,7 +120,7 @@
                                             string action = string.Empty;
 
                                             // Leave coloring and borders
-                                            if (leave?.Status == "Approved" && leave.Leave_type?.BsColor is not null)
+                                            if (leave?.Status == "Approved" && shiftId != 0)
                                             {
                                                 leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'";
                                                 bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient";
@@ -165,15 +165,15 @@
                                             }
 
                                             // Disable selector for holidays, leaves, or regular users
-                                            string disabledSelect = (isCompanyHoliday || hasLeave || isRegularUser) ? "disabled" : "";
+                                            string disabledSelect = (isCompanyHoliday || isRegularUser) ? "disabled" : "";
 
                                             <td id="cell-@user.Personnel_ID-@dateString"
                                             class="p-1 @cellClass position-relative border-bottom border-end border-secondary">
 
                                                 <select data-date="@dateString"
-                                                class="form-control p-1 position-relative text-center"
+                                                class="form-control p-1 position-relative text-center z-1 @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "")"
                                                 onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
-                                                style="background-color: transparent; border: none; z-index: 1;@(isCompanyHoliday ? "color: transparent;" : "")"
+                                                style="background-color: transparent; border: none;@(isCompanyHoliday ? "color: transparent;" : "")"
                                                 @(disabledSelect)>
                                                     <option value="0"></option>
                                                     @foreach (var shift in Model.Shifts)
@@ -201,11 +201,15 @@
                                                     }
                                                 </select>
 
-                                                <p id="p-@user.Personnel_ID-@dateString"
-                                                class="position-absolute start-0 top-0 w-100 h-100 text-center @borderClass @(hasLeave ? bgClass : "") @(disabledSelect != "disabled" ? "visually-hidden" : "")"
-                                                @Html.Raw(action) @Html.Raw(leavePopover)
-                                                style="z-index: 1;@(action != string.Empty ? "cursor: pointer;" : "")">
-                                                </p>
+                                                @if ((hasLeave && leave?.Status == "Pending") || (hasLeave && shiftId != 0))
+                                                {
+                                                    <p id="p-@user.Personnel_ID-@dateString"
+                                                        class="position-absolute start-0 top-0 w-100 h-100 text-center z-2 leave-@leave?.Leave_type_ID @borderClass @(hasLeave ? bgClass : "")"
+                                                        @Html.Raw(action) @Html.Raw(leavePopover)
+                                                        style="@(action != string.Empty ? "cursor: pointer;" : "")">
+                                                    </p>
+                                                }
+
                                                 @if (schedule?.Comment == "cancelled")
                                                 {
                                                     <svg class="position-absolute top-0 start-0 w-100 h-100">
@@ -235,7 +239,8 @@
                                     s.Comment != "cancelled" &&
                                     s.Date == date &&
                                     Model.Users.Any(u => u.Personnel_ID == s.Personnel_ID) &&
-                                    !Model.Holidays.Any(h => h.Type == "Company" && h.Date == date));
+                                    !Model.Holidays.Any(h => h.Type == "Company" && h.Date == date) && 
+                                    !Model.Leaves.Any(l => l.Personnel_ID == s.Personnel_ID && l.Status == "Approved" && l.Date_start.Date <= date.Date && l.Date_end.Date >= date.Date));
 
                                     var bgColor = count switch
                                     {
@@ -266,7 +271,7 @@
             <small class="text-body-secondary mb-2">Reflected leaves</small>
             @foreach(var leaveType in leaveTypes)
             {
-                <p class="mb-2"><span class="bg-@leaveType?.BsColor rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;@leaveType?.Leave_type_name</p>
+                <p class="mb-2" onclick="toggleLeave(@leaveType?.Leave_type_ID)"><span class="bg-@leaveType?.BsColor rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;@leaveType?.Leave_type_name</p>
             }
             <p class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
         </div>

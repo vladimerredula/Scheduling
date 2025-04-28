@@ -72,19 +72,19 @@
                     <tbody>
                         @foreach (var sector in users.GroupBy(u => u.Sector_ID))
                         {
-                        <tbody class="sector">
-                            <tr class="sectorName">
-                                <td class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">
-                                    <small class="fw-bold">
+                            <tbody class="sector">
+                                <tr class="sectorName">
+                                    <td class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">
+                                        <small class="fw-bold">
                                             @sector?.FirstOrDefault()?.Sector?.Sector_name
-                                    </small>
-                                </td>
-                            </tr>
+                                        </small>
+                                    </td>
+                                </tr>
 
                                 @foreach (var user in sector)
                                 {
-                                <tr>
-                                    <td class="border border-top-0 border-secondary text-nowrap text-start">@user.Full_name</td>
+                                    <tr>
+                                        <td class="border border-top-0 border-secondary text-nowrap text-start">@user.Full_name</td>
 
                                         @for (int day = 1; day <= daysInMonth; day++)
                                         {
@@ -94,6 +94,7 @@
                                             var schedule = schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
                                             var shift = shifts.FirstOrDefault(s => s.Shift_ID == (schedule?.Shift_ID ?? 0));
                                             var leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
+                                            var hasLeave = leave != null && shift != null;
                                             var holiday = holidays.FirstOrDefault(h => h.Date == date);
 
                                             bool isCompanyHoliday = holiday?.Type == "Company";
@@ -101,23 +102,23 @@
                                             ? (isCompanyHoliday ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
                                             : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
-                                            string leavePopover = leave != null ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'" : "";
+                                            string leavePopover = hasLeave ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'" : "";
 
-                                            string bgClass = leave != null ? "bg-" + leave.Leave_type?.BsColor + " bg-gradient" : "visually-hidden";
+                                            string bgClass = hasLeave ? "bg-" + leave?.Leave_type?.BsColor + " bg-gradient" : "visually-hidden";
 
-                                        <td id="cell-@user.Personnel_ID-@dateStr" class="p-0 @cellClass position-relative border-bottom border-end border-secondary">
-                                            <p class="p-1 m-0 text-center">@(isCompanyHoliday || leave != null ? "" : shift?.Shift_name)</p>
+                                            <td id="cell-@user.Personnel_ID-@dateStr" class="p-0 @cellClass position-relative border-bottom border-end border-secondary">
+                                                <p class="p-1 m-0 text-center">@(isCompanyHoliday || leave != null ? "" : shift?.Shift_name)</p>
 
-                                            <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @bgClass" @Html.Raw(leavePopover) style="z-index: 1;"></p>
+                                                <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @bgClass" @Html.Raw(leavePopover) style="z-index: 1;"></p>
 
-                                                @if (schedule?.Comment == "cancelled")
-                                                {
-                                                <svg class="position-absolute top-0 start-0 w-100 h-100">
-                                                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
-                                                    <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
-                                                </svg>
-                                                }
-                                        </td>
+                                                    @if (schedule?.Comment == "cancelled")
+                                                    {
+                                                    <svg class="position-absolute top-0 start-0 w-100 h-100">
+                                                        <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
+                                                        <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
+                                                    </svg>
+                                                    }
+                                            </td>
                                         }
                                 </tr>
                                 }
@@ -138,7 +139,8 @@
                                         s.Comment != "cancelled" &&
                                         s.Date == date &&
                                         userIds.Contains(s.Personnel_ID) &&
-                                        !companyHolidayDates.Contains(date));
+                                        !companyHolidayDates.Contains(date) && 
+                                        !leaves.Any(l => l.Personnel_ID == s.Personnel_ID && l.Status == "Approved" && l.Date_start.Date <= date.Date && l.Date_end.Date >= date.Date));
 
                                     var bgColor = count switch
                                     {
