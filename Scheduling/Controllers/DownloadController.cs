@@ -59,31 +59,30 @@ namespace Scheduling.Controllers
 
             var users = usersInOrder.Concat(usersNotInOrder).ToList();
 
-            var schedules = from sc in _db.Schedules
-                            join u in _db.Users on sc.Personnel_ID equals u.Personnel_ID
-                            join s in _db.Shifts on sc.Shift_ID equals s.Shift_ID into shifts
-                            from s in shifts.DefaultIfEmpty()
-                            where sc.Date.Month == month && sc.Date.Year == year
-                            select new
+            var schedules = _db.Schedules
+                            .Include(sc => sc.Shift)
+                            .Where( sc => sc.Date.Month == month && sc.Date.Year == year)
+                            .Select(sc => new
                             {
                                 Personnel_ID = sc.Personnel_ID,
-                                Shift = s.Shift_name,
+                                Shift = sc.Shift.Shift_name,
+                                Comment = sc.Comment,
                                 Date = sc.Date
-                            };
+                            });
 
-            var leaves = from l in _db.Leaves
-                         join u in _db.Users on l.Personnel_ID equals u.Personnel_ID
-                         where
-                             (l.Date_start.Year == year && l.Date_start.Month == month) ||
-                             (l.Date_end.Year == year && l.Date_end.Month == month) &&
-                             u.Department_ID == departmentId
-                         select l;
+            var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId);
 
-            var holidays = from h in _db.Holidays
-                           where h.Date.Year == year && h.Date.Month == month
-                           select h;
+            var leaves = _db.Leaves
+                            .Include(l => l.Leave_type)
+                            .Where(l => 
+                            (l.Date_start.Year == year && l.Date_start.Month == month) || (l.Date_end.Year == year && l.Date_end.Month == month) &&
+                            l.User.Department_ID == departmentId);
 
-            var excelFile = _excel.Schedule(users.ToList<dynamic>(), schedules.ToList<dynamic>(), leaves.ToList(), holidays.ToList(), month, year);
+            var holidays = _db.Holidays.Where(h => h.Date.Year == year && h.Date.Month == month);
+
+            var departmentName = _db.Departments.Find(departmentId).Department_name;
+
+            var excelFile = _excel.Schedule(users.ToList<dynamic>(), schedules.ToList<dynamic>(), shifts.ToList(), leaves.ToList(), holidays.ToList(), departmentName, month, year);
 
             return File(excelFile, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Schedule.xlsx");
         }
