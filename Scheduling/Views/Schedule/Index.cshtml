@@ -13,23 +13,29 @@
     <div class="row mb-3 justify-content-between">
         <div class="col-auto">
             <div class="row">
-                <div class="col-auto mb-2">
+                <div class="col-6 col-sm-auto mb-2">
+                    <form asp-controller="Download" asp-action="DownloadSchedule" id="downloadForm">
+                        <input name="month" id="month" hidden />
+                        <input name="year" id="year" hidden />
+
                     <label for="departmentId" class="form-label">Department</label>
                     <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
                     </select>
+                    </form>
                 </div>
                 <!-- Month Selection -->
-                <div class="col-auto mb-2">
+                <div class="col-6 col-sm-auto mb-2">
                     <label for="monthSelect" class="form-label">Month</label>
                     <input type="text" class="form-control" id="monthPicker">
                 </div>
-                <div class="col-auto mb-2 align-self-end">
-                    <input type="text" id="searchBox" class="form-control" placeholder="Search Employee..." />
+                <div class="col-6 col-sm-auto mb-2 align-self-end">
+                    <input type="text" id="searchBox" class="form-control" placeholder="Search employee..." />
                 </div>
             </div>
         </div>
         <div class="col-auto align-self-end">
             <a class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
+            <a class="btn btn-light border" id="downloadBtn"><i class="bi bi-download"></i> Download</a>
             <a id="toggleLegendsBtn" class="btn btn-light border">Show legends</a>
         </div>
     </div>
@@ -272,6 +278,15 @@
                 }
             });
         }
+
+        $("#downloadBtn").on("click", function () {
+            let date = $('#monthPicker').datepicker("getDate");
+            $("#month").val(date.getMonth() + 1);
+            $("#year").val(date.getFullYear());
+
+            // console.log($("#month").val(),$("#year").val());
+            $("#downloadForm").submit();
+        });
 
         function initializeToggleLegends() {
             const toggleLegendsBtn = $("#toggleLegendsBtn");
