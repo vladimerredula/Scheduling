@@ -8,10 +8,12 @@ namespace Scheduling.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly ExcelService _excel;
+        private readonly LogService<DownloadController> _log;
 
-        public DownloadController(ApplicationDbContext dbContext)
+        public DownloadController(ApplicationDbContext dbContext, LogService<DownloadController> log)
         {
             _db = dbContext;
+            _log = log;
             _excel = new ExcelService();
         }
 
@@ -21,10 +23,9 @@ namespace Scheduling.Controllers
         }
 
         [HttpPost]
-        public IActionResult DownloadSchedule(int month, int year, int departmentId)
+        public async Task<IActionResult> DownloadSchedule(int month, int year, int departmentId)
         {
-
-            var userOrder = _db.Employee_orders
+            var userOrder = await _db.Employee_orders
                 .Include(o => o.User)
                 .Where(o =>
                     o.User.Department_ID == departmentId &&
@@ -33,16 +34,16 @@ namespace Scheduling.Controllers
                 .ThenBy(o => o.Month)  // Then by Month within the same year
                 .ThenBy(o => o.Order_index) // Optional: If you want to order by Order_index
                 .Select(o => o.Personnel_ID)
-                .ToList();
+                .ToListAsync();
 
-            var baseQuery = _db.Users
+            var baseQuery = await _db.Users
                 .Include(u => u.Sector)
                 .Where(u =>
                     u.Privilege_ID != 0 &&
                     u.Privilege_ID != 4 &&
                     u.Department_ID == departmentId &&
                     u.Status == 1)
-                .ToList(); // Execute once, filter and sort in memory
+                .ToListAsync(); // Execute once, filter and sort in memory
 
             var usersInOrder = baseQuery
                 .Where(u => userOrder.Contains(u.Personnel_ID))
@@ -59,7 +60,7 @@ namespace Scheduling.Controllers
 
             var users = usersInOrder.Concat(usersNotInOrder).ToList();
 
-            var schedules = _db.Schedules
+            var schedules = await _db.Schedules
                             .Include(sc => sc.Shift)
                             .Where( sc => sc.Date.Month == month && sc.Date.Year == year)
                             .Select(sc => new
@@ -68,23 +69,29 @@ namespace Scheduling.Controllers
                                 Shift = sc.Shift.Shift_name,
                                 Comment = sc.Comment,
                                 Date = sc.Date
-                            });
+                            })
+                            .ToListAsync<dynamic>();
 
-            var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId);
+            var shifts = await _db.Shifts.Where(s => s.Department_ID == departmentId).ToListAsync();
 
-            var leaves = _db.Leaves
+            var leaves = await _db.Leaves
                             .Include(l => l.Leave_type)
                             .Where(l => 
                             (l.Date_start.Year == year && l.Date_start.Month == month) || (l.Date_end.Year == year && l.Date_end.Month == month) &&
-                            l.User.Department_ID == departmentId);
+                            l.User.Department_ID == departmentId)
+                            .ToListAsync();
 
-            var holidays = _db.Holidays.Where(h => h.Date.Year == year && h.Date.Month == month);
+            var holidays = await _db.Holidays.Where(h => h.Date.Year == year && h.Date.Month == month).ToListAsync();
 
-            var departmentName = _db.Departments.Find(departmentId).Department_name;
+            var department = await _db.Departments.FindAsync(departmentId);
 
-            var excelFile = _excel.Schedule(users.ToList<dynamic>(), schedules.ToList<dynamic>(), shifts.ToList(), leaves.ToList(), holidays.ToList(), departmentName, month, year);
+            var excelFile = _excel.Schedule(users.ToList<dynamic>(), schedules, shifts, leaves, holidays, department.Department_name, month, year);
 
-            return File(excelFile, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Schedule.xlsx");
+            var date = new DateTime(year, month, 1);
+
+            await _log.LogInfoAsync($"Downloaded {date.ToString("yyyy.MM")} {department.Department_name} Schedule");
+
+            return File(excelFile, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{date.ToString("yyyy.MM")} {department.Department_name}.xlsx");
         }
     }
 }
