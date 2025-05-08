@@ -19,41 +19,50 @@ namespace Scheduling.Services
 
                 // Add headers
                 var departmentName = ws.Cell(row, col);
-                departmentName.Value = department;
-                departmentName.Style.Font.SetFontSize(14);
-                departmentName.Style.Font.SetBold(true);
+                departmentName.SetValue(department)
+                    .Style
+                    .Font.SetFontSize(14)
+                    .Font.SetBold(true);
 
                 col++;
 
-                ws.Cell(row, col).Value = monthYear.ToString("MMMM yyyy");
-                ws.Range($"{Col(col)}{row}:{Col(col + daysInMonth - 1)}{row}").Style.Font.SetBold(true);
-                ws.Range($"{Col(col)}{row}:{Col(col + daysInMonth - 1)}{row}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                ws.Range($"{Col(col)}{row}:{Col(col + daysInMonth - 1)}{row}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-                ws.Range($"{Col(col)}{row}:{Col(col + daysInMonth - 1)}{row}").Merge().Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
+                var monthYearCell = ws.Range($"{Col(col)}{row}:{Col(col + daysInMonth - 1)}{row}");
+                monthYearCell.Merge()
+                    .SetValue(monthYear.ToString("MMMM yyyy"))
+                    .Style
+                    .Font.SetBold(true)
+                    .Border.SetOutsideBorder(XLBorderStyleValues.Medium)
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
 
                 row = 4;
                 col = 2;
-                ws.Cell(row, col).Value = "Name";
-                ws.Range($"{Col(col)}{row}:{Col(col)}{row + 1}").Style.Font.SetBold(true);
-                ws.Range($"{Col(col)}{row}:{Col(col)}{row + 1}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-                ws.Range($"{Col(col)}{row}:{Col(col)}{row + 1}").Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
-                ws.Range($"{Col(col)}{row}:{Col(col)}{row + 1}").Merge().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                var nameCol = ws.Range($"{Col(col)}{row}:{Col(col)}{row + 1}");
+                nameCol.Merge()
+                    .SetValue("Name")
+                    .Style
+                    .Font.SetBold(true)
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
+                    .Border.SetOutsideBorder(XLBorderStyleValues.Medium);
 
                 for (int day = 1; day <= daysInMonth; day++)
                 {
                     var dateCell = ws.Cell(row, day + col);
-                    dateCell.Value = day;
-                    dateCell.Style.Font.SetBold(true);
-                    dateCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                    dateCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-                    dateCell.Style.Border.TopBorder = XLBorderStyleValues.Medium;
+                    dateCell.SetValue(day)
+                        .Style
+                        .Font.SetBold(true)
+                        .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                        .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
+                        .Border.SetTopBorder(XLBorderStyleValues.Medium);
 
                     var date = new DateTime(year, month, day);
                     var dayCell = ws.Cell(row + 1, day + col);
-                    dayCell.Value = date.ToString("ddd");
-                    dayCell.Style.Font.FontSize = 10;
-                    dayCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                    dayCell.Style.Border.BottomBorder = XLBorderStyleValues.Medium;
+                    dayCell.SetValue(date.ToString("ddd"))
+                        .Style
+                        .Font.SetFontSize(10)
+                        .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
+                        .Border.SetBottomBorder(XLBorderStyleValues.Medium);
 
                     if (day == daysInMonth)
                     {
@@ -74,10 +83,12 @@ namespace Scheduling.Services
                     {
                         if (isCompanyHoliday)
                         {
-                            dateCell.Style.Font.FontColor = XLColor.White;
-                            dayCell.Style.Font.FontColor = XLColor.White;
-                            dateCell.Style.Fill.BackgroundColor = XLColor.FromHtml("6c757d");
-                            dayCell.Style.Fill.BackgroundColor = XLColor.FromHtml("6c757d");
+                            dateCell.Style
+                                .Font.SetFontColor(XLColor.White)
+                                .Fill.SetBackgroundColor(XLColor.FromHtml("6c757d"));
+                            dayCell.Style
+                                .Font.SetFontColor(XLColor.White)
+                                .Fill.SetBackgroundColor(XLColor.FromHtml("6c757d"));
                         } else
                         {
                             dateCell.Style.Fill.BackgroundColor = XLColor.FromHtml("e2e3e5");
@@ -96,7 +107,7 @@ namespace Scheduling.Services
                     foreach (var user in sector)
                     {
                         ws.Cell(row, col).Value = user.Full_name;
-                        ws.Cell(row, col).Style.Border.RightBorder = XLBorderStyleValues.Medium;
+                        //ws.Cell(row, col).Style.Border.RightBorder = XLBorderStyleValues.Medium;
 
                         //ws.Range($"{Col(col + 1)}{row}:{Col(col + daysInMonth)}{row + sector.Count() - 1}").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
 
@@ -142,10 +153,11 @@ namespace Scheduling.Services
 
                             if (schedule?.Comment == "cancelled" && !string.IsNullOrEmpty(shift))
                             {
-                                shiftCell.Style.Border.DiagonalBorder = XLBorderStyleValues.Thin;
-                                shiftCell.Style.Border.DiagonalUp = true;
-                                shiftCell.Style.Border.DiagonalDown = true;
-                                shiftCell.Style.Border.DiagonalBorderColor = XLColor.Red;
+                                shiftCell.Style
+                                    .Border.SetDiagonalBorder(XLBorderStyleValues.Thin)
+                                    .Border.SetDiagonalUp(true)
+                                    .Border.SetDiagonalDown(true)
+                                    .Border.SetDiagonalBorderColor(XLColor.Red);
                             }
                         }
 
@@ -169,8 +181,9 @@ namespace Scheduling.Services
                     }
 
                     var shiftCountRange = ws.Range($"{Col(col + 1)}{row}:{Col(col + daysInMonth)}{row}");
-                    shiftCountRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-                    shiftCountRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    shiftCountRange.Style
+                        .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                        .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
                     shiftCountRange.AddConditionalFormat().WhenEquals(0)
                         .Fill.SetBackgroundColor(XLColor.FromHtml("f8d7da"))
                         .Font.SetFontColor(XLColor.DarkRed);
@@ -193,11 +206,26 @@ namespace Scheduling.Services
 
                 // Styles
                 var empTable = ws.Range($"{Col(col)}{row}:{Col(daysInMonth + 2)}{row + empCount}");
-                empTable.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
-                empTable.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                empTable.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                empTable.Style
+                    .Border.SetOutsideBorder(XLBorderStyleValues.Medium)
+                    .Border.SetInsideBorder(XLBorderStyleValues.Thin)
+                    .Border.SetInsideBorderColor(XLColor.FromHtml("808080"))
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center);
+
+                var row1 = row;
+                foreach (var sector in users.GroupBy(u => u.Sector_ID))
+                {
+                    ws.Range($"{Col(col)}{row1}:{Col(col + daysInMonth)}{row1 + sector.Count() - 1}").Style
+                        .Border.SetOutsideBorder(XLBorderStyleValues.Medium)
+                        .Border.SetOutsideBorderColor(XLColor.Black);
+                    row1 += sector.Count();
+                }
+
                 var empNames = ws.Range($"{Col(col)}{row}:{Col(col)}{row + empCount}");
-                empNames.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+                empNames.Style
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left)
+                    .Border.SetOutsideBorder(XLBorderStyleValues.Medium);
 
                 // Auto-fit columns
                 ws.Rows().Height = 21;
@@ -215,30 +243,34 @@ namespace Scheduling.Services
                 ws.Column(col + 1).Width = 20;
 
                 ws.Cell(row, col).Style.Fill.SetBackgroundColor(XLColor.FromHtml(GetLeaveBgColor(10)));
-                ws.Cell(row, col + 1).Value = " Business Trip";
-                ws.Cell(row, col + 1).Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
-                ws.Cell(row, col + 1).Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
+                ws.Cell(row, col + 1).SetValue(" Business Trip")
+                    .Style
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
 
                 row += 2;
 
                 ws.Cell(row, col).Style.Fill.SetBackgroundColor(XLColor.FromHtml(GetLeaveBgColor(11)));
-                ws.Cell(row, col + 1).Value = " Paid Leave";
-                ws.Cell(row, col + 1).Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
-                ws.Cell(row, col + 1).Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
+                ws.Cell(row, col + 1).SetValue(" Paid Leave")
+                    .Style
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
 
                 row += 2;
 
                 ws.Cell(row, col).Style.Fill.SetBackgroundColor(XLColor.FromHtml(GetLeaveBgColor(12)));
-                ws.Cell(row, col + 1).Value = " Unpaid Leave";
-                ws.Cell(row, col + 1).Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
-                ws.Cell(row, col + 1).Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
+                ws.Cell(row, col + 1).SetValue(" Unpaid Leave")
+                    .Style
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
 
                 row += 2;
 
                 ws.Cell(row, col).Style.Fill.SetBackgroundColor(XLColor.FromHtml("6c757d"));
-                ws.Cell(row, col + 1).Value = " Company Holiday";
-                ws.Cell(row, col + 1).Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
-                ws.Cell(row, col + 1).Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
+                ws.Cell(row, col + 1).SetValue(" Company Holiday")
+                    .Style
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
 
                 foreach (var pattern in new[] { "4/2", "5/2" })
                 {
@@ -247,12 +279,12 @@ namespace Scheduling.Services
                     {
                         row += 3;
 
-                        ws.Range($"{Col(col)}{row}:{Col(col + 1)}{row}").Merge();
-                        ws.Range($"{Col(col)}{row}:{Col(col + 1)}{row}").Value = $"{pattern} Pattern";
-                        ws.Range($"{Col(col)}{row}:{Col(col + 1)}{row}").Style.Font.SetBold(true);
-                        ws.Range($"{Col(col)}{row}:{Col(col + 1)}{row}").Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
-                        ws.Range($"{Col(col)}{row}:{Col(col + 1)}{row}").Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
-                        ws.Range($"{Col(col)}{row}:{Col(col + 1)}{row}").Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
+                        ws.Range($"{Col(col)}{row}:{Col(col + 1)}{row}")
+                            .Merge().SetValue($"{pattern} Pattern")
+                            .Style.Font.SetBold(true)
+                            .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                            .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
+                            .Border.SetOutsideBorder(XLBorderStyleValues.Medium);
 
                         row++;
 
@@ -263,10 +295,11 @@ namespace Scheduling.Services
                             row++;
                         }
 
-                        ws.Range($"{Col(col)}{row - shiftPatterns.Count()}:{Col(col + 1)}{row - 1}").Style.Border.SetInsideBorder(XLBorderStyleValues.Thin);
-                        ws.Range($"{Col(col)}{row - shiftPatterns.Count()}:{Col(col + 1)}{row - 1}").Style.Border.SetOutsideBorder(XLBorderStyleValues.Medium);
-                        ws.Range($"{Col(col)}{row - shiftPatterns.Count()}:{Col(col + 1)}{row - 1}").Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
-                        ws.Range($"{Col(col)}{row - shiftPatterns.Count()}:{Col(col + 1)}{row - 1}").Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+                        ws.Range($"{Col(col)}{row - shiftPatterns.Count()}:{Col(col + 1)}{row - 1}")
+                            .Style.Border.SetInsideBorder(XLBorderStyleValues.Thin)
+                            .Border.SetOutsideBorder(XLBorderStyleValues.Medium)
+                            .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                            .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
                     }
                 }
 
