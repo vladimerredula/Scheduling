@@ -166,6 +166,10 @@
 
                                             // Disable selector for holidays, leaves, or regular users
                                             string disabledSelect = (isCompanyHoliday || isRegularUser) ? "disabled" : "";
+                                            if (User.FindFirst("Personnelid").Value == "94")
+                                            {
+                                                disabledSelect = "";
+                                            }
 
                                             <td id="cell-@user.Personnel_ID-@dateString"
                                             class="p-1 @cellClass position-relative border-bottom border-end border-secondary">

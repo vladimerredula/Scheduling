@@ -18,9 +18,9 @@
                         <input name="month" id="month" hidden />
                         <input name="year" id="year" hidden />
 
-                    <label for="departmentId" class="form-label">Department</label>
-                    <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
-                    </select>
+                        <label for="departmentId" class="form-label">Department</label>
+                        <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                        </select>
                     </form>
                 </div>
                 <!-- Month Selection -->
@@ -379,6 +379,121 @@
                     alert("Error loading schedule.");
                 }
             });
+        }
+
+        function assignShift(userId, date, dropdown) {
+            var shiftId = dropdown.value;
+
+                $.ajax({
+                    url: '/Schedule/AssignShift',
+                    type: 'POST',
+                    data: {
+                        userId: userId,
+                        date: date,
+                        shiftId: shiftId
+                    },
+                    success: function (response) {
+                        if (!response.success) {
+                            alert('Error assigning shift!');
+                        } else {
+                            let cell = $(`#cell-${userId}-${date}`);
+
+                            if (shiftId == 999) {
+                                cell.append(`
+                                    <svg class="position-absolute top-0 start-0 w-100 h-100">
+                                        <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
+                                        <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
+                                    </svg>
+                                `);
+
+                                removeCancelOption(dropdown);
+                                addUncancelOption(dropdown);
+
+                                dropdown.value = previousValue;
+                            } else if (shiftId == 998) {
+
+                                removeUncancelOption(dropdown);
+                                addCancelOption(dropdown);
+
+                                cell.find("svg").remove();
+                                dropdown.value = previousValue;
+                            } else if (shiftId == 0) {
+                                removeCancelOption(dropdown);
+                                removeUncancelOption(dropdown);
+                                cell.find("svg").remove();
+                            } else {
+                                addCancelOption(dropdown);
+                                previousValue = dropdown.value;
+                                cell.find("svg").remove();
+                            }
+
+                            updateShiftCount(date);
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while assigning the shift.');
+                    }
+                });
+            // }
+        }
+
+        function removeCancelOption(select) {
+            let option = select.querySelector(`option[value="999"]`);
+            if (option) {
+                option.remove(); // Removes the option from the select
+            }
+        }
+
+        function addCancelOption(select) {
+            removeCancelOption(select);
+            $(select).append(new Option("*Cancel shift", "999"));
+        }
+
+        function removeUncancelOption(select) {
+            let option = select.querySelector(`option[value="998"]`);
+            if (option) {
+                option.remove(); // Removes the option from the select
+            }
+        }
+
+        function addUncancelOption(select) {
+            removeUncancelOption(select);
+            $(select).append(new Option("*Uncancel shift", "998"));
+        }
+
+        function updateShiftCount(date) {
+            let shiftTypes = ["A", "B", "C"];
+
+            shiftTypes.forEach(shift => {
+                let count = $(`select[data-date="${date}"]:not(:disabled):not(.onLeave)`).filter(function () {
+                    return $(this).find('option:selected').text().trim() === shift;
+                }).length;
+                let cell = $(`#shift-${shift}-${date}`);
+
+                cell.text(count);
+
+                // Remove previous colors before applying the new one
+                removeColorClass(cell);
+
+                // Apply background color based on shift count
+                if (count === 0) {
+                    cell.addClass("bg-danger-subtle text-danger-emphasis"); // Light red
+                } else if (count === 1) {
+                    cell.addClass("bg-warning-subtle text-warning-emphasis"); // Light yellow
+                } else if (count === 2) {
+                    cell.addClass("bg-success-subtle text-success-emphasis"); // Light green
+                } else {
+                    cell.addClass("bg-success text-white"); // Green
+                }
+            });
+        }
+
+        function removeLeaveBg(p) {
+            $(p).removeClass("bg-secondary bg-secondary-subtle text-secondary-emphasis");
+        }
+
+        function removeColorClass(e) {
+            $(e).removeClass("bg-danger-subtle text-danger-emphasis bg-warning-subtle text-warning-emphasis bg-success-subtle text-success-emphasis bg-success text-white");
         }
     </script>
 }

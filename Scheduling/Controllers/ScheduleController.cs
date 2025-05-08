@@ -217,9 +217,14 @@ namespace Scheduling.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "admin,manager,topManager")]
+        //[Authorize(Roles = "admin,manager,topManager")]
         public async Task<IActionResult> AssignShift(int userId, int shiftId, DateTime date)
         {
+            if (User.IsInRole("user") || (User.IsInRole("shiftLeader") && GetPersonnelID() != 94))
+            {
+                return Unauthorized();
+            }
+
             var existingSchedule = await _db.Schedules
                 .FirstOrDefaultAsync(s => s.Personnel_ID == userId && s.Date == date);
 
@@ -378,7 +383,10 @@ namespace Scheduling.Controllers
             ViewBag.LeaveTypes = leaveTypes;
 
             var model = (users, shifts, schedules, leaves, holidays, month, year);
-            await _log.LogInfoAsync($"Loaded schedule for {new DateTime(year, month, 1).ToString("MMMM yyyy")}");
+
+            var department = _db.Departments?.Find(departmentId)?.Department_name;
+
+            await _log.LogInfoAsync($"Loaded schedule for {department} {new DateTime(year, month, 1).ToString("MMMM yyyy")}");
 
             return PartialView("_ScheduleTable", model);
         }
