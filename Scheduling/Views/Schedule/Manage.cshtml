@@ -364,6 +364,15 @@
             }
         });
 
+        $(document).on("click", "#reloadBtn", function () {
+            let $datepicker = $('#monthPicker');
+            let currentDate = $datepicker.datepicker('getDate');
+
+            if (currentDate) {
+                loadSchedule(currentDate.getMonth() + 1, currentDate.getFullYear());
+            }
+        });
+
         function initializeSortable() {
             $(".sector").sortable({
                 items: ".draggable",
@@ -574,6 +583,14 @@
                 }
             });
             $("#approveModal").modal("show");
+        }
+
+        function toggleLeave(leave, id) {
+            let leaveBlocks = $(".leave-" + id);
+            let eyeMarker = $(leave).find(".eye");
+
+            leaveBlocks.toggle();
+            eyeMarker.toggle();
         }
 
         $("#denyBtn").on("click", function () {

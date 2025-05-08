@@ -35,13 +35,14 @@
             <!-- Month Header Navigation -->
             <div class="row justify-content-between mb-3">
                 <div class="col-auto">
-                    <a class="btn btn-light border" id="prevBtn"><i class="bi bi-arrow-bar-left"></i> Previous</a>
+                    <a class="btn btn-light border" id="prevBtn" title="Go to previous month"><i class="bi bi-arrow-bar-left"></i> Previous</a>
                 </div>
                 <div class="col text-center">
                     <h3>@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth) @Model.year</h3>
                 </div>
                 <div class="col-auto">
-                    <a class="btn btn-light border" id="nextBtn">Next <i class="bi bi-arrow-bar-right"></i></a>
+                    <a class="btn btn-light border me-2" id="reloadBtn" title="Reload schedule"><i class="bi bi-arrow-clockwise"></i></a>
+                    <a class="btn btn-light border" id="nextBtn" title="Go to next month">Next <i class="bi bi-arrow-bar-right"></i></a>
                 </div>
             </div>
 
@@ -123,7 +124,7 @@
                                             if (leave?.Status == "Approved" && shiftId != 0)
                                             {
                                                 leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'";
-                                                bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient";
+                                                bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient leave-{leave?.Leave_type_ID}";
                                             }
 
                                             if (hasLeave && canActOnLeave)
@@ -131,7 +132,7 @@
                                                 if (leave?.Approver_1 == null)
                                                 {
                                                     leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
-                                                    bgClass = "bg-warning bg-opacity-25";
+                                                    bgClass = "bg-warning bg-opacity-25 leave-pending";
                                                     borderColor = "border-warning";
                                                 }
                                                 else if (leave?.Approver_2 == null)
@@ -139,7 +140,7 @@
                                                     string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i> Approved by " + (leave?.Approver1?.Full_name ?? "");
                                                     string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
                                                     leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-html=\"true\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
-                                                    bgClass = "bg-success bg-opacity-25";
+                                                    bgClass = "bg-success bg-opacity-25 leave-approved";
                                                     borderColor = "border-success";
                                                 }
 
@@ -209,7 +210,7 @@
                                                 @if ((hasLeave && leave?.Status == "Pending") || (hasLeave && shiftId != 0))
                                                 {
                                                     <p id="p-@user.Personnel_ID-@dateString"
-                                                        class="position-absolute start-0 top-0 w-100 h-100 text-center z-2 leave-@leave?.Leave_type_ID @borderClass @(hasLeave ? bgClass : "")"
+                                                        class="position-absolute start-0 top-0 w-100 h-100 text-center z-2 @borderClass @(hasLeave ? bgClass : "")"
                                                         @Html.Raw(action) @Html.Raw(leavePopover)
                                                         style="@(action != string.Empty ? "cursor: pointer;" : "")">
                                                     </p>
@@ -271,14 +272,14 @@
         @* Leave Legends *@
         <div class="card p-3 mb-3">
             <small class="text-body-secondary mb-2">Leave applications</small>
-            <p class="mb-2"><small class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</p>
-            <p class="mb-3"><small class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</p>
+            <p class="mb-2" onclick="toggleLeave(this, 'pending')" style="cursor:pointer;" title="Toggle visibility for requested leaves"><span class="eye position-absolute text-secondary" style="display:none;">&nbsp;<i class="bi bi-eye-slash-fill"></i></span><small class="bg-warning-subtle border border-2 border-warning rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</p>
+            <p class="mb-3" onclick="toggleLeave(this, 'approved')" style="cursor:pointer;" title="Toggle visibility for manager approved leaves"><span class="eye position-absolute text-secondary" style="display:none;">&nbsp;<i class="bi bi-eye-slash-fill"></i></span><small class="bg-success-subtle border border-2 border-success rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</p>
             <small class="text-body-secondary mb-2">Reflected leaves</small>
             @foreach(var leaveType in leaveTypes)
             {
-                <p class="mb-2" onclick="toggleLeave(@leaveType?.Leave_type_ID)"><span class="bg-@leaveType?.BsColor rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;@leaveType?.Leave_type_name</p>
+                <p class="mb-2" onclick="toggleLeave(this, @leaveType?.Leave_type_ID)" style="cursor:pointer;" title="Toggle visibility for @leaveType?.Leave_type_name"><span class="eye position-absolute text-white" style="display:none;">&nbsp;<i class="bi bi-eye-slash-fill"></i></span><span class="bg-@leaveType?.BsColor rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;@leaveType?.Leave_type_name</p>
             }
-            <p class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
+            <p class="mb-2"><span class="bg-secondary rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
         </div>
 
         @* Shift Patterns *@
