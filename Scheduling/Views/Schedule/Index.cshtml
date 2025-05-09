@@ -348,6 +348,23 @@
             }
         });
 
+        $(document).on("click", "#reloadBtn", function () {
+            let $datepicker = $('#monthPicker');
+            let currentDate = $datepicker.datepicker('getDate');
+
+            if (currentDate) {
+                loadSchedule(currentDate.getMonth() + 1, currentDate.getFullYear());
+            }
+        });
+
+        function toggleLeave(leave, id) {
+            let leaveBlocks = $(".leave-" + id);
+            let eyeMarker = $(leave).find(".eye");
+
+            leaveBlocks.toggle();
+            eyeMarker.toggle();
+        }
+
         function showSpinner() {
             $("#loading-spinner").removeClass("d-none");
         }
