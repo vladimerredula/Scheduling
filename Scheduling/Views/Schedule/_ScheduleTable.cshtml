@@ -167,7 +167,8 @@
 
                                             // Disable selector for holidays, leaves, or regular users
                                             string disabledSelect = (isCompanyHoliday || isRegularUser) ? "disabled" : "";
-                                            if (User.FindFirst("Personnelid").Value == "94")
+
+                                            if (User.FindFirst("Personnelid").Value == "94") // TEMPORARY FIX FOR JONNEL TO ASSIGN SHIFTS
                                             {
                                                 disabledSelect = "";
                                             }

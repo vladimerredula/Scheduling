@@ -474,13 +474,27 @@ namespace Scheduling.Controllers
             }
             else if (departmentId != null && departmentId != 0)
             {
+                var userId = GetPersonnelID();
+
+                if (userId == 35) // TEMPORARY FIX FOR KONSTANTIN
+                {
                 ViewBag.Leaves = await _db.Leaves
                     .Include(l => l.User)
                     .Include(l => l.Leave_type)
                     .Include(l => l.Approver1)
                     .Include(l => l.Approver2)
+                        .Where(l => l.User.Department_ID == 2 || l.User.Department_ID == 3)
+                        .ToListAsync();
+                } else
+                {
+                    ViewBag.Leaves = await _db.Leaves
+                        .Include(l => l.User)
+                        .Include(l => l.Leave_type)
+                        .Include(l => l.Approver1)
+                        .Include(l => l.Approver2)
                     .Where(l => l.User.Department_ID == departmentId)
                     .ToListAsync();
+                }
 
                 ViewBag.Departments = new SelectList(
                     _db.Departments.ToList(),

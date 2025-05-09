@@ -220,7 +220,7 @@ namespace Scheduling.Controllers
         //[Authorize(Roles = "admin,manager,topManager")]
         public async Task<IActionResult> AssignShift(int userId, int shiftId, DateTime date)
         {
-            if (User.IsInRole("user") || (User.IsInRole("shiftLeader") && GetPersonnelID() != 94))
+            if (User.IsInRole("user") || (User.IsInRole("shiftLeader") && GetPersonnelID() != 94)) // TEMPORARY FIX FOR JONNEL TO ASSIGN SHIFTS
             {
                 return Unauthorized();
             }
