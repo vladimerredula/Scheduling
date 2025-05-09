@@ -33,6 +33,7 @@ namespace Scheduling.Models
         [Display(Name = "Leave type")]
         public int Leave_type_ID { get; set; }
         public Leave_type? Leave_type { get; set; }
+        public int? Notify { get; set; } = 0; // 0 - no notification, 1 - new notification sent, 2 - notification, 3 - notification read
 
         public string? Date_start_string
         {

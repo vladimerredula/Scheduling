@@ -15,20 +15,20 @@
 
     <ul class="nav nav-tabs leavesTab" id="leavesTab" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link fs-5" id="pending" data-bs-toggle="tab" data-bs-target="#content-1" role="tab" aria-controls="0">Requests</button>
+            <button class="nav-link fs-5" id="pending-tab" data-bs-toggle="tab" data-bs-target="#content-pending" role="tab" aria-controls="0">Requests</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link fs-5" id="approved" data-bs-toggle="tab" data-bs-target="#content-2" role="tab" aria-controls="1">Approved</button>
+            <button class="nav-link fs-5" id="approved-tab" data-bs-toggle="tab" data-bs-target="#content-approved" role="tab" aria-controls="1">Approved</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link fs-5" id="denied" data-bs-toggle="tab" data-bs-target="#content-3" role="tab" aria-controls="2">Denied</button>
+            <button class="nav-link fs-5" id="denied-tab" data-bs-toggle="tab" data-bs-target="#content-denied" role="tab" aria-controls="2">Denied</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link fs-5" id="cancelled" data-bs-toggle="tab" data-bs-target="#content-4" role="tab" aria-controls="3">Cancelled</button>
+            <button class="nav-link fs-5" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#content-cancelled" role="tab" aria-controls="3">Cancelled</button>
         </li>
     </ul>
     <div class="tab-content rounded-bottom p-3 bg-white shadow-sm">
-        <div class="tab-pane" id="content-1" role="tabpanel" aria-labelledby="pending">
+        <div class="tab-pane" id="content-pending" role="tabpanel" aria-labelledby="pending">
             <table class="datatable table table-hover">
                 <thead>
                     <tr>
@@ -90,7 +90,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="tab-pane" id="content-2" role="tabpanel" aria-labelledby="approved">
+        <div class="tab-pane" id="content-approved" role="tabpanel" aria-labelledby="approved">
             <table class="datatable table table-hover">
                 <thead>
                     <tr>
@@ -148,7 +148,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="tab-pane" id="content-3" role="tabpanel" aria-labelledby="denied">
+        <div class="tab-pane" id="content-denied" role="tabpanel" aria-labelledby="denied">
             <table class="datatable table table-hover">
                 <thead>
                     <tr>
@@ -208,7 +208,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="tab-pane" id="content-4" role="tabpanel" aria-labelledby="cancelled">
+        <div class="tab-pane" id="content-cancelled" role="tabpanel" aria-labelledby="cancelled">
             <table class="datatable table table-hover">
                 <thead>
                     <tr>
@@ -520,7 +520,38 @@
                     }
                 }
             });
+
+            // Check for a hash in the URL and activate the corresponding tab
+            var hash = window.location.hash.substring(1);
+            if (hash) {
+                activateTab(hash);
+
+                // Add click event to tab links
+                $('.leavesTab .nav-link').click(function (e) {
+                    e.preventDefault();
+                    var tabId = $(this).attr('href');
+                    if (tabId != null) {
+                        tabId = tabId.substring(1);
+                        activateTab(tabId);
+                        window.location.hash = tabId;
+                    }
+                });
+            }
         });
+
+        // Function to activate the tab
+        function activateTab(tabId) {
+            var tab = $('#' + tabId + '-tab');
+
+            if (tab.length == 0) {
+                return;
+            }
+
+            $('.nav-link').removeClass('active');
+            $('.tab-pane').removeClass('show active');
+            $('#' + tabId + '-tab').addClass('active');
+            $('#content-' + tabId).addClass('show active');
+        }
 
         $("#departmentId").on("change", function() {
             $("#changeDepartment").submit();

@@ -65,15 +65,32 @@
                                     <a class="nav-link text-dark" asp-area="" asp-controller="Shift" asp-action="Index">Shifts</a>
                                 </li>
                             }
+                            @* <li class="nav-item"><a class="nav-link" role="button" href="http://dcl.faradaygroup.local/" target="_blank" rel="noopener noreferrer"><i class="bi bi-ui-checks"></i> DailyChecklist</a></li> *@
                         </ul>
-                        @* <ul class="navbar-nav navbar-right me-3">
-                            <li class="nav-item"><a class="nav-link" role="button" href="http://dcl.faradaygroup.local/" target="_blank" rel="noopener noreferrer"><i class="bi bi-ui-checks"></i> DailyChecklist</a></li>
-                        </ul> *@
+                    }
+
+                    @if (User.IsInRole("admin") || User.IsInRole("manager") || User.IsInRole("topManager"))
+                    {
+                        <a class="btn btn-sm btn-outline-primary me-4" asp-controller="Leave" asp-action="DepartmentLeaves" type="button" title="Go to Leave requests">
+                            Leave Requests <span class="badge bg-secondary" id="requestCount">0</span>
+                        </a>
                     }
 
                     <ul class="navbar-nav navbar-right">
                         @if (User.Identity.IsAuthenticated)
                         {
+                            <li class="nav-item dropdown" id="notifDropdown">
+                                <a class="nav-link position-relative me-2 p-1" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" id="notification">
+                                    <i class="fs-5 bi bi-bell-fill"></i>
+                                    <div id="notificationCount" hidden>
+                                        <span class="position-absolute bottom-50 start-50 p-2 bg-danger border border-light rounded-circle">
+                                            <span class="visually-hidden">New alerts</span>
+                                        </span>
+                                    </div>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notification" style="min-width:350px;max-width:370px;" id="notificationList">
+                                </ul>
+                            </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="userDropdownMenu">
                                     @firstName @lastName

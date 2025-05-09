@@ -264,6 +264,7 @@ namespace Scheduling.Controllers
                     leave.Status = "Approved";
                     leave.Approver_2 = approverId;
                     leave.Date_approved_2 = today;
+                    leave.Notify = 1; // Notify the user that the leave was approved
                 }
                 else
                 {
@@ -315,11 +316,13 @@ namespace Scheduling.Controllers
                 {
                     leave.Approver_2 = approverId;
                     leave.Date_approved_2 = today;
+                    leave.Notify = 1; // Notify the user that the leave was denied
                 }
                 else
                 {
                     leave.Approver_1 = approverId;
                     leave.Date_approved_1 = today;
+                    leave.Notify = 1; // Notify the user that the leave was denied
                 }
 
                 _db.Leaves.Update(leave);
@@ -364,6 +367,7 @@ namespace Scheduling.Controllers
                     leave.Status = "Approved";
                     leave.Approver_2 = approverId;
                     leave.Date_approved_2 = today;
+                    leave.Notify = 1; // Notify the user that the leave was approved
                 }
                 else
                 {
@@ -416,11 +420,13 @@ namespace Scheduling.Controllers
                 {
                     leave.Approver_2 = approverId;
                     leave.Date_approved_2 = today;
+                    leave.Notify = 1; // Notify the user that the leave was denied
                 }
                 else
                 {
                     leave.Approver_1 = approverId;
                     leave.Date_approved_1 = today;
+                    leave.Notify = 1; // Notify the user that the leave was denied
                 }
 
                 _db.Leaves.Update(leave);
@@ -478,11 +484,11 @@ namespace Scheduling.Controllers
 
                 if (userId == 35) // TEMPORARY FIX FOR KONSTANTIN
                 {
-                ViewBag.Leaves = await _db.Leaves
-                    .Include(l => l.User)
-                    .Include(l => l.Leave_type)
-                    .Include(l => l.Approver1)
-                    .Include(l => l.Approver2)
+                    ViewBag.Leaves = await _db.Leaves
+                        .Include(l => l.User)
+                        .Include(l => l.Leave_type)
+                        .Include(l => l.Approver1)
+                        .Include(l => l.Approver2)
                         .Where(l => l.User.Department_ID == 2 || l.User.Department_ID == 3)
                         .ToListAsync();
                 } else
@@ -492,8 +498,8 @@ namespace Scheduling.Controllers
                         .Include(l => l.Leave_type)
                         .Include(l => l.Approver1)
                         .Include(l => l.Approver2)
-                    .Where(l => l.User.Department_ID == departmentId)
-                    .ToListAsync();
+                        .Where(l => l.User.Department_ID == departmentId)
+                        .ToListAsync();
                 }
 
                 ViewBag.Departments = new SelectList(
