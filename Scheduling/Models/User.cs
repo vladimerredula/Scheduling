@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Scheduling.Models.Templates;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Scheduling.Models
@@ -46,6 +47,10 @@ namespace Scheduling.Models
 
         public int Status { get; set; } = 0;
         public DateTime? Last_password_changed { get; set; }
+
+        [ForeignKey("Template")]
+        public int? Template_ID { get; set; }
+        public virtual Template? Template { get; set; }
 
         [Display(Name = "Name")]
         public string? Full_name

@@ -1,0 +1,74 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Scheduling.Models.Templates;
+
+namespace Scheduling.Services
+{
+    public class TemplateService
+    {
+        private readonly ApplicationDbContext _db;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public TemplateService(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor)
+        {
+            _db = context;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        public async Task<List<Module>?> GetUserTemplateAsync()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            var userIdValue = httpContext?.User?.FindFirst("Personnelid")?.Value;
+
+            if (!int.TryParse(userIdValue, out var userId))
+                return null;
+
+            var modules = await _db.Users
+                .Where(u => u.Personnel_ID == userId)
+                .Include(u => u.Template)
+                    .ThenInclude(t => t.Modules)
+                        .ThenInclude(m => m.Pages)
+                            .ThenInclude(p => p.Components)
+                .AsSplitQuery()
+                .SelectMany(u => u.Template.Modules.Select(m => new Module
+                {
+                    Module_name = m.Module.Module_name,
+                    Controller_name = m.Module.Controller_name,
+                    Pages = m.Pages.Select(p => new Page
+                    {
+                        Page_name = p.Page.Page_name,
+                        Action_name = p.Page.Action_name,
+                        Components = p.Components.Select(c => new Component
+                        {
+                            Component_name = c.Component.Component_name,
+                            Component_abbreviation = c.Component.Component_abbreviation
+                        }).ToList()
+                    }).ToList()
+                }))
+                .ToListAsync();
+
+            return modules;
+        }
+
+        public async Task<List<Component>?> GetComponentPermissionAsync()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            var routeData = httpContext.GetRouteData();
+            var controller = routeData?.Values["controller"]?.ToString();
+            var action = routeData?.Values["action"]?.ToString();
+
+            var modules = await GetUserTemplateAsync();
+
+            if (modules == null)
+                return new List<Component>();
+
+            var components = modules
+                .Where(m => m.Controller_name == controller)
+                .SelectMany(m => m.Pages)
+                .Where(p => p.Action_name == action)
+                .SelectMany(p => p.Components)
+                .ToList();
+
+            return components;
+        }
+    }
+}

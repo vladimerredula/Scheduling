@@ -1,0 +1,322 @@
+﻿@model Template
+
+@{
+    ViewData["Title"] = "Templates";
+
+    var templates = ViewBag.Shifts as List<Template> ?? new List<Template>();
+    var modules = ViewBag.Modules as List<Module> ?? new List<Module>();
+}
+
+<div class="container">
+    <h1>@ViewData["Title"]</h1>
+
+    <p class="mb-4">
+        <a class="btn btn-primary shadow" onclick="addTemplate()">Create New</a>
+    </p>
+
+    <div class="card p-3 border-0 shadow-sm">
+        <table class="table table-hover" id="templateTable">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Template_ID)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Template_name)
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<!-- Template Modal -->
+<div class="modal fade" id="templateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="templateModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="templateForm" method="post">
+                <div class="modal-body">
+                    <input name="Template_ID" id="Template_ID" hidden />
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label class="form-label">Template name</label><span class="text-danger" title="Required">*</span>
+                            <input class="form-control" name="Template_name" id="Template_name" data-val="true" data-val-required="The Template name field is required." required />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Template_name" data-valmsg-replace="true"></span>
+                        </div>
+                    </div>
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Module</th>
+                                <th>Pages and Components</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var module in modules)
+                            {
+                                <tr class="py-2">
+                                    <td class="p-3">
+                                        <p>
+                                            <input class="module-checkbox" type="checkbox" name="selectedModules" value="@module.Module_ID" id="module-@module.Module_ID" hidden>
+                                            @module.Module_name
+                                        </p>
+                                    </td>
+                                    <td>
+                                        @foreach (var templatePage in module.Pages)
+                                        {
+                                            <div class="row py-2">
+                                                <div class="col">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input page-checkbox" type="checkbox" name="selectedPages" value="@module.Module_ID-@templatePage.Page_ID" id="page-@templatePage.Page_ID">
+                                                        <label class="form-check-label" for="page-@templatePage.Page_ID">
+                                                            @templatePage.Page_name
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col">
+                                                    @foreach (var component in templatePage.Components)
+                                                    {
+                                                        <div class="form-check">
+                                                            <input class="form-check-input component-checkbox page-@templatePage.Page_ID" type="checkbox" name="selectedComponents" value="@templatePage.Page_ID-@component.Component_ID" id="component-@component.Component_ID" disabled>
+                                                            <label class="form-check-label" for="component-@component.Component_ID">
+                                                                @component.Component_name
+                                                            </label>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer border-0">
+                    <div class="form-group">
+                        <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
+                        <a href="javascript:void(0)" class="btn btn-primary" id="modalButton"></a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteModalLabel">Are you sure you want to Delete this template?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-4">
+                        @Html.DisplayNameFor(model => model.Template_name)
+                    </dt>
+                    <dd class="col-sm-8" id="template_name">
+                    </dd>
+                </dl>
+            </div>
+            <div class="modal-footer border-0">
+                <form asp-action="Delete">
+                    <input type="hidden" name="id" id="deleteID" />
+                    <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
+                    <input type="submit" value="Delete" class="btn btn-danger" />
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            var table = $('#templateTable').DataTable({
+                ajax: {
+                    url: '@Url.Action("GetTemplates", "Template")',
+                    dataSrc: ''
+                },
+                columns: [
+                    {
+                        data: null,
+                        orderable: false,
+                        className: 'dt-control',
+                        width: "20px",
+                        render: function () {
+                            return null;
+                        }
+                    },
+                    { data: 'template_ID' },
+                    { data: 'template_name' },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            return `
+                                <a class="btn btn-sm btn-light border me-2" onclick="editTemplate(${row.template_ID})">Update</a>
+                                <a class="btn btn-sm btn-danger" onclick="deleteTemplate(${row.template_ID})">Delete</a>
+                            `;
+                        }
+                    }
+
+                ],
+                order: [[1, 'asc']]
+            });
+
+            $('#templateTable tbody').on('click', 'tr', function () {
+                var tr = $(this);
+                var row = table.row(tr);
+
+                if (row.child.isShown()) {
+                    row.child.hide();
+                    tr.removeClass('shown');
+                } else {
+                    var data = row.data();
+                    var modules = "";
+
+                    data.modules.forEach(function(module) {
+                        modules += "<div class='row justify-content-center'><div class='col-xxl-2'><strong>" + module.module_name + "</strong></div><div class='col-xxl-4'>";
+                        module.pages.forEach(function(page) {
+                            modules += "<div class='row border-bottom'><div class='col'>" + page.page_name + "</div><div class='col'>";
+
+                            if (page.components && page.components.length > 0) {
+                                page.components.forEach(function(component) {
+                                    modules += component.component_name + "</br>";
+                                });
+                            }
+
+                            modules += "</div></div>";
+                        });
+                        modules += "</div></div>";
+                    });
+
+                    row.child(modules).show();
+                    tr.addClass('shown');
+                }
+            });
+        });
+
+        $(".page-checkbox").on("change", function () {
+            let row = $(this).closest('tr');
+            let moduleCheckbox = row.find('.module-checkbox');
+            let components = $("." + this.id);
+
+            // Toggle compinent checkboxes if page checkbox is checked
+            components.prop("disabled", !$(this).is(":checked"));
+
+            if ($(this).is(':checked')) {
+                moduleCheckbox.prop('checked', true);
+            } else {
+                // Check if any other page checkboxes in the same row are still checked
+                const anyChecked = row.find('.page-checkbox:checked').length > 0;
+                moduleCheckbox.prop('checked', anyChecked);
+            }
+        });
+
+        function addTemplate() {
+            $(".modal-title").text("Add Template");
+
+            $("#modalButton").text("Create");
+
+            $("#templateForm").attr("action", "/Template/Add");
+
+            clearModal();
+
+            // Show the modal
+            $("#templateModal").modal("show");
+        }
+
+        function editTemplate(id) {
+            clearModal();
+
+            $.ajax({
+                url: "/Template/GetTemplate",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    $("#Template_name").val(data["template_name"]);
+                    $("#Template_ID").val(data["template_ID"]);
+
+                    // Iterate over the data object and check the corresponding checkboxes
+                    data.modules.forEach(function(module) {
+                        $("#module-" + module.module_ID).prop("checked", true);
+                        module.pages.forEach(function(page) {
+                            $("#page-" + page.page_ID).prop("checked", true);
+                            $("#page-" + page.page_ID).change();
+
+                            if (page.components && page.components.length > 0) {
+                                console.log(page.components);
+                                page.components.forEach(function(component) {
+                                    $("#component-" + component.component_ID).prop("checked", true);
+                                });
+                            }
+                        });
+                    });
+
+                    // Set the action attribute of the form
+                    $("#templateForm").attr("action", "/Template/Edit");
+                    $("#templateModalLabel").text("Edit template");
+                    $("#modalButton").text("Update");
+
+                    // Show the modal
+                    $("#templateModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response);
+                }
+            });
+        };
+
+        function deleteTemplate(id) {
+            $.ajax({
+                url: "/Template/GetTemplate",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    $("#template_name").text(data["template_name"])
+
+                    $("#deleteID").val(data["template_ID"]);
+
+                    // Show the modal
+                    $("#deleteModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response.status, response.responseJSON.message);
+                    alert("Error: " + response.responseJSON.message);
+                }
+            });
+        }
+
+        $("#modalButton").on("click", function() {
+            $("#templateForm").submit();
+        });
+
+        function clearModal() {
+            $('input[type="text"]').val('');
+            $('input[type="checkbox"]').prop('checked', false);
+            $('.component-checkbox').prop('disabled', true);
+            // $('select').prop('selectedIndex', "");
+
+            $(".field-validation-error").text("");
+        }
+
+        function formatDate(dateString) {
+            var date = new Date(dateString);
+            var day = ("0" + date.getDate()).slice(-2);
+            var month = ("0" + (date.getMonth() + 1)).slice(-2);
+            var year = date.getFullYear();
+            return year + "-" + month + "-" + day; // Format: YYYY/MM/DD
+        }
+    </script>
+}

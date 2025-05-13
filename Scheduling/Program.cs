@@ -41,6 +41,7 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<TemplateService>();
 
 builder.Logging.AddFile(builder.Configuration.GetSection("Logging:File"), fileLoggerOpts =>
 {
