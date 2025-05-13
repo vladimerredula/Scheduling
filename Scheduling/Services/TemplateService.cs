@@ -14,7 +14,7 @@ namespace Scheduling.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<List<Module>?> GetUserTemplateAsync()
+        public List<Module>? GetUserTemplate()
         {
             var httpContext = _httpContextAccessor.HttpContext;
             var userIdValue = httpContext?.User?.FindFirst("Personnelid")?.Value;
@@ -22,7 +22,7 @@ namespace Scheduling.Services
             if (!int.TryParse(userIdValue, out var userId))
                 return null;
 
-            var modules = await _db.Users
+            var modules = _db.Users
                 .Where(u => u.Personnel_ID == userId)
                 .Include(u => u.Template)
                     .ThenInclude(t => t.Modules)
@@ -44,19 +44,31 @@ namespace Scheduling.Services
                         }).ToList()
                     }).ToList()
                 }))
-                .ToListAsync();
+                .ToList();
 
             return modules;
         }
 
-        public async Task<List<Component>?> GetComponentPermissionAsync()
+        public List<Component>? GetComponentPermission()
         {
             var httpContext = _httpContextAccessor.HttpContext;
             var routeData = httpContext.GetRouteData();
             var controller = routeData?.Values["controller"]?.ToString();
             var action = routeData?.Values["action"]?.ToString();
 
-            var modules = await GetUserTemplateAsync();
+            switch (action)
+            {
+                case "GetScheduleByMonth":
+                    action = "Index";
+                    break;
+                case "GetCalendar":
+                    action = "Calendar";
+                    break;
+                default:
+                    break;
+            }
+
+            var modules = GetUserTemplate();
 
             if (modules == null)
                 return new List<Component>();
@@ -69,6 +81,13 @@ namespace Scheduling.Services
                 .ToList();
 
             return components;
+        }
+
+        public bool HasPermission(string keyWord)
+        {
+            var components = GetComponentPermission();
+
+            return components.Any(c => c.Component_abbreviation == keyWord);
         }
     }
 }

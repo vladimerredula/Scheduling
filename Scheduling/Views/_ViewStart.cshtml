@@ -1,18 +1,3 @@
 ﻿@{
     Layout = "_Layout";
 }
-
-@using Scheduling.Services
-@inject TemplateService TemplateService
-
-@{
-    var templateTask = TemplateService.GetUserTemplateAsync();
-    templateTask.Wait();
-    var userTemplate = templateTask.Result;
-    ViewData["UserTemplate"] = userTemplate;
-
-    var componentTask = TemplateService.GetComponentPermissionAsync();
-    componentTask.Wait();
-    var components = componentTask.Result;
-    ViewData["ComponentPermission"] = components;
-}
