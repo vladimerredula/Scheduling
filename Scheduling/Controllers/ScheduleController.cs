@@ -72,7 +72,9 @@ namespace Scheduling.Controllers
                     u.Privilege_ID != 0 &&
                     u.Privilege_ID != 4 &&
                     u.Department_ID == departmentId &&
-                    u.Status == 1)
+                    u.Status == 1 &&
+                    (u.Date_hired == null || u.Date_hired.Value.Date <= new DateTime(year, month, DateTime.DaysInMonth(year, month)).Date) &&
+                    (u.Last_day == null || u.Last_day.Value.Date >= new DateTime(year, month, 1).Date))
                 .ToListAsync();
 
             // Override Sector_IDs based on latest Employee_order
@@ -331,7 +333,9 @@ namespace Scheduling.Controllers
                     u.Privilege_ID != 0 &&
                     u.Privilege_ID != 4 &&
                     u.Department_ID == departmentId &&
-                    u.Status == 1)
+                    u.Status == 1 &&
+                    (u.Date_hired == null || u.Date_hired.Value.Date <= new DateTime(year, month, DateTime.DaysInMonth(year, month)).Date) &&
+                    (u.Last_day == null || u.Last_day.Value.Date >= new DateTime(year, month, 1).Date))
                 .ToListAsync();
 
             // Override Sector_IDs based on latest Employee_order
@@ -592,7 +596,9 @@ namespace Scheduling.Controllers
                     u.Privilege_ID != 0 &&
                     u.Privilege_ID != 4 &&
                     u.Department_ID == departmentId &&
-                    u.Status == 1)
+                    u.Status == 1 &&
+                    (u.Date_hired == null || u.Date_hired.Value.Date <= new DateTime(year, month, DateTime.DaysInMonth(year, month)).Date) &&
+                    (u.Last_day == null || u.Last_day.Value.Date >= new DateTime(year, month, 1).Date))
                 .ToListAsync();
 
             // Override Sector_IDs based on latest Employee_order
@@ -693,7 +699,9 @@ namespace Scheduling.Controllers
                     u.Privilege_ID != 0 &&
                     u.Privilege_ID != 4 &&
                     u.Department_ID == departmentId &&
-                    u.Status == 1)
+                    u.Status == 1 &&
+                    (u.Date_hired == null || u.Date_hired.Value.Date <= new DateTime(year, month, DateTime.DaysInMonth(year, month)).Date) &&
+                    (u.Last_day == null || u.Last_day.Value.Date >= new DateTime(year, month, 1).Date))
                 .ToListAsync();
 
             // Override Sector_IDs based on latest Employee_order

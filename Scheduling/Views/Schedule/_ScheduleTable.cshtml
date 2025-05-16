@@ -87,8 +87,12 @@
                                 </tr>
                                 @foreach (var user in sector)
                                 {
-                                    <tr id="user-@user.Personnel_ID" class="@(!isRegularUser ? "draggable" : "")">
-                                        <td class="border border-top-0 border-secondary text-nowrap text-start ps-2 drag-handle align-content-center @(userId == user.Personnel_ID ? "fw-semibold" : "")">
+                                    var trainingPeriod = user.Date_hired.HasValue ? user.Date_hired.Value.AddMonths(3) : DateTime.MinValue;
+                                    var isTrainee = trainingPeriod.Date >= new DateTime(currentYear, selectedMonth, daysInMonth).Date;
+
+                                    <tr id="user-@user.Personnel_ID" class="@(canReorder ? "draggable" : "")">
+                                        <td class="border border-top-0 border-secondary text-nowrap text-start ps-2 drag-handle align-content-center @(userId == user.Personnel_ID ? "fw-semibold" : "")
+                                            @(isTrainee ? "bg-success-subtle text-success-emphasis" : "")">
                                             @user.Full_name
                                         </td>
                                         @for (int day = 1; day <= daysInMonth; day++)
@@ -107,6 +111,7 @@
                                             var holiday = holidays.FirstOrDefault(h => h.Date == date);
                                             bool isHoliday = holiday != null;
                                             bool isCompanyHoliday = holiday?.Type == "Company";
+                                            bool isStillTrainee = trainingPeriod.Date >= date.Date;
 
                                             bool canActOnLeave = hasLeave && (isAdmin || isManager || isTopManager || (isRegularUser && leave?.Personnel_ID == userId));
 
@@ -177,9 +182,11 @@
                                             class="p-1 @cellClass position-relative border-bottom border-end border-secondary">
 
                                                 <select data-date="@dateString"
-                                                class="form-control p-1 position-relative text-center z-1 @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "")"
+                                                    class="form-control p-1 position-relative text-center z-1 bg-transparent 
+                                                        @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "") 
+                                                        @(isStillTrainee ? "text-success fw-semibold" : "")"
                                                 onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
-                                                style="background-color: transparent; border: none;@(isCompanyHoliday ? "color: transparent;" : "")" 
+                                                    style="border: none;@(isCompanyHoliday ? "color: transparent;" : "")" 
                                                 @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "") 
                                                 @(disabledSelect)>
                                                     <option value="0"></option>
@@ -199,11 +206,11 @@
                                                     {
                                                         @if (schedule?.Comment == "cancelled")
                                                         {
-                                                            <option value="998">*Uncancel shift</option>
+                                                            <option class="text-body" value="998">*Uncancel shift</option>
                                                         }
                                                         else
                                                         {
-                                                            <option value="999">*Cancel shift</option>
+                                                            <option class="text-body" value="999">*Cancel shift</option>
                                                         }
                                                     }
                                                 </select>

@@ -83,8 +83,14 @@
 
                                 @foreach (var user in sector)
                                 {
+                                    var trainingPeriod = user.Date_hired.HasValue ? user.Date_hired.Value.AddMonths(3) : DateTime.MinValue;
+                                    var isTrainee = trainingPeriod.Date >= new DateTime(currentYear, selectedMonth, daysInMonth).Date;
+
                                     <tr>
-                                        <td class="border border-top-0 border-secondary text-nowrap text-start">@user.Full_name</td>
+                                    <td class="border border-top-0 border-secondary text-nowrap text-start
+                                            @(isTrainee ? "bg-success-subtle text-success-emphasis" : "")">
+                                            @user.Full_name
+                                    </td>
 
                                         @for (int day = 1; day <= daysInMonth; day++)
                                         {
@@ -97,16 +103,17 @@
                                             var hasLeave = leave != null && shift != null;
                                             var holiday = holidays.FirstOrDefault(h => h.Date == date);
 
+                                            bool isStillTrainee = trainingPeriod.Date >= date.Date;
                                             bool isCompanyHoliday = holiday?.Type == "Company";
                                             var cellClass = holiday != null
-                                            ? (isCompanyHoliday ? "bg-secondary text-white" : "bg-secondary-subtle text-secondary-emphasis")
-                                            : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
+                                            ? (isCompanyHoliday ? "bg-secondary" : "bg-secondary-subtle")
+                                            : (isWeekend ? "bg-secondary-subtle" : "");
 
                                             string leavePopover = hasLeave ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'" : "";
 
                                             string bgClass = hasLeave ? "bg-" + leave?.Leave_type?.BsColor + " bg-gradient" : "visually-hidden";
 
-                                            <td id="cell-@user.Personnel_ID-@dateStr" class="p-0 @cellClass position-relative border-bottom border-end border-secondary">
+                                            <td id="cell-@user.Personnel_ID-@dateStr" class="p-0 @cellClass @(isStillTrainee ? "text-success fw-semibold" : "") position-relative border-bottom border-end border-secondary">
                                                 <p class="p-1 m-0 text-center">@(isCompanyHoliday || leave != null ? "" : shift?.Shift_name)</p>
 
                                                 <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @bgClass" @Html.Raw(leavePopover) style="z-index: 1;"></p>
