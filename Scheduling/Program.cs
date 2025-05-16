@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Scheduling;
 using Scheduling.Services;
 using NReco.Logging.File;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,11 +35,16 @@ builder.Services.AddAuthentication(
 // Add session services
 builder.Services.AddSession(options =>
 {
+    options.Cookie.Name = ".Scheduling.Session";
     options.Cookie.HttpOnly = true; // Ensure session cookie is not accessible to client-side scripts
     options.Cookie.IsEssential = true; // Indicate that the session cookie is essential for the application
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Send session cookie only over HTTPS
     options.IdleTimeout = TimeSpan.FromMinutes(30); // Session timeout set to 30 minutes
 });
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "DataProtection-Keys")))
+    .SetApplicationName("SchedulingApp");
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<TemplateService>();
