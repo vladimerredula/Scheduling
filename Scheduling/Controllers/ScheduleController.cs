@@ -126,12 +126,9 @@ namespace Scheduling.Controllers
             ViewBag.Departments = new SelectList(departments, "Department_ID", "Department_name", departmentId);
             ViewBag.LeaveTypes = leaveTypes;
 
-            var model = (users, shifts, schedules, leaves, holidays, month, year);
             await _log.LogInfoAsync("Visited schedules");
 
-            return (User.IsInRole("member") || User.IsInRole("shiftLeader"))
-                ? View(model)
-                : View("Manage", model);
+            return View((users, shifts, schedules, leaves, holidays, month, year));
         }
 
         public async Task<IActionResult> Calendar(int month = 0, int year = 0)

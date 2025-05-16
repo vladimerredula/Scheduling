@@ -20,9 +20,12 @@ namespace Scheduling.Controllers
             _log = logger;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return RedirectToAction(nameof(Leaves));
+            await PopulateLeaveViewBagsAsync();
+            await _log.LogInfoAsync("Visited leaves");
+
+            return View();
         }
 
         [Authorize(Roles = "admin,manager,topManager")]
@@ -56,7 +59,7 @@ namespace Scheduling.Controllers
 
                 await PopulateLeaveViewBagsAsync();
                 await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
-                return View(nameof(Leaves), leave);
+                return View(nameof(Index), leave);
             }
 
             try
@@ -77,7 +80,7 @@ namespace Scheduling.Controllers
                 TempData["toastMessage"] = "Unable to request leave.-danger";
             }
 
-            return RedirectToAction(nameof(Leaves));
+            return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> Edit(int id, [Bind("Leave_ID,Personnel_ID,Leave_type_ID,Status,Date_start,Date_end")] Leave leave)
@@ -86,13 +89,13 @@ namespace Scheduling.Controllers
             {
                 TempData["toastMessage"] = "Leave IDs didn't match.-danger";
                 await _log.LogWarningAsync($"Leave IDs didn't match: {id} and {leave.Leave_ID}");
-                return RedirectToAction(nameof(Leaves));
+                return RedirectToAction(nameof(Index));
             }
 
             if (!ModelState.IsValid)
             {
                 await PopulateLeaveViewBagsAsync();
-                return View(nameof(Leaves), leave);
+                return View(nameof(Index), leave);
             }
 
             if (HasOverlappingLeave(leave))
@@ -100,7 +103,7 @@ namespace Scheduling.Controllers
                 ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
                 await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
                 await PopulateLeaveViewBagsAsync();
-                return View(nameof(Leaves), leave);
+                return View(nameof(Index), leave);
             }
 
             try
@@ -117,7 +120,7 @@ namespace Scheduling.Controllers
                 TempData["toastMessage"] = "Unable to update leave.-danger";
             }
 
-            return RedirectToAction(nameof(Leaves));
+            return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> Apply(Leave request)
@@ -187,7 +190,7 @@ namespace Scheduling.Controllers
             {
                 TempData["toastMessage"] = "Leave not found-danger";
                 await _log.LogWarningAsync($"Leave ID: {Id} was not found");
-                return RedirectToAction(nameof(Leaves));
+                return RedirectToAction(nameof(Index));
             }
 
             leave.Status = "Cancelled";
@@ -197,7 +200,7 @@ namespace Scheduling.Controllers
 
             TempData["toastMessage"] = "Successfully cancelled leave request!-success";
 
-            return RedirectToAction(nameof(Leaves));
+            return RedirectToAction(nameof(Index));
         }
 
         // Check if the dates overlap

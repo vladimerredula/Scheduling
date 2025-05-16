@@ -51,8 +51,6 @@ function getRequestCount() {
 
 function getNotifications() {
     $.post("/Home/GetNotifications", function (notifications) {
-        console.log(notifications);
-
         var notificationList = $("#notificationList").empty();
 
         notificationList.append('<li><h6 class="dropdown-header">Notifications</h6></li>');
@@ -65,7 +63,7 @@ function getNotifications() {
 
                 var item = $("<li>").addClass("border-top notif")
                     .attr("id", notification["leave_ID"])
-                    .attr("data-link", "/Leave/Leaves#" + notification["status"].toLowerCase());
+                    .attr("data-link", "/Leave/Index#" + notification["status"].toLowerCase());
                 var button = $("<a>").addClass("dropdown-item py-2").attr("href", "#");
                 var div = $("<div>").addClass("d-flex w-100 justify-content-between");
                 var h6 = $("<h6>").addClass("mt-1 mb-0");
@@ -150,7 +148,6 @@ $("#notifDropdown").on('hidden.bs.dropdown', function () {
 $(document).on("click", ".notif", function () {
     let id = this.id;
     let url = $(this).data("link");
-    console.log(id, url);
     $.ajax({
         url: "/Home/ReadNotification",
         type: "POST",
@@ -159,7 +156,7 @@ $(document).on("click", ".notif", function () {
             window.location.href = url;
         },
         error: function (response) {
-            console.error("Error:", response.status, response.responseJSON.message);
+            console.error("Error:", response);
         }
     });
 });
