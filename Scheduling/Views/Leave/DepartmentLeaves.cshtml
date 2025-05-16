@@ -4,12 +4,19 @@
     ViewData["Title"] = "Departmental Leaves";
 
     var leaves = ViewBag.Leaves as List<Leave> ?? new List<Leave>();
+
+    // Permissions
+    var canSelectDept = _template.HasPermission("DeptSelect");
+    var canApprove = _template.HasPermission("ApproveLeave");
+    var canDeny = _template.HasPermission("DenyLeave");
+    var isFirstApprover = _template.HasPermission("FirstApprover");
+    var isFinalApprover = _template.HasPermission("FinalApprover");
 }
 
 <div class="container">
     <h1 class="mb-3">@ViewData["Title"]</h1>
 
-    @if (User.IsInRole("admin") || User.IsInRole("topManager"))
+    @if (canSelectDept)
     {
         <div class="row mb-3">
             <div class="col-auto">
@@ -97,19 +104,24 @@
                                 }
                             </td>
                             <td class="text-nowrap align-content-center">
-                                @if ((User.IsInRole("manager") || User.IsInRole("admin")) && item?.Approver_1 == null)
+                                @if ((isFirstApprover && item?.Approver_1 == null) || (isFinalApprover && item?.Approver_1 != null && item?.Approver_2 == null))
                                 {
-                                    <a class="btn btn-sm btn-outline-success" asp-action="Approve" asp-route-id="@item?.Leave_ID" asp-route-departmentId="@(leaves.Select(l => l?.User?.Department_ID).Distinct().Count() > 1 ? "0" : item?.User?.Department_ID)">Approve</a>
-                                    <a class="btn btn-sm btn-outline-danger" href="javascript:void(0)" onclick="denyLeave(@item?.Leave_ID)">Deny</a>
+                                    if (canApprove)
+                                    {
+                                        <a class="btn btn-sm btn-outline-success" asp-action="Approve" asp-route-id="@item?.Leave_ID" asp-route-departmentId="@(leaves.Select(l => l?.User?.Department_ID).Distinct().Count() > 1 ? "0" : item?.User?.Department_ID)">Approve</a>
+                                    }
+                                    if (canDeny)
+                                    {
+                                        <a class="btn btn-sm btn-outline-danger" href="javascript:void(0)" onclick="denyLeave(@item?.Leave_ID)">Deny</a>
+                                    }
                                 }
-                                else if (User.IsInRole("manager") && item?.Approver_1 != null)
+                                else if (isFirstApprover && item?.Approver_1 != null)
                                 {
-                                    <span class="text-secondary">Pending for second approval</span>
+                                    <span class="text-secondary">Pending for final approval</span>
                                 }
-                                else if ((User.IsInRole("topManager") || User.IsInRole("admin")) && item?.Approver_1 != null && item?.Approver_2 == null)
+                                else if (isFinalApprover && item?.Approver_2 == null)
                                 {
-                                    <a class="btn btn-sm btn-outline-success" asp-action="Approve" asp-route-id="@item?.Leave_ID" asp-route-departmentId="@(leaves.Select(l => l?.User?.Department_ID).Distinct().Count() > 1 ? "0" : item?.User?.Department_ID)">Approve</a>
-                                    <a class="btn btn-sm btn-outline-danger" href="javascript:void(0)" onclick="denyLeave(@item?.Leave_ID)">Deny</a>
+                                    <span class="text-secondary">Pending for manager's approval</span>
                                 }
                             </td>
                         </tr>

@@ -10,13 +10,21 @@
     <p class="mb-3"><a asp-action="Index">View all schedules</a></p>
     <div class="row mb-3 justify-content-between">
         <!-- Month Selection -->
-        <div class="col-auto mb-2">
-            <label for="monthSelect" class="form-label">Month</label>
-            <input type="text" class="form-control" id="monthPicker">
+        <div class="col-auto">
+            @if (_template.HasPermission("MonthSelect"))
+            {
+                <input type="text" class="form-control" id="monthPicker">
+            }
         </div>
         <div class="col-auto align-self-end">
-            <a class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
-            <a id="toggleLegendsBtn" class="btn btn-light border">Show legends</a>
+            @if (_template.HasPermission("LeaveBtn"))
+            {
+                <a class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
+            }
+            @if (_template.HasPermission("LegendBtn"))
+            {
+                <a id="toggleLegendsBtn" class="btn btn-light border">Show legends</a>
+            }
         </div>
     </div>
     <div id="calendarTable">
@@ -71,7 +79,7 @@
 
 @section Scripts {
     @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
         $(document).ready(function (){

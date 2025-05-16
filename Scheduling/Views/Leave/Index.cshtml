@@ -1,102 +1,272 @@
 ﻿@model Leave
 
 @{
-    ViewData["Title"] = "Leaves";
+    ViewData["Title"] = "User Leaves";
 
     var leaves = ViewBag.Leaves as List<Leave> ?? new List<Leave>();
+
+    // Permissions
+    var canAddLeave = _template.HasPermission("AddLeave");
+    var canEditLeave = _template.HasPermission("EditLeave");
+    var canCancelLeave = _template.HasPermission("CancelLeave");
+    var canWithdrawLeave = _template.HasPermission("WithdrawLeave");
 }
 
 <div class="container">
     <h1>@ViewData["Title"]</h1>
 
-    <p class="mb-4">
-        <a class="btn btn-primary shadow" onclick="addLeave()">Create New</a>
-    </p>
+    @if (canAddLeave)
+    {
+        <p class="mb-4">
+            <a class="btn btn-primary shadow" onclick="addLeave()">Create New</a>
+        </p>
+    }
 
-    <div class="card p-3 border-0 shadow-sm">
-        @if (User.IsInRole("admin") || User.IsInRole("topManager"))
-        {
-            <div class="row mb-3">
-                <div class="col-auto">
-                    <form asp-action="Index" id="changeDepartment">
-                        <label for="departmentId" class="form-label">Department</label>
-                        <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
-                            <option value="" disabled></option>
-                        </select>
-                    </form>
-                </div>
-            </div>
-        }
-        <table class="datatable table table-hover">
-            <thead>
-                <tr>
-                    @if (!User.IsInRole("member") && !User.IsInRole("shiftLeader"))
-                    {
-                        <th>
-                            @Html.DisplayNameFor(model => model.User.Full_name)
-                        </th>
-                    }
-                    <th>
-                        @Html.DisplayNameFor(model => model.Date_start)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.Date_end)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.Status)
-                    </th>
-                    <th>
-                        Approved by
-                    </th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in leaves)
-                {
+    <ul class="nav nav-tabs leavesTab" id="leavesTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fs-5" id="pending-tab" data-bs-toggle="tab" data-bs-target="#content-pending" role="tab" aria-controls="0">Requests</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fs-5" id="approved-tab" data-bs-toggle="tab" data-bs-target="#content-approved" role="tab" aria-controls="1">Approved</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fs-5" id="denied-tab" data-bs-toggle="tab" data-bs-target="#content-denied" role="tab" aria-controls="2">Denied</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fs-5" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#content-cancelled" role="tab" aria-controls="3">Cancelled</button>
+        </li>
+    </ul>
+    <div class="tab-content rounded-bottom p-3 bg-white shadow-sm">
+        <div class="tab-pane" id="content-pending" role="tabpanel" aria-labelledby="pending">
+            <table class="datatable table table-hover">
+                <thead>
                     <tr>
-                        @if (!User.IsInRole("member") && !User.IsInRole("shiftLeader"))
-                        {
-                            <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
-                                @Html.DisplayFor(modelItem => item.User.Full_name)
-                            </td>
-                        }
-                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
-                            @Html.DisplayFor(modelItem => item.Date_start_string)
-                        </td>
-                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
-                            @Html.DisplayFor(modelItem => item.Date_end_string)
-                        </td>
-                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
-                            @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
-                        </td>
-                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
-                            @Html.DisplayFor(modelItem => item.Status)
-                        </td>
-                        <td class="@(item.Status == "Cancelled" ? "text-secondary" : "")">
-                            @Html.DisplayFor(modelItem => item.Approver1.Full_name)
-                        </td>
-                        <td class="text-nowrap @(item.Status == "Cancelled" ? "text-secondary" : "")">
-                            @if (item.Status == "Pending")
-                            {
-                                <a href="javascript:void(0)" onclick="editLeave(@item.Leave_ID)">Edit</a>
-                                <span> | </span>
-                                <a href="javascript:void(0)" onclick="cancelLeave(@item.Leave_ID)">Cancel</a>
-                            } else if (item.Status != "Cancelled")
-                            {
-                                <a href="javascript:void(0)" onclick="cancelLeave(@item.Leave_ID)">Widthraw</a>
-                            }
-                        </td>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_start)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_end)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Status)
+                        </th>
+                        <th>
+                            1st Approver
+                        </th>
+                        <th>
+                            2nd Approver
+                        </th>
+                        <th>Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var item in leaves.Where(l => l.Status == "Pending"))
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_start_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_end_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Status)
+                            </td>
+                            <td>
+                                @if (item?.Approver_1 != null)
+                                {
+                                    <i class="bi bi-check-circle text-success"></i> @Html.DisplayFor(modelItem => item.Approver1.Full_name)
+                                }
+                            </td>
+                            <td>
+                                @if (item?.Approver_2 != null)
+                                {
+                                    <i class="bi bi-check-circle text-success"></i> @Html.DisplayFor(modelItem => item.Approver2.Full_name)
+                                }
+                            </td>
+                            <td class="text-nowrap align-content-center">
+                                @if (canEditLeave)
+                                {
+                                    <a class="btn btn-sm btn-light border @(item?.Approver_1 != null ? "disabled" : "")" href="javascript:void(0)" onclick="editLeave(@item?.Leave_ID)">Edit</a>
+                                }
+
+                                @if (canCancelLeave)
+                                {
+                                    <a class="btn btn-sm btn-light border text-danger" href="javascript:void(0)" onclick="cancelLeave(@item?.Leave_ID)">Cancel</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="tab-pane" id="content-approved" role="tabpanel" aria-labelledby="approved">
+            <table class="datatable table table-hover">
+                <thead>
+                    <tr>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_start)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_end)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Status)
+                        </th>
+                        <th>
+                            1st Approver
+                        </th>
+                        <th>
+                            2nd Approver
+                        </th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in leaves.Where(l => l.Status == "Approved"))
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_start_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_end_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Status)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Approver1.Full_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Approver2.Full_name)
+                            </td>
+                            <td class="text-nowrap align-content-center">
+                                @if (canWithdrawLeave && item?.Date_start > DateTime.Now)
+                                {
+                                    <a class="btn btn-sm btn-light border text-danger" href="javascript:void(0)" onclick="withdrawLeave(@item?.Leave_ID)">Request to withdraw</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="tab-pane" id="content-denied" role="tabpanel" aria-labelledby="denied">
+            <table class="datatable table table-hover">
+                <thead>
+                    <tr>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_start)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_end)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Status)
+                        </th>
+                        <th>
+                            Denied by
+                        </th>
+                        <th>
+                            Comment
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in leaves.Where(l => l.Status == "Denied"))
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_start_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_end_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Status)
+                            </td>
+                            @if (item?.Approver_2 != null)
+                            {
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Approver2.Full_name)
+                                </td>
+                            }
+                            else if (item?.Approver_1 != null)
+                            {
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Approver1.Full_name)
+                                </td>
+                            }
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Comment)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="tab-pane" id="content-cancelled" role="tabpanel" aria-labelledby="cancelled">
+            <table class="datatable table table-hover">
+                <thead>
+                    <tr>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_start)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_end)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Status)
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in leaves.Where(l => l.Status == "Cancelled" || l.Status == "Withdrawn"))
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_start_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Date_end_string)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Status)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
+<!-- Edit modal -->
 <div class="modal fade" id="leaveModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -108,10 +278,14 @@
                 <div class="modal-body">
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     <input type="hidden" asp-for="Leave_ID" />
+                    <input type="hidden" asp-for="Personnel_ID" value="@leaves?.FirstOrDefault()?.Personnel_ID" />
+                    <input type="hidden" asp-for="Status" />
                     <div class="row mb-3">
                         <div class="col">
                             <label asp-for="Leave_type_ID" class="form-label"></label><span class="text-danger" title="Required">*</span>
-                            <select asp-for="Leave_type_ID" class="form-select" asp-items="ViewBag.LeaveTypes"></select>
+                            <select asp-for="Leave_type_ID" class="form-select" asp-items="ViewBag.LeaveTypes">
+                                <option value="" selected disabled>Choose..</option>
+                            </select>
                             <span asp-validation-for="Leave_type_ID" class="text-danger"></span>
                         </div>
                     </div>
@@ -129,13 +303,6 @@
                             <span asp-validation-for="Date_end" class="text-danger"></span>
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label asp-for="Comment" class="form-label"></label>
-                            <textarea asp-for="Comment" class="form-control"></textarea>
-                            <span asp-validation-for="Comment" class="text-danger"></span>
-                        </div>
-                    </div>
                 </div>
                 <div class="modal-footer border-0">
                     <div class="form-group">
@@ -148,7 +315,8 @@
     </div>
 </div>
 
-<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel">
+<!-- Cancel modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header border-0">
@@ -157,20 +325,20 @@
             </div>
             <div class="modal-body">
                 <dl class="row">
-                    <dt class="col-sm-3">
+                    <dt class="col-sm-3 text-end">
                         @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
                     </dt>
-                    <dd class="col-sm-9" id="leave_type_name">
+                    <dd class="col-sm-9" id="cancel_leave_type_name">
                     </dd>
-                    <dt class="col-sm-3">
+                    <dt class="col-sm-3 text-end">
                         @Html.DisplayNameFor(model => model.Date_start)
                     </dt>
-                    <dd class="col-sm-9" id="date_start">
+                    <dd class="col-sm-9" id="cancel_date_start">
                     </dd>
-                    <dt class="col-sm-3">
+                    <dt class="col-sm-3 text-end">
                         @Html.DisplayNameFor(model => model.Date_end)
                     </dt>
-                    <dd class="col-sm-9" id="date_end">
+                    <dd class="col-sm-9" id="cancel_date_end">
                     </dd>
                 </dl>
             </div>
@@ -178,12 +346,55 @@
                 <form asp-action="Cancel">
                     <input type="hidden" name="id" id="cancelID" />
                     <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">No</a>
+                    <input type="submit" value="Yes, Cancel" class="btn btn-danger" />
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Withdraw modal -->
+<div class="modal fade" id="withdrawModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="withdrawModalLabel">Request to withdraw this leave?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                    </dt>
+                    <dd class="col-sm-9" id="withdraw_leave_type_name">
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Date_start)
+                    </dt>
+                    <dd class="col-sm-9" id="withdraw_date_start">
+                    </dd>
+                    <dt class="col-sm-3">
+                        @Html.DisplayNameFor(model => model.Date_end)
+                    </dt>
+                    <dd class="col-sm-9" id="withdraw_date_end">
+                    </dd>
+                </dl>
+            </div>
+            <div class="modal-footer border-0">
+                <form asp-action="Withdraw">
+                    <input type="hidden" name="id" id="withdrawID" />
+                    <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">No</a>
                     <input type="submit" value="Yes, proceed" class="btn btn-danger" />
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+@if (Model != null)
+{
+    <input type="hidden" id="action" data-id="@Model.Leave_ID" value="@(Model.Leave_ID != 0 ? "edit" : "add")" />
+}
 
 @section Scripts {
     @{
@@ -193,13 +404,41 @@
         $("table.datatable").DataTable({
             responsive: true,
             fixedHeader: true
-            @if (!User.IsInRole("member") && !User.IsInRole("shiftLeader"))
-            {
-                @: , order: [[1, 'asc']]
-            }
         });
 
         $(document).ready(function () {
+            var action = $("#action");
+            var actionVal = action.val();
+            if (actionVal != null) {
+                if (actionVal == "add") {
+                    $(".modal-title").text("Add Leave");
+
+                    $("#modalButton").text("Create");
+
+                    $("#leaveForm").attr("action", "/Leave/Add");
+                } else {
+                    $(".modal-title").text("Edit Leave");
+
+                    $("#modalButton").text("Update");
+
+                    $("#leaveForm").attr("action", "/Leave/Edit/" + action.data("id"));
+                }
+
+                $("#leaveModal").modal("show");
+            }
+
+            var tabs = document.getElementsByClassName('nav nav-tabs')
+
+            // Selecting all nav tabs and showing the first tab open
+            for (var i = 0; i < tabs.length; i++) {
+                var firstEl = tabs[i].querySelector('li:first-child button')
+                if (firstEl == null) {
+                    continue
+                }
+                var tab = new bootstrap.Tab(firstEl)
+                tab.show()
+            }
+
             $("#Date_start").on("click", function () {
                 $(this)[0].showPicker();
             });
@@ -247,7 +486,38 @@
                     }
                 }
             });
+
+            // Check for a hash in the URL and activate the corresponding tab
+            var hash = window.location.hash.substring(1);
+            if (hash) {
+                activateTab(hash);
+
+                // Add click event to tab links
+                $('.leavesTab .nav-link').click(function (e) {
+                    e.preventDefault();
+                    var tabId = $(this).attr('href');
+                    if (tabId != null) {
+                        tabId = tabId.substring(1);
+                        activateTab(tabId);
+                        window.location.hash = tabId;
+                    }
+                });
+            }
         });
+
+        // Function to activate the tab
+        function activateTab(tabId) {
+            var tab = $('#' + tabId + '-tab');
+
+            if (tab.length == 0) {
+                return;
+            }
+
+            $('.nav-link').removeClass('active');
+            $('.tab-pane').removeClass('show active');
+            $('#' + tabId + '-tab').addClass('active');
+            $('#content-' + tabId).addClass('show active');
+        }
 
         $("#departmentId").on("change", function() {
             $("#changeDepartment").submit();
@@ -274,7 +544,6 @@
                 type: "POST",
                 data: {id: id},
                 success: function (data) {
-                    console.log(data);
                     // Iterate over the properties of the data object and set the corresponding form field values
                     $.each(data, function (key, value) {
                         var elementId = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize the first letter
@@ -304,7 +573,7 @@
                 success: function (data) {
                     // Iterate over the properties of the data object and set the corresponding form field values
                     $.each(data, function (key, value) {
-                        var $element = $("#" + key);
+                        var $element = $("#cancel_" + key);
                         if ($element.length) {
                             if (key == "date") {
                                 $element.text(formatDate(value));
@@ -326,14 +595,47 @@
             });
         }
 
+        function withdrawLeave(id) {
+            $.ajax({
+                url: "/Leave/GetLeave",
+                type: "POST",
+                data: {id: id},
+                success: function (data) {
+                    // Iterate over the properties of the data object and set the corresponding form field values
+                    $.each(data, function (key, value) {
+                        var $element = $("#withdraw_" + key);
+                        if ($element.length) {
+                            if (key == "date") {
+                                $element.text(formatDate(value));
+                            } else {
+                                $element.text(value);
+                            }
+                        }
+                    });
+
+                    $("#withdrawID").val(data["leave_ID"]);
+
+                    // Show the modal
+                    $("#withdrawModal").modal("show");
+                },
+                error: function (response) {
+                    console.error("Error:", response.status, response.responseJSON.message);
+                    alert("Error: " + response.responseJSON.message);
+                }
+            });
+        }
+
         $("#modalButton").on("click", function() {
             $("#leaveForm").submit();
         });
 
         function clearModal() {
             $('input[type="text"]').val('');
+            $('input[type="date"]').val('');
+            $('select').val('');
             // $('select').prop('selectedIndex', "");
 
+            $(".validation-summary-errors").remove();
             $(".field-validation-error").text("");
         }
 

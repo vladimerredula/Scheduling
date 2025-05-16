@@ -7,29 +7,37 @@
     ViewData["Title"] = "Shifts";
 
     var shifts = ViewBag.Shifts as List<Shift> ?? new List<Shift>();
+
+    // Permissions
+    var deptSelect = _template.HasPermission("DeptSelect");
+    var canAddShift = _template.HasPermission("AddShift");
+    var canEditShift = _template.HasPermission("EditShift");
+    var canDeleteShift = _template.HasPermission("DeleteShift");
 }
 
 <div class="container">
     <h1>@ViewData["Title"]</h1>
 
-    <p class="mb-4">
-        <a class="btn btn-primary shadow" onclick="addShift()">Create New</a>
-    </p>
+    @if (canAddShift)
+    {
+        <p class="mb-4">
+            <a class="btn btn-primary shadow" onclick="addShift()">Create New</a>
+        </p>
+    }
 
-    <div class="card p-3 border-0 shadow-sm">
-        @if (!User.IsInRole("member") && !User.IsInRole("shiftLeader"))
-        {
-            <div class="row mb-3">
-                <div class="col-auto">
-                    <form asp-action="Index" id="changeDepartment">
-                        <label for="departmentId" class="form-label">Department</label>
-                        <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
-                            <option value="" disabled></option>
-                        </select>
-                    </form>
-                </div>
+    @if (deptSelect)
+    {
+        <div class="row mb-3">
+            <div class="col-auto">
+                <form asp-action="Index" id="changeDepartment">
+                    <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                        <option value="" disabled></option>
+                    </select>
+                </form>
             </div>
-        }
+        </div>
+    }
+    <div class="card p-3 border-0 shadow-sm">
         <table class="datatable table table-hover">
             <thead>
                 <tr>
@@ -65,8 +73,15 @@
                             @Html.DisplayFor(modelItem => item.Time_end)
                         </td>
                         <td class="text-nowrap">
-                            <a href="javascript:void(0)" onclick="editShift(@item.Shift_ID)">Edit</a> |
-                            <a href="javascript:void(0)" onclick="deleteShift(@item.Shift_ID)">Delete</a>
+                            @if (canEditShift)
+                            {
+                                <a href="javascript:void(0)" class="btn btn-sm btn-light border" onclick="editShift(@item.Shift_ID)">Edit</a>
+                            }
+
+                            @if (canDeleteShift)
+                            {
+                                <a href="javascript:void(0)" class="btn btn-sm btn-danger" onclick="deleteShift(@item.Shift_ID)">Delete</a>
+                            }
                         </td>
                     </tr>
                 }
@@ -140,22 +155,22 @@
             </div>
             <div class="modal-body">
                 <dl class="row">
-                    <dt class="col-sm-3">
+                    <dt class="col-sm-3 text-end">
                         @Html.DisplayNameFor(model => model.Shift_name)
                     </dt>
                     <dd class="col-sm-9" id="shift_name">
                     </dd>
-                    <dt class="col-sm-3">
+                    <dt class="col-sm-3 text-end">
                         @Html.DisplayNameFor(model => model.Time_start)
                     </dt>
                     <dd class="col-sm-9" id="time_start">
                     </dd>
-                    <dt class="col-sm-3">
+                    <dt class="col-sm-3 text-end">
                         @Html.DisplayNameFor(model => model.Time_end)
                     </dt>
                     <dd class="col-sm-9" id="time_end">
                     </dd>
-                    <dt class="col-sm-3">
+                    <dt class="col-sm-3 text-end">
                         @Html.DisplayNameFor(model => model.Pattern)
                     </dt>
                     <dd class="col-sm-9" id="pattern">

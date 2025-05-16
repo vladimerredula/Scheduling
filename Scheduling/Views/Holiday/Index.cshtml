@@ -7,14 +7,22 @@
     ViewData["Title"] = "Holidays";
 
     var holidays = ViewBag.Holidays as List<Holiday> ?? new List<Holiday>();
+
+    // Permissions
+    var canAddHoliday = _template.HasPermission("AddHoliday");
+    var canEditHoliday = _template.HasPermission("EditHoliday");
+    var canDeleteHoliday = _template.HasPermission("DeleteHoliday");
 }
 
 <div class="container">
     <h1>@ViewData["Title"]</h1>
 
-    <p class="mb-4">
-        <a class="btn btn-primary shadow" onclick="addHoliday()">Create New</a>
-    </p>
+    @if (canAddHoliday)
+    {
+        <p class="mb-4">
+            <a class="btn btn-primary shadow" onclick="addHoliday()">Create New</a>
+        </p>
+    }
 
     <div class="card p-3 border-0 shadow-sm">
         <table class="datatable table table-hover">
@@ -45,9 +53,15 @@
                         <td>
                             @Html.DisplayFor(modelItem => item.Type)
                         </td>
-                        <td class="text-nowrap">
-                            <a href="javascript:void(0)" onclick="editHoliday(@item.Holiday_ID)">Edit</a> |
-                            <a href="javascript:void(0)" onclick="deleteHoliday(@item.Holiday_ID)">Delete</a>
+                        <td class="hstack gap-2">
+                            @if (canEditHoliday)
+                            {
+                                <a href="javascript:void(0)" class="btn btn-sm btn-light border" onclick="editHoliday(@item.Holiday_ID)">Edit</a>
+                            }
+                            @if (canDeleteHoliday)
+                            {
+                                <a href="javascript:void(0)" class="btn btn-sm btn-danger" onclick="deleteHoliday(@item.Holiday_ID)">Delete</a>
+                            }
                         </td>
                     </tr>
                 }
@@ -112,17 +126,17 @@
             </div>
             <div class="modal-body">
                 <dl class="row">
-                    <dt class="col-sm-3">
+                    <dt class="col-sm-3 text-end">
                         @Html.DisplayNameFor(model => model.Date)
                     </dt>
                     <dd class="col-sm-9" id="date">
                     </dd>
-                    <dt class="col-sm-3">
+                    <dt class="col-sm-3 text-end">
                         @Html.DisplayNameFor(model => model.Name)
                     </dt>
                     <dd class="col-sm-9" id="name">
                     </dd>
-                    <dt class="col-sm-3">
+                    <dt class="col-sm-3 text-end">
                         @Html.DisplayNameFor(model => model.Type)
                     </dt>
                     <dd class="col-sm-9" id="type">

@@ -4,6 +4,16 @@
     ViewData["Title"] = "Schedules";
 
     var leaves = ViewBag.LeaveTypes as List<Leave_type> ?? new List<Leave_type>();
+
+    // Permissions
+    var deptSelect = _template.HasPermission("DeptSelect");
+    var monthSelect = _template.HasPermission("MonthSelect");
+    var empSearch = _template.HasPermission("EmpSearch");
+    var leaveBtn = _template.HasPermission("LeaveBtn");
+    var downloadBtn = _template.HasPermission("DownloadBtn");
+    var legendBtn = _template.HasPermission("LegendBtn");
+    var canApprove = _template.HasPermission("ApproveLeave");
+    var canDeny = _template.HasPermission("DenyLeave");
 }
 
 <div class="px-3 px-sm-5">
@@ -13,30 +23,52 @@
     <div class="row mb-3 justify-content-between">
         <div class="col-auto">
             <div class="row">
-                <div class="col-6 col-sm-auto mb-2">
-                    <form asp-controller="Download" asp-action="DownloadSchedule" id="downloadForm">
-                        <input name="month" id="month" hidden />
-                        <input name="year" id="year" hidden />
+                @if (deptSelect)
+                {
+                    <!-- Department Dropdown -->
+                    <div class="col-6 col-sm-auto mb-2">
+                        <form asp-controller="Download" asp-action="DownloadSchedule" id="downloadForm">
+                            <input name="month" id="month" hidden />
+                            <input name="year" id="year" hidden />
 
-                        <label for="departmentId" class="form-label">Department</label>
-                        <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
-                        </select>
-                    </form>
-                </div>
-                <!-- Month Selection -->
-                <div class="col-6 col-sm-auto mb-2">
-                    <label for="monthSelect" class="form-label">Month</label>
-                    <input type="text" class="form-control" id="monthPicker">
-                </div>
-                <div class="col-6 col-sm-auto mb-2 align-self-end">
-                    <input type="text" id="searchBox" class="form-control" placeholder="Search employee..." />
-                </div>
+                            <label for="departmentId" class="form-label">Department</label>
+                            <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                            </select>
+                        </form>
+                    </div>
+                }
+                @if (monthSelect)
+                {
+                    <!-- Month Selection -->
+                    <div class="col-6 col-sm-auto mb-2">
+                        <label for="monthSelect" class="form-label">Month</label>
+                        <input type="text" class="form-control" id="monthPicker">
+                    </div>
+                }
+                @if (empSearch)
+                {
+                    <!-- Employee Search -->
+                    <div class="col-6 col-sm-auto mb-2 align-self-end">
+                        <input type="text" id="searchBox" class="form-control" placeholder="Search employee..." />
+                    </div>
+                }
             </div>
         </div>
-        <div class="col-auto align-self-end">
-            <a class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
-            <a class="btn btn-light border" id="downloadBtn"><i class="bi bi-download"></i> Download</a>
-            <a id="toggleLegendsBtn" class="btn btn-light border">Show legends</a>
+        <div class="col-auto align-self-end hstack gap-2">
+            @if (leaveBtn)
+            {
+                <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
+            }
+            @if (downloadBtn)
+            {
+                <a class="btn btn-light border" id="downloadBtn"><i class="bi bi-download"></i> Download</a>
+            }
+            @if (legendBtn)
+            {
+                <a id="toggleLegendsBtn" class="btn btn-light border">Show legends</a>
+            }
+            <!-- <a class="btn btn-light border me-1" onclick="printSchedule()" title="Print Schedule"><i class="bi bi-printer"></i></a>
+            <a class="btn btn-light border" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></a> -->
         </div>
     </div>
 
@@ -118,48 +150,60 @@
                 </dl>
             </div>
             <div class="modal-footer border-0">
-                <a class="btn btn-danger" id="denyBtn">Deny</a>
-                <a class="btn btn-success" id="approveBtn">Approve</a>
+                @if (canDeny)
+                {
+                    <a class="btn btn-danger" id="denyBtn" data-id="">Deny</a>
+                }
+                @if (canApprove)
+                {
+                    <a class="btn btn-success" id="approveBtn">Approve</a>
+                }
             </div>
         </div>
     </div>
 </div>
 
-<!-- Reflect leave Modal -->
-<div class="modal fade" id="reflectModal" tabindex="-1">
+<!-- Deny modal -->
+<div class="modal fade" id="denyModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header border-0">
-                <h5 class="modal-title">Leave application</h5>
+                <h5 class="modal-title" id="denyModalLabel">Deny this leave?</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <dl class="row">
-                    <dt class="col-sm-3 text-end">
-                        Name
-                    </dt>
-                    <dd class="col-sm-9" id="name">
-                    </dd>
-                    <dt class="col-sm-3 text-end">
-                        Leave type
-                    </dt>
-                    <dd class="col-sm-9" id="leaveType">
-                    </dd>
-                    <dt class="col-sm-3 text-end">
-                        Date
-                    </dt>
-                    <dd class="col-sm-9" id="date">
-                    </dd>
-                    <dt class="col-sm-3 text-end">
-                        Approved by
-                    </dt>
-                    <dd class="col-sm-9" id="approvedBy">
-                    </dd>
-                </dl>
-            </div>
-            <div class="modal-footer border-0">
-                <a class="btn btn-danger">Mark as reflected</a>
-            </div>
+            <form asp-controller="Leave" asp-action="Deny1" id="denyForm">
+                <div class="modal-body">
+                    <dl class="row">
+                        <dt class="col-sm-3 text-end">
+                            Name
+                        </dt>
+                        <dd class="col-sm-9" id="denyName">
+                        </dd>
+                        <dt class="col-sm-3 text-end">
+                            Leave type
+                        </dt>
+                        <dd class="col-sm-9" id="denyLeaveType">
+                        </dd>
+                        <dt class="col-sm-3 text-end">
+                            Date
+                        </dt>
+                        <dd class="col-sm-9" id="denyDate">
+                        </dd>
+                    </dl>
+                    <div class="row">
+                        <div class="col">
+                            <label for="Comment" class="form-label">Reason</label><span class="text-danger" title="Required">*</span>
+                            <textarea name="Comment" id="Comment" class="form-control" data-val="true" data-val-required="The Reason field is required." required></textarea>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Comment" data-valmsg-replace="true"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <input type="hidden" name="id" id="denyID" />
+                    <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">No</a>
+                    <input type="submit" value="Yes, proceed" class="btn btn-danger" />
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -169,7 +213,6 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
-        // $.fn.bootstrapDP = $.fn.datepicker.noConflict();
         let cancelSort = false;
         let previousValue;
 
@@ -236,48 +279,20 @@
                 }
             });
 
-            initializeToggleLegends();
+            initializeToggleLegends(); // Initialize the toggle legends button
+            initializeSortable(); // Initial call to initialize sortable functionality
+
+            // ESC key handler to cancel drag
+            $(document).on("keydown", function (e) {
+              if (e.key === "Escape") {
+                cancelSort = true;
+              }
+            });
+
             adjustTableColumns();
             $(window).on('resize', adjustTableColumns); // Optional: handle resizing
             filterTable();
         });
-
-        // Search functionality
-        $("#searchBox").on("input", function () {
-            filterTable();
-            });
-
-        function initializePopovers() {
-            $('[data-bs-toggle="tooltip"]').tooltip();
-            $('[data-bs-toggle="popover"]').popover();
-        }
-
-        function filterTable() {
-            let searchValue = $("#searchBox").val().toLowerCase();
-
-            // Filter rows based on the search value
-            $(".sector tr").filter(function () {
-                let name = $(this).find("td:first").text().toLowerCase();
-                $(this).toggle(name.includes(searchValue));
-            });
-        }
-
-        function adjustTableColumns() {
-            const table = $('#schedule');
-            const columns = table.find('thead th');
-            const totalColumns = columns.length;
-            const firstColumnWidth = 230; // px
-            const availableWidth = table.width() - firstColumnWidth;
-            const otherColumnWidth = Math.floor(availableWidth / (totalColumns - 1));
-
-            columns.each(function (index) {
-                if (index === 0) {
-                    $(this).css('width', firstColumnWidth + 'px');
-                } else {
-                    $(this).css('width', otherColumnWidth + 'px');
-                }
-            });
-        }
 
         $("#downloadBtn").on("click", function () {
             let date = $('#monthPicker').datepicker("getDate");
@@ -287,6 +302,49 @@
             // console.log($("#month").val(),$("#year").val());
             $("#downloadForm").submit();
         });
+
+        function printSchedule() {
+            let date = $('#monthPicker').datepicker("getDate");
+            let month = date.getMonth() + 1;
+            let year = date.getFullYear();
+            let departmentId = $("#departmentId").val();
+
+            $.ajax({
+                url: '/Schedule/PrintSchedule',
+                type: 'GET',
+                data: {
+                    month: month,
+                    year: year,
+                    departmentId: departmentId
+                },
+                success: function (response) {
+                    var headstr = "<html><head><title></title></head><body>";
+                    var footstr = "</"+"body></html>";
+                    var newstr = response;
+                    newstr = newstr.replace("sticky-top", ""); // remove sticky-bottom class
+                    newstr = newstr.replace("sticky-bottom", ""); // remove sticky-bottom class
+                    newstr = newstr.replace("control-form", "control-form control-form-sm"); // remove sticky-bottom class
+                    newstr = newstr.replace("table table-borderless", "table table-borderless table-sm"); // remove sticky-bottom class
+                    var oldstr = document.body.innerHTML;
+                    document.body.innerHTML = headstr + newstr + footstr;
+                    window.print();
+                    document.body.innerHTML = oldstr;
+                },
+                error: function () {
+                    alert("Error loading schedule.");
+                }
+            });
+        }
+
+        // Search functionality
+        $("#searchBox").on("input", function () {
+            filterTable();
+        });
+
+        function initializePopovers() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+            $('[data-bs-toggle="popover"]').popover();
+        }
 
         function initializeToggleLegends() {
             const toggleLegendsBtn = $("#toggleLegendsBtn");
@@ -313,6 +371,33 @@
                 } else {
                     toggleLegendsBtn.text("Show legends");
                     localStorage.setItem("legendsAndShiftsVisible", "hidden"); // Save state
+                }
+            });
+        }
+
+        function filterTable() {
+            let searchValue = $("#searchBox").val().toLowerCase();
+
+            // Filter rows based on the search value
+            $(".sector tr").filter(function () {
+                let name = $(this).find("td:first").text().toLowerCase();
+                $(this).toggle(name.includes(searchValue));
+            });
+        }
+
+        function adjustTableColumns() {
+            const table = $('#schedule');
+            const columns = table.find('thead th');
+            const totalColumns = columns.length;
+            const firstColumnWidth = 230; // px
+            const availableWidth = table.width() - firstColumnWidth;
+            const otherColumnWidth = Math.floor(availableWidth / (totalColumns - 1));
+
+            columns.each(function (index) {
+                if (index === 0) {
+                    $(this).css('width', firstColumnWidth + 'px');
+                } else {
+                    $(this).css('width', otherColumnWidth + 'px');
                 }
             });
         }
@@ -357,12 +442,49 @@
             }
         });
 
-        function toggleLeave(leave, id) {
-            let leaveBlocks = $(".leave-" + id);
-            let eyeMarker = $(leave).find(".eye");
+        function initializeSortable() {
+            $(".sector").sortable({
+                items: ".draggable",
+                handle: ".drag-handle",
+                connectWith: ".sector", // Allow dragging between sectors
+                cursor: "move",
+                start: function (event, ui) {
+                    cancelSort = false; // Reset flag on new drag
+                },
+                beforeStop: function (event, ui) {
+                    if (cancelSort) {
+                        $(this).sortable("cancel"); // Cancel the sort
+                        cancelSort = false;
+                    }
+                },
+                update: function (event, ui) {
+                    let orders = $(".draggable").map(function () {
+                        return this.id.replace("user-", "") + "-" + $(this).parent().data("sector-id"); // Extract user IDs
+                    }).get().join(',');
 
-            leaveBlocks.toggle();
-            eyeMarker.toggle();
+                    let date = $('#monthPicker').datepicker("getDate");
+                    let month = date.getMonth() + 1;
+                    let year = date.getFullYear();
+
+                    $.ajax({
+                        url: '/Schedule/UpdateEmployeeOrder',
+                        type: 'POST',
+                        data: {
+                            order: orders,
+                            month: month,
+                            year: year
+                        },
+                        success: function (response) {
+                            if (!response.success) {
+                                alert('Error updating user sector and order!');
+                            }
+                        },
+                        error: function () {
+                            alert('An error occurred while updating the user sector and order.');
+                        }
+                    });
+                }
+            }).disableSelection();
         }
 
         function showSpinner() {
@@ -388,9 +510,11 @@
                 success: function (response) {
                     $("#scheduleTable").html(response);
                     hideSpinner();
-                    initializeToggleLegends();
-                    initializePopovers();
+                    initializeSortable(); // Reinitialize sortable functionality
+                    initializeToggleLegends(); // Reinitialize the toggle legends button
                     adjustTableColumns();
+                    filterTable();
+                    initializePopovers();
                 },
                 error: function () {
                     alert("Error loading schedule.");
@@ -504,6 +628,50 @@
                 }
             });
         }
+
+        function getLeave(id) {
+            console.log(id);
+            $.ajax({
+                url: '/Leave/GetLeave',
+                type: 'POST',
+                data: {
+                    Id: id
+                },
+                success: function (response) {
+                    $("#name").text(response.name);
+                    $("#leaveType").text(response.leave_type_name);
+                    $("#date").text(`${response.date_start} to ${response.date_end}`);
+                    $("#comment").text(response.comment);
+
+                    $("#approveBtn").attr("href", `/Leave/Approve1/${response.leave_ID}`);
+                    $("#denyBtn").attr("data-id", response.leave_ID);
+                    // $("#denyBtn").attr("href", `/Leave/Deny1/${response.leave_ID}`);
+                },
+                error: function () {
+                    alert('An error occurred while assigning the shift.');
+                }
+            });
+            $("#approveModal").modal("show");
+        }
+
+        function toggleLeave(leave, id) {
+            let leaveBlocks = $(".leave-" + id);
+            let eyeMarker = $(leave).find(".eye");
+
+            leaveBlocks.toggle();
+            eyeMarker.toggle();
+        }
+
+        $("#denyBtn").on("click", function () {
+            console.log("Yes");
+            $("#denyName").text($("#name").text());
+            $("#denyLeaveType").text($("#leaveType").text());
+            $("#denyDate").text($("#date").text());
+            $("#denyID").val($(this).data("id"));
+
+            // Show the modal
+            $("#denyModal").modal("show");
+        });
 
         function removeLeaveBg(p) {
             $(p).removeClass("bg-secondary bg-secondary-subtle text-secondary-emphasis");

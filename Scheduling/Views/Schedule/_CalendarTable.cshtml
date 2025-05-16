@@ -19,17 +19,23 @@
         <div class="card p-3">
             <!-- Month Header Navigation -->
             <div class="row justify-content-between mb-3">
-                <div class="col-auto">
-                    <a class="btn btn-light border" id="prevBtn"><i class="bi bi-arrow-bar-left"></i> Previous</a>
-                </div>
+                @if (_template.HasPermission("MonthNav"))
+                {
+                    <div class="col-auto">
+                        <a class="btn btn-light border" id="prevBtn"><i class="bi bi-arrow-bar-left"></i> Previous</a>
+                    </div>
+                }
                 <div class="col text-center">
                     <h4 class="text-center">
                         @firstDay.ToString("MMMM yyyy")
                     </h4>
                 </div>
-                <div class="col-auto">
-                    <a class="btn btn-light border" id="nextBtn">Next <i class="bi bi-arrow-bar-right"></i></a>
-                </div>
+                @if (_template.HasPermission("MonthNav"))
+                {
+                    <div class="col-auto">
+                        <a class="btn btn-light border" id="nextBtn">Next <i class="bi bi-arrow-bar-right"></i></a>
+                    </div>
+                }
             </div>
             <div class="table-responsive">
                 <table class="table table-bordered border-secondary-subtle text-center" id="calendar" style="table-layout:fixed;">

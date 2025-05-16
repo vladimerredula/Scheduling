@@ -64,6 +64,9 @@ namespace Scheduling.Services
                 case "GetCalendar":
                     action = "Calendar";
                     break;
+                case "LoadScheduleView":
+                    action = "ScheduleView";
+                    break;
                 default:
                     break;
             }
