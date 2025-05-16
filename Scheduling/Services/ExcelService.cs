@@ -37,6 +37,7 @@ namespace Scheduling.Services
 
                 row = 4;
                 col = 2;
+
                 var nameCol = ws.Range($"{Col(col)}{row}:{Col(col)}{row + 1}");
                 nameCol.Merge()
                     .SetValue("Name")
@@ -102,14 +103,9 @@ namespace Scheduling.Services
                 // Add user data
                 foreach (var sector in users.GroupBy(u => u.Sector_ID))
                 {
-                    //ws.Range($"{Col(col)}{row + sector.Count() - 1}:{Col(col + daysInMonth)}{row + sector.Count() - 1}").Style.Border.BottomBorder = XLBorderStyleValues.Medium;
-
                     foreach (var user in sector)
                     {
                         ws.Cell(row, col).Value = user.Full_name;
-                        //ws.Cell(row, col).Style.Border.RightBorder = XLBorderStyleValues.Medium;
-
-                        //ws.Range($"{Col(col + 1)}{row}:{Col(col + daysInMonth)}{row + sector.Count() - 1}").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
 
                         for (int day = 1; day <= daysInMonth; day++)
                         {
@@ -272,12 +268,13 @@ namespace Scheduling.Services
                     .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
                     .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
 
+                row += 3;
+
                 foreach (var pattern in new[] { "4/2", "5/2" })
                 {
                     var shiftPatterns = shifts.Where(s => s.Pattern == pattern).ToList();
                     if (shiftPatterns.Any())
                     {
-                        row += 3;
 
                         ws.Range($"{Col(col)}{row}:{Col(col + 1)}{row}")
                             .Merge().SetValue($"{pattern} Pattern")
@@ -300,6 +297,8 @@ namespace Scheduling.Services
                             .Border.SetOutsideBorder(XLBorderStyleValues.Medium)
                             .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
                             .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+
+                        row++;
                     }
                 }
 
