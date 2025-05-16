@@ -35,39 +35,30 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    @if (int.Parse(User.FindFirstValue("Personnelid")) != 999)
-                    {
-                        <ul class="navbar-nav flex-grow-1">
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Schedule" asp-action="Index">Schedule</a>
-                            </li>
-                            @if (User.IsInRole("member") || User.IsInRole("shiftLeader"))
-                            {
-                                        <li class="nav-item">
-                                            <a class="nav-link text-dark" asp-controller="Leave" asp-action="Leaves">Leaves</a>
-                                        </li>
-                            }
-                            @if (User.IsInRole("admin") || User.IsInRole("manager") || User.IsInRole("topManager"))
+                    <ul class="navbar-nav flex-grow-1">
+                        @foreach (var module in _template.GetUserTemplate())
+                        {
+                            if (module.Pages.Count > 1)
                             {
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link text-dark dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="leaveDropdownMenu">
-                                        Leaves
+                                    <a class="nav-link text-dark dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="@(module.Module_name)DropdownMenu">
+                                        @module.Module_name
                                     </a>
-                                    <ul class="dropdown-menu" aria-labelledby="leaveDropdownMenu">
-                                        <li><a asp-controller="Leave" asp-action="Leaves" class="dropdown-item">My leaves</a></li>
-                                        <li><a asp-controller="Leave" asp-action="DepartmentLeaves" class="dropdown-item">Departmental leaves</a></li>
+                                    <ul class="dropdown-menu" aria-labelledby="@(module.Module_name)DropdownMenu">
+                                        @foreach (var templatePage in module.Pages)
+                                        {
+                                            <li><a asp-controller="@module.Controller_name" asp-action="@templatePage.Action_name" class="dropdown-item">@templatePage.Page_name</a></li>
+                                        }
                                     </ul>
                                 </li>
+                            } else
+                            {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Holiday" asp-action="Index">Holidays</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Shift" asp-action="Index">Shifts</a>
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="@module.Controller_name" asp-action="@module.Pages.First().Action_name">@module.Pages.First().Page_name</a>
                                 </li>
                             }
-                            @* <li class="nav-item"><a class="nav-link" role="button" href="http://dcl.faradaygroup.local/" target="_blank" rel="noopener noreferrer"><i class="bi bi-ui-checks"></i> DailyChecklist</a></li> *@
-                        </ul>
-                    }
+                        }
+                    </ul>
 
                     @if (User.IsInRole("admin") || User.IsInRole("manager") || User.IsInRole("topManager"))
                     {
