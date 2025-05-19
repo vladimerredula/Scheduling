@@ -13,9 +13,16 @@ namespace Scheduling.Models
 
         [Display(Name = "Date end")]
         public DateTime Date_end { get; set; }
-        public string? Comment { get; set; }
+        public string? Message { get; set; } // Leave request message
+        public string? Comment { get; set; } // Leave approval comment
         public string? Status { get; set; } // "Pending", "Approved", "Denied", "Cancelled"
+
+        [Display(Name = "Date approved (Manager)")]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime? Date_approved_1 { get; set; }
+
+        [Display(Name = "Date approved (HR)")]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime? Date_approved_2 { get; set; }
 
         [ForeignKey("User")]
@@ -23,9 +30,12 @@ namespace Scheduling.Models
         public User? User { get; set; }
 
         [ForeignKey("Approver1")]
+        [Display(Name = "Approver (Manager)")]
         public int? Approver_1 { get; set; }
         public User? Approver1 { get; set; }
+
         [ForeignKey("Approver2")]
+        [Display(Name = "Approver (HR)")]
         public int? Approver_2 { get; set; }
         public User? Approver2 { get; set; }
 

@@ -83,7 +83,7 @@ namespace Scheduling.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> Edit(int id, [Bind("Leave_ID,Personnel_ID,Leave_type_ID,Status,Date_start,Date_end")] Leave leave)
+        public async Task<IActionResult> Edit(int id, [Bind("Leave_ID,Personnel_ID,Leave_type_ID,Message,Status,Date_start,Date_end")] Leave leave)
         {
             if (id != leave.Leave_ID)
             {
@@ -236,6 +236,7 @@ namespace Scheduling.Controllers
                 Leave_type_name = leave?.Leave_type?.Leave_type_name,
                 Date_start = leave?.Date_start_string,
                 Date_end = leave?.Date_end_string,
+                Message = leave?.Message,
                 Approver_1 = leave?.Approver1?.Full_name,
                 Approver_2 = leave?.Approver2?.Full_name,
                 Status = leave?.Status,
