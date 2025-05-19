@@ -13,11 +13,13 @@ namespace Scheduling.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly LogService<LeaveController> _log;
+        private readonly TemplateService _template;
 
-        public LeaveController(ApplicationDbContext context, LogService<LeaveController> logger)
+        public LeaveController(ApplicationDbContext context, LogService<LeaveController> logger, TemplateService template)
         {
             _db = context;
             _log = logger;
+            _template = template;
         }
 
         public async Task<IActionResult> Index()
@@ -67,6 +69,13 @@ namespace Scheduling.Controllers
                 var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
                 leave.Personnel_ID = personnelId;
                 leave.Status = "Pending";
+
+                if (_template.HasPermission("FirstApprover"))
+                {
+                    leave.Approver_1 = personnelId;
+                    leave.Date_approved_1 = DateTime.Today;
+                }
+
                 _db.Leaves.Add(leave);
 
                 await _db.SaveChangesAsync();
@@ -135,7 +144,7 @@ namespace Scheduling.Controllers
                 {
                     request.Status = "Pending";
 
-                    if (User.IsInRole("manager") || User.IsInRole("topManager"))
+                    if (_template.HasPermission("FirstApprover"))
                     {
                         request.Approver_1 = personnelId;
                         request.Date_approved_1 = DateTime.Today;

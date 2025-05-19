@@ -67,6 +67,18 @@ namespace Scheduling.Services
                 case "LoadScheduleView":
                     action = "ScheduleView";
                     break;
+                case "Apply":
+                    action = "DepartmentLeaves";
+                    break;
+                case "Add":
+                    if (controller == "Leave")
+                    {
+                        action = "DepartmentLeaves";
+                    } else
+                    {
+                        action = "Index";
+                    }
+                        break;
                 default:
                     break;
             }
