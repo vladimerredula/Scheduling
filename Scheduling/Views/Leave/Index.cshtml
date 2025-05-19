@@ -38,9 +38,10 @@
     </ul>
     <div class="tab-content rounded-bottom p-3 bg-white shadow-sm">
         <div class="tab-pane" id="content-pending" role="tabpanel" aria-labelledby="pending">
-            <table class="datatable table table-hover">
+            <table class="table table-hover hasChild" id="pendingTable">
                 <thead>
                     <tr>
+                        <th></th> <!-- Control toggle -->
                         <th>
                             @Html.DisplayNameFor(model => model.Date_start)
                         </th>
@@ -54,10 +55,16 @@
                             @Html.DisplayNameFor(model => model.Status)
                         </th>
                         <th>
-                            1st Approver
+                            @Html.DisplayNameFor(model => model.Approver_1)
                         </th>
                         <th>
-                            2nd Approver
+                            @Html.DisplayNameFor(model => model.Date_approved_1)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Approver_2)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Message)
                         </th>
                         <th>Actions</th>
                     </tr>
@@ -66,39 +73,48 @@
                     @foreach (var item in leaves.Where(l => l.Status == "Pending"))
                     {
                         <tr>
-                            <td>
+                            <td></td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Date_start_string)
                             </td>
-                            <td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Date_end_string)
                             </td>
-                            <td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
                             </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Status)
+                            <td class="td-control">
+                                <span class="badge rounded-pill text-bg-warning">
+                                    @Html.DisplayFor(modelItem => item.Status)
+                                </span>
                             </td>
-                            <td>
+                            <td class="td-control">
                                 @if (item?.Approver_1 != null)
                                 {
                                     <i class="bi bi-check-circle text-success"></i> @Html.DisplayFor(modelItem => item.Approver1.Full_name)
                                 }
                             </td>
-                            <td>
+                            <td class="td-control">
+                                @Html.DisplayFor(modelItem => item.Date_approved_1)
+                            </td>
+                            <td class="td-control">
                                 @if (item?.Approver_2 != null)
                                 {
                                     <i class="bi bi-check-circle text-success"></i> @Html.DisplayFor(modelItem => item.Approver2.Full_name)
                                 }
                             </td>
+                            <td class="td-control">
+                                @Html.DisplayFor(modelItem => item.Message)
+                            </td>
                             <td class="text-nowrap align-content-center">
                                 @if (canEditLeave)
                                 {
-                                    <a class="btn btn-sm btn-light border @(item?.Approver_1 != null ? "disabled" : "")" href="javascript:void(0)" onclick="editLeave(@item?.Leave_ID)">Edit</a>
+                                    <a class="btn btn-sm btn-light border z-3 @(item?.Approver_1 != null ? "disabled" : "")" href="javascript:void(0)" onclick="editLeave(@item?.Leave_ID)">Edit</a>
                                 }
 
                                 @if (canCancelLeave)
                                 {
-                                    <a class="btn btn-sm btn-light border text-danger" href="javascript:void(0)" onclick="cancelLeave(@item?.Leave_ID)">Cancel</a>
+                                    <a class="btn btn-sm btn-light border text-danger z-3" href="javascript:void(0)" onclick="cancelLeave(@item?.Leave_ID)">Cancel</a>
                                 }
                             </td>
                         </tr>
@@ -107,9 +123,10 @@
             </table>
         </div>
         <div class="tab-pane" id="content-approved" role="tabpanel" aria-labelledby="approved">
-            <table class="datatable table table-hover">
+            <table class="table table-hover hasChild" id="approvedTable">
                 <thead>
                     <tr>
+                        <th></th> <!-- Control toggle -->
                         <th>
                             @Html.DisplayNameFor(model => model.Date_start)
                         </th>
@@ -120,43 +137,64 @@
                             @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
                         </th>
                         <th>
+                            @Html.DisplayNameFor(model => model.Message)
+                        </th>
+                        <th>
                             @Html.DisplayNameFor(model => model.Status)
                         </th>
                         <th>
-                            1st Approver
+                            @Html.DisplayNameFor(model => model.Approver_1)
                         </th>
                         <th>
-                            2nd Approver
+                            @Html.DisplayNameFor(model => model.Date_approved_1)
                         </th>
-                        <th></th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Approver_2)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Date_approved_2)
+                        </th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var item in leaves.Where(l => l.Status == "Approved"))
                     {
                         <tr>
-                            <td>
+                            <td></td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Date_start_string)
                             </td>
-                            <td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Date_end_string)
                             </td>
-                            <td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
                             </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Status)
+                            <td class="td-control">
+                                @Html.DisplayFor(modelItem => item.Message)
                             </td>
-                            <td>
+                            <td class="td-control">
+                                <span class="badge rounded-pill text-bg-success">
+                                    @Html.DisplayFor(modelItem => item.Status)
+                                </span>
+                            </td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Approver1.Full_name)
                             </td>
-                            <td>
+                            <td class="td-control">
+                                @Html.DisplayFor(modelItem => item.Date_approved_1)
+                            </td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Approver2.Full_name)
+                            </td>
+                            <td class="td-control">
+                                @Html.DisplayFor(modelItem => item.Date_approved_2)
                             </td>
                             <td class="text-nowrap align-content-center">
                                 @if (canWithdrawLeave && item?.Date_start > DateTime.Now)
                                 {
-                                    <a class="btn btn-sm btn-light border text-danger" href="javascript:void(0)" onclick="withdrawLeave(@item?.Leave_ID)">Request to withdraw</a>
+                                    <a class="btn btn-sm btn-light border text-danger" href="javascript:void(0)" onclick="withdrawLeave(@item?.Leave_ID)">Withdraw</a>
                                 }
                             </td>
                         </tr>
@@ -165,9 +203,10 @@
             </table>
         </div>
         <div class="tab-pane" id="content-denied" role="tabpanel" aria-labelledby="denied">
-            <table class="datatable table table-hover">
+            <table class="table table-hover hasChild" id="deniedTable">
                 <thead>
                     <tr>
+                        <th></th>
                         <th>
                             @Html.DisplayNameFor(model => model.Date_start)
                         </th>
@@ -184,7 +223,13 @@
                             Denied by
                         </th>
                         <th>
-                            Comment
+                            Date denied
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Comment)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Message)
                         </th>
                     </tr>
                 </thead>
@@ -192,32 +237,44 @@
                     @foreach (var item in leaves.Where(l => l.Status == "Denied"))
                     {
                         <tr>
-                            <td>
+                            <td></td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Date_start_string)
                             </td>
-                            <td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Date_end_string)
                             </td>
-                            <td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
                             </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Status)
+                            <td class="td-control">
+                                <span class="badge rounded-pill text-bg-danger">
+                                    @Html.DisplayFor(modelItem => item.Status)
+                                </span>
                             </td>
                             @if (item?.Approver_2 != null)
                             {
-                                <td>
+                                <td class="td-control">
                                     @Html.DisplayFor(modelItem => item.Approver2.Full_name)
+                                </td>
+                                <td class="td-control">
+                                    @Html.DisplayFor(modelItem => item.Date_approved_1)
                                 </td>
                             }
                             else if (item?.Approver_1 != null)
                             {
-                                <td>
+                                <td class="td-control">
                                     @Html.DisplayFor(modelItem => item.Approver1.Full_name)
                                 </td>
+                                <td class="td-control">
+                                    @Html.DisplayFor(modelItem => item.Date_approved_1)
+                                </td>
                             }
-                            <td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Comment)
+                            </td>
+                            <td class="td-control">
+                                @Html.DisplayFor(model => model.Message)
                             </td>
                         </tr>
                     }
@@ -225,7 +282,7 @@
             </table>
         </div>
         <div class="tab-pane" id="content-cancelled" role="tabpanel" aria-labelledby="cancelled">
-            <table class="datatable table table-hover">
+            <table class="table table-hover" id="cancelledTable">
                 <thead>
                     <tr>
                         <th>
@@ -256,7 +313,9 @@
                                 @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
                             </td>
                             <td>
-                                @Html.DisplayFor(modelItem => item.Status)
+                                <span class="badge rounded-pill text-bg-secondary">
+                                    @Html.DisplayFor(modelItem => item.Status)
+                                </span>
                             </td>
                         </tr>
                     }
@@ -295,12 +354,16 @@
                             <input asp-for="Date_start" type="date" class="form-control" />
                             <span asp-validation-for="Date_start" class="text-danger"></span>
                         </div>
-                    </div>
-                    <div class="row mb-3">
                         <div class="col">
                             <label asp-for="Date_end" class="form-label"></label><span class="text-danger" title="Required">*</span>
                             <input asp-for="Date_end" type="date" class="form-control" />
                             <span asp-validation-for="Date_end" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <label class="form-label" asp-for="Message">Message</label>
+                            <textarea class="form-control" asp-for="Message" style="height: 120px"></textarea>
                         </div>
                     </div>
                 </div>
@@ -401,9 +464,132 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
-        $("table.datatable").DataTable({
+        $.extend(true, $.fn.dataTable.defaults, {
             responsive: true,
-            fixedHeader: true
+            fixedHeader: true,
+            layout: {
+                topStart: 'pageLength',
+                topEnd: {
+                    search: {
+                        placeholder: 'Search'
+                    },
+                    buttons: [
+                        {
+                            extend: 'colvis',
+                            text: 'Show/Hide columns',
+                            className: 'btn btn-sm btn-secondary-subtle',
+                            columns: ':not(.dt-control)' // Exclude control column
+                        }
+                    ]
+                },
+                bottomStart: 'info',
+                bottomEnd: 'paging'
+            },
+            order: [[1, 'desc']]
+        });
+
+        $(document).on("click", ".dt-control, .td-control", function () {
+            var $tableElement = $(this).closest('table');
+
+            // Only proceed if the table has the "hasChild" class
+            if (!$tableElement.hasClass("hasChild")) return;
+
+            var tr = $(this).closest('tr');
+            var table = $tableElement.DataTable(); // Get the correct DataTable instance
+            var row = table.row(tr);
+
+            if (row.child.isShown()) {
+                row.child.hide();
+                tr.removeClass('shown');
+            } else {
+                var rowData = row.data();
+                var childData = '<table class="table table-bordered table-sm mb-0 w-100">';
+
+                table.columns().every(function (index) {
+                    if (!this.visible() && index !== 0) {
+                        var header = $(table.column(index).header()).text();
+                        childData += `
+                            <tr>
+                                <th class="px-2 text-nowrap" style="width:2%;">${header}</th>
+                                <td class="px-2">${rowData[index] ? rowData[index] : '<span class="fst-italic text-secondary">Empty</span>'}</td>
+                            </tr>`;
+                    }
+                });
+
+                childData += '</table>';
+
+                row.child(childData || '<em>No row child data</em>').show();
+                tr.addClass('shown');
+            }
+        });
+
+        $("#pendingTable").DataTable({
+            stateSave: true,
+            columnDefs: [
+                {
+                    targets: 0,
+                    className: 'dt-control',
+                    orderable: false,
+                    defaultContent: '',
+                    width: '20px'
+                },
+                {
+                    targets: [6,8],
+                    visible: false,
+                    searchable: true
+                },
+                {
+                    targets: 9,
+                    searchable: false,
+                    orderable: false
+                }
+            ]
+        });
+
+        $("#approvedTable").DataTable({
+            stateSave: true,
+            columnDefs: [
+                {
+                    targets: 0,
+                    className: 'dt-control',
+                    orderable: false,
+                    defaultContent: '',
+                    width: '20px'
+                },
+                {
+                    targets: [4,7,9,10],
+                    visible: false,
+                    searchable: false
+                },
+                {
+                    targets: 10,
+                    visible: false,
+                    searchable: false,
+                    orderable: false
+                }
+            ]
+        });
+
+        $("#deniedTable").DataTable({
+            stateSave: true,
+            columnDefs: [
+                {
+                    targets: 0,
+                    className: 'dt-control',
+                    orderable: false,
+                    defaultContent: '',
+                    width: '20px'
+                },
+                {
+                    targets: [6,8],
+                    visible: false,
+                    searchable: false
+                }
+            ]
+        });
+
+        $("#cancelledTable").DataTable({
+            order: [[0, 'desc']]
         });
 
         $(document).ready(function () {
