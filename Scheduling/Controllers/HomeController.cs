@@ -42,7 +42,9 @@ namespace Scheduling.Controllers
             if (User.IsInRole("member") || User.IsInRole("shiftLeader"))
                 return Json(0);
 
-            var requests = await _db.Leaves.Where(l => l.Status == "Pending").ToListAsync();
+            var requests = await _db.Leaves
+                .Include(l => l.User)
+                .Where(l => l.Status == "Pending").ToListAsync();
 
             if (User.IsInRole("manager"))
             {
@@ -50,7 +52,7 @@ namespace Scheduling.Controllers
 
                 if (user.Personnel_ID == 35) // TEMPORARY FIX FOR KONSTANTIN
                 {
-                    requests = requests.Where(l => l.Approver_1 == null && l?.User?.Department_ID == 2 || l?.User?.Department_ID == 3).ToList();
+                    requests = requests.Where(l => l.Approver_1 == null && (l?.User?.Department_ID == 2 || l?.User?.Department_ID == 3)).ToList();
                 } else
                 {
                     requests = requests.Where(l => l.Approver_1 == null && l?.User?.Department_ID == user.Department_ID).ToList();
