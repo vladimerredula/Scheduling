@@ -153,6 +153,11 @@
                     </dt>
                     <dd class="col-sm-9" id="date">
                     </dd>
+                    <dt class="col-sm-3 text-end">
+                        Message
+                    </dt>
+                    <dd class="col-sm-9" id="message">
+                    </dd>
                 </dl>
             </div>
             <div class="modal-footer border-0">
@@ -194,6 +199,11 @@
                             Date
                         </dt>
                         <dd class="col-sm-9" id="denyDate">
+                        </dd>
+                        <dt class="col-sm-3 text-end">
+                            Message
+                        </dt>
+                        <dd class="col-sm-9" id="denyMessage">
                         </dd>
                     </dl>
                     <div class="row">
@@ -647,7 +657,7 @@
                     $("#name").text(response.name);
                     $("#leaveType").text(response.leave_type_name);
                     $("#date").text(`${response.date_start} to ${response.date_end}`);
-                    $("#comment").text(response.comment);
+                    $("#message").text(response.message);
 
                     $("#approveBtn").attr("href", `/Leave/Approve1/${response.leave_ID}`);
                     $("#denyBtn").attr("data-id", response.leave_ID);
@@ -673,6 +683,7 @@
             $("#denyName").text($("#name").text());
             $("#denyLeaveType").text($("#leaveType").text());
             $("#denyDate").text($("#date").text());
+            $("#denyMessage").text($("#message").text());
             $("#denyID").val($(this).data("id"));
 
             // Show the modal

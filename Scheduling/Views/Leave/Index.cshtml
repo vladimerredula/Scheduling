@@ -84,7 +84,16 @@
                                 @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
                             </td>
                             <td class="td-control">
-                                <span class="badge rounded-pill text-bg-warning">
+                                @{
+                                    string statusClass = item.Status switch
+                                    {
+                                        "Pending" => "warning",
+                                        "Approved" => "success",
+                                        "Denied" => "danger",
+                                        _ => "secondary"
+                                    };
+                                }
+                                <span class="badge rounded-pill text-bg-@statusClass">
                                     @Html.DisplayFor(modelItem => item.Status)
                                 </span>
                             </td>
@@ -464,7 +473,17 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
+        const tableReinitMap = {
+            'pendingTable': initPendingTable,
+            'approvedTable': initApprovedTable,
+            'deniedTable': initDeniedTable,
+            'cancelledTable': initCancelledTable,
+        };
+
         $.extend(true, $.fn.dataTable.defaults, {
+            colReorder: {
+                columns: ':gt(0)'
+            },
             responsive: true,
             fixedHeader: true,
             layout: {
@@ -478,7 +497,33 @@
                             extend: 'colvis',
                             text: 'Show/Hide columns',
                             className: 'btn btn-sm btn-secondary-subtle',
-                            columns: ':not(.dt-control)' // Exclude control column
+                            columns: ':not(.dt-control)', // Exclude control column
+                            attr: {
+                                title: 'Toggle visibility of table columns'
+                            }
+                        },
+                        {
+                            text: 'Restore table <i class="bi bi-arrow-clockwise"></i>',
+                            className: 'btn btn-sm btn-secondary',
+                            attr: {
+                                title: 'Reset table column visibility and order'
+                            },
+                            action: function (e, dt, node, config) {
+                                const tableId = dt.table().node().id;
+
+                                dt.state.clear(); // Clear saved state
+                                dt.destroy(); // Destroy DataTable instance
+
+                                // Replace the old table DOM with the original clone
+                                const $original = originalTableHTML[tableId].clone();
+                                $('#' + tableId).replaceWith($original);
+
+                                // Reinitialize
+                                const reinit = tableReinitMap[tableId];
+                                if (typeof reinit === 'function') {
+                                    reinit();
+                                }
+                            }
                         }
                     ]
                 },
@@ -511,7 +556,7 @@
                         childData += `
                             <tr>
                                 <th class="px-2 text-nowrap" style="width:2%;">${header}</th>
-                                <td class="px-2">${rowData[index] ? rowData[index] : '<span class="fst-italic text-secondary">Empty</span>'}</td>
+                                <td class="px-2">${rowData[index] ? rowData[index] : '<span class="text-secondary">-</span>'}</td>
                             </tr>`;
                     }
                 });
@@ -523,76 +568,100 @@
             }
         });
 
-        $("#pendingTable").DataTable({
-            stateSave: true,
-            columnDefs: [
-                {
-                    targets: 0,
-                    className: 'dt-control',
-                    orderable: false,
-                    defaultContent: '',
-                    width: '20px'
-                },
-                {
-                    targets: [6,8],
-                    visible: false,
-                    searchable: true
-                },
-                {
-                    targets: 9,
-                    searchable: false,
-                    orderable: false
-                }
-            ]
-        });
+        function initPendingTable() {
+            $("#pendingTable").DataTable({
+                stateSave: true,
+                columnDefs: [
+                    {
+                        targets: 0,
+                        className: 'dt-control',
+                        orderable: false,
+                        defaultContent: '',
+                        width: '20px'
+                    },
+                    {
+                        targets: [6,8],
+                        visible: false,
+                        searchable: true
+                    },
+                    {
+                        targets: 9,
+                        searchable: false,
+                        orderable: false
+                    }
+                ]
+            });
+        }
 
-        $("#approvedTable").DataTable({
-            stateSave: true,
-            columnDefs: [
-                {
-                    targets: 0,
-                    className: 'dt-control',
-                    orderable: false,
-                    defaultContent: '',
-                    width: '20px'
-                },
-                {
-                    targets: [4,7,9,10],
-                    visible: false,
-                    searchable: false
-                },
-                {
-                    targets: 10,
-                    visible: false,
-                    searchable: false,
-                    orderable: false
-                }
-            ]
-        });
+        function initApprovedTable() {
+            $("#approvedTable").DataTable({
+                stateSave: true,
+                columnDefs: [
+                    {
+                        targets: 0,
+                        className: 'dt-control',
+                        orderable: false,
+                        defaultContent: '',
+                        width: '20px'
+                    },
+                    {
+                        targets: [4,7,9,10],
+                        visible: false,
+                        searchable: false
+                    },
+                    {
+                        targets: 10,
+                        visible: false,
+                        searchable: false,
+                        orderable: false
+                    }
+                ]
+            });
+        }
 
-        $("#deniedTable").DataTable({
-            stateSave: true,
-            columnDefs: [
-                {
-                    targets: 0,
-                    className: 'dt-control',
-                    orderable: false,
-                    defaultContent: '',
-                    width: '20px'
-                },
-                {
-                    targets: [6,8],
-                    visible: false,
-                    searchable: false
-                }
-            ]
-        });
+        function initDeniedTable() {
+            $("#deniedTable").DataTable({
+                stateSave: true,
+                columnDefs: [
+                    {
+                        targets: 0,
+                        className: 'dt-control',
+                        orderable: false,
+                        defaultContent: '',
+                        width: '20px'
+                    },
+                    {
+                        targets: [6,8],
+                        visible: false,
+                        searchable: false
+                    }
+                ]
+            });
+        }
 
-        $("#cancelledTable").DataTable({
-            order: [[0, 'desc']]
-        });
+        function initCancelledTable() {
+            $("#cancelledTable").DataTable({
+                order: [[0, 'desc']]
+            });
+        }
+
+        const originalTableHTML = {}; // Use for cloning original table DOM
 
         $(document).ready(function () {
+            // Cache original table HTML for each table in the map
+            Object.keys(tableReinitMap).forEach(id => {
+                originalTableHTML[id] = $('#' + id).clone(); // Deep copy
+            });
+
+            // And then initialize all tables
+            Object.values(tableReinitMap).forEach(initFn => {
+                if (typeof initFn === 'function') {
+                    initFn();
+                }
+            });
+
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
             var action = $("#action");
             var actionVal = action.val();
             if (actionVal != null) {
