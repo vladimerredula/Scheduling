@@ -94,6 +94,8 @@ namespace Scheduling.Controllers
                             {
                                 Personnel_ID = sc.Personnel_ID,
                                 Shift = sc.Shift.Shift_name,
+                                Time_in = sc.Time_in,
+                                Time_out = sc.Time_out,
                                 Comment = sc.Comment,
                                 Date = sc.Date
                             })

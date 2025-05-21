@@ -24,7 +24,7 @@ namespace Scheduling.Services
                     .Font.SetFontSize(14)
                     .Font.SetBold(true);
 
-                col++;
+                col += 2;
 
                 var monthYearCell = ws.Range($"{Col(col)}{row}:{Col(col + daysInMonth - 1)}{row}");
                 monthYearCell.Merge()
@@ -38,7 +38,7 @@ namespace Scheduling.Services
                 row = 4;
                 col = 2;
 
-                var nameCol = ws.Range($"{Col(col)}{row}:{Col(col)}{row + 1}");
+                var nameCol = ws.Range($"{Col(col)}{row}:{Col(col + 1)}{row + 1}");
                 nameCol.Merge()
                     .SetValue("Name")
                     .Style
@@ -46,6 +46,8 @@ namespace Scheduling.Services
                     .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
                     .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
                     .Border.SetOutsideBorder(XLBorderStyleValues.Medium);
+
+                col++;
 
                 for (int day = 1; day <= daysInMonth; day++)
                 {
@@ -99,6 +101,29 @@ namespace Scheduling.Services
                 }
 
                 row += 2;
+                col = 2;
+
+                var empCount = users.Count() + users.Where(u => u.Employment_type == "PartTime").Count() - 1;
+
+
+                // Styles
+                var empTable = ws.Range($"{Col(col)}{row}:{Col(daysInMonth + 3)}{row + empCount}");
+                empTable.Style
+                    .Border.SetOutsideBorder(XLBorderStyleValues.Medium)
+                    .Border.SetInsideBorder(XLBorderStyleValues.Thin)
+                    .Border.SetInsideBorderColor(XLColor.FromHtml("808080"))
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center);
+
+                var row1 = row;
+                foreach (var sector in users.GroupBy(u => u.Sector_ID))
+                {
+                    var partTimers = sector.Where(u => u.Employment_type == "PartTime").Count();
+                    ws.Range($"{Col(col)}{row1}:{Col(col + daysInMonth + 1)}{row1 + sector.Count() + partTimers - 1}").Style
+                        .Border.SetOutsideBorder(XLBorderStyleValues.Medium)
+                        .Border.SetOutsideBorderColor(XLColor.Black);
+                    row1 += sector.Count() + partTimers;
+                }
 
                 // Add user data
                 foreach (var sector in users.GroupBy(u => u.Sector_ID))
@@ -107,76 +132,145 @@ namespace Scheduling.Services
                     {
                         ws.Cell(row, col).Value = user.Full_name;
 
+                        var isPartTime = user.Employment_type == "PartTime";
+                        if (isPartTime)
+                        {
+                            ws.Range($"{Col(col)}{row}:{Col(col)}{row + 1}").Merge();
+                            ws.Cell(row, col + 1).Value = "In";
+                            ws.Cell(row + 1, col + 1).Value = "Out";
+
+                            ws.Range($"{Col(col + 1)}{row}:{Col(col + 1)}{row + 1}").Style.Border.SetInsideBorder(XLBorderStyleValues.Dotted);
+                        } else
+                        {
+                            ws.Range($"{Col(col)}{row}:{Col(col + 1)}{row}").Merge();
+                        }
+
+                        var col1 = col + 1;
+
                         for (int day = 1; day <= daysInMonth; day++)
                         {
                             var date = new DateTime(year, month, day);
                             bool isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 
                             var schedule = schedules.FirstOrDefault(sc => sc.Date == date && sc.Personnel_ID == user.Personnel_ID);
-                            var shift = schedule?.Shift ?? string.Empty;
-                            var shiftCell = ws.Cell(row, col + day);
 
                             var holiday = holidays.FirstOrDefault(h => h.Date == date);
                             bool isHoliday = holiday != null;
                             bool isCompanyHoliday = holiday?.Type == "Company";
 
-                            var leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
-                            bool hasLeave = leave != null && leave?.Status == "Approved";
-
-                            if (isHoliday || isWeekend)
+                            if (isPartTime)
                             {
-                                if (isCompanyHoliday)
-                                {
-                                    shiftCell.Style.Fill.BackgroundColor = XLColor.FromHtml("6c757d");
-                                    shift = string.Empty;
-                                }
-                                else
-                                {
-                                    shiftCell.Style.Fill.BackgroundColor = XLColor.FromHtml("e2e3e5");
-                                }
-                            }
+                                var timeInCell = ws.Cell(row, col1 + day);
+                                var timeOutCell = ws.Cell(row + 1, col1 + day);
 
-                            if (hasLeave && !isCompanyHoliday)
+                                timeInCell.Value = schedule?.Time_in != null
+                                    ? schedule.Time_in.ToString(@"hh\:mm")
+                                    : string.Empty;
+
+                                timeOutCell.Value = schedule?.Time_out != null
+                                    ? schedule.Time_out.ToString(@"hh\:mm")
+                                    : string.Empty;
+
+                                timeInCell.Style.Font.SetFontSize(11);
+                                timeOutCell.Style.Font.SetFontSize(11);
+
+                                ws.Range($"{Col(col1 + day)}{row}:{Col(col1 + day)}{row1 + 1}").Style.Border.SetInsideBorder(XLBorderStyleValues.Dotted);
+
+                                if (isHoliday || isWeekend)
+                                {
+                                    if (isCompanyHoliday)
+                                    {
+                                        timeInCell.Style.Fill.BackgroundColor = XLColor.FromHtml("6c757d");
+                                        timeOutCell.Style.Fill.BackgroundColor = XLColor.FromHtml("6c757d");
+                                        ws.Range($"{Col(col1 + day)}{row}:{Col(col1 + day)}{row1 + 1}").Style.Border.SetInsideBorder(XLBorderStyleValues.None);
+                                    }
+                                    else
+                                    {
+                                        timeInCell.Style.Fill.BackgroundColor = XLColor.FromHtml("e2e3e5");
+                                        timeOutCell.Style.Fill.BackgroundColor = XLColor.FromHtml("e2e3e5");
+                                    }
+                                }
+                            } else
                             {
-                                if (!string.IsNullOrEmpty(shift))
+                                var shift = schedule?.Shift ?? string.Empty;
+                                var shiftCell = ws.Cell(row, col1 + day);
+
+                                var leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
+                                bool hasLeave = leave != null && leave?.Status == "Approved";
+
+                                if (isHoliday || isWeekend)
                                 {
-                                    shiftCell.Style.Fill.BackgroundColor = XLColor.FromHtml(GetLeaveBgColor(leave.Leave_type_ID));
-                                    shift = string.Empty;
+                                    if (isCompanyHoliday)
+                                    {
+                                        shiftCell.Style.Fill.BackgroundColor = XLColor.FromHtml("6c757d");
+                                        shift = string.Empty;
+                                    }
+                                    else
+                                    {
+                                        shiftCell.Style.Fill.BackgroundColor = XLColor.FromHtml("e2e3e5");
+                                    }
                                 }
-                            }
 
-                            shiftCell.Value = shift;
+                                if (hasLeave && !isCompanyHoliday)
+                                {
+                                    if (!string.IsNullOrEmpty(shift))
+                                    {
+                                        shiftCell.Style.Fill.BackgroundColor = XLColor.FromHtml(GetLeaveBgColor(leave.Leave_type_ID));
+                                        shift = string.Empty;
+                                    }
+                                }
 
-                            if (schedule?.Comment == "cancelled" && !string.IsNullOrEmpty(shift))
-                            {
-                                shiftCell.Style
-                                    .Border.SetDiagonalBorder(XLBorderStyleValues.Thin)
-                                    .Border.SetDiagonalUp(true)
-                                    .Border.SetDiagonalDown(true)
-                                    .Border.SetDiagonalBorderColor(XLColor.Red);
+                                shiftCell.Value = shift;
+
+                                if (schedule?.Comment == "cancelled" && !string.IsNullOrEmpty(shift))
+                                {
+                                    shiftCell.Style
+                                        .Border.SetDiagonalBorder(XLBorderStyleValues.Thin)
+                                        .Border.SetDiagonalUp(true)
+                                        .Border.SetDiagonalDown(true)
+                                        .Border.SetDiagonalBorderColor(XLColor.Red);
+                                }
                             }
                         }
 
-                        row++;
+                        if (isPartTime)
+                        {
+                            row += 2;
+                        } else
+                        {
+                            row++;
+                        }
                     }
                 }
 
-                var empCount = users.Count() - 1;
-
                 // Shift counter
+                ws.Range($"{Col(col)}{row}:{Col(col)}{row + 2}").Merge();
+                ws.Range($"{Col(col)}{row}:{Col(col)}{row + 2}").Value = "Shift count";
+                ws.Range($"{Col(col)}{row}:{Col(col)}{row + 2}").Style
+                    .Font.SetBold(true)
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+
                 var genShifts = new[] { "A", "B", "C" };
                 foreach (var shiftName in genShifts)
                 {
-                    ws.Cell(row, col).Value = $"Shift {shiftName}";
-                    ws.Cell(row, col).Style.Font.SetBold(true);
-                    ws.Cell(row, col).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    var col1 = col + 1;
+
+                    var shiftNameCell = ws.Cell(row, col1);
+                    shiftNameCell.Value = shiftName;
+                    shiftNameCell.Style
+                        .Font.SetBold(true)
+                        .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Right)
+                        .Alignment.SetVertical(XLAlignmentVerticalValues.Center);
 
                     for (int day = 1; day <= daysInMonth; day++)
                     {
-                        ws.Cell(row, col + day).FormulaA1 = $"=COUNTIF({Col(col + day)}$6:{Col(col + day)}${6 + empCount},\"{shiftName}\")";
+                        ws.Cell(row, col1 + day).FormulaA1 = $"=COUNTIF({Col(col1 + day)}$6:{Col(col1 + day)}${6 + empCount},\"{shiftName}\")";
                     }
 
-                    var shiftCountRange = ws.Range($"{Col(col + 1)}{row}:{Col(col + daysInMonth)}{row}");
+                    col1++;
+
+                    var shiftCountRange = ws.Range($"{Col(col1)}{row}:{Col(col1 + daysInMonth - 1)}{row}");
                     shiftCountRange.Style
                         .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
                         .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
@@ -196,46 +290,36 @@ namespace Scheduling.Services
                     row++;
                 }
 
-                ws.Range($"{Col(col + 1)}{row - 3}:{Col(col + daysInMonth)}{row - 1}").Style.Border.SetInsideBorder(XLBorderStyleValues.Thin);
+                // Shift counter borders
+                ws.Range($"{Col(col)}{row - 3}:{Col(col + daysInMonth + 1)}{row - 1}").Style
+                    .Border.SetInsideBorder(XLBorderStyleValues.Thin)
+                    .Border.SetOutsideBorder(XLBorderStyleValues.Medium);
 
                 row = 6;
 
-                // Styles
-                var empTable = ws.Range($"{Col(col)}{row}:{Col(daysInMonth + 2)}{row + empCount}");
-                empTable.Style
-                    .Border.SetOutsideBorder(XLBorderStyleValues.Medium)
-                    .Border.SetInsideBorder(XLBorderStyleValues.Thin)
-                    .Border.SetInsideBorderColor(XLColor.FromHtml("808080"))
-                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
-                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center);
-
-                var row1 = row;
-                foreach (var sector in users.GroupBy(u => u.Sector_ID))
-                {
-                    ws.Range($"{Col(col)}{row1}:{Col(col + daysInMonth)}{row1 + sector.Count() - 1}").Style
-                        .Border.SetOutsideBorder(XLBorderStyleValues.Medium)
-                        .Border.SetOutsideBorderColor(XLColor.Black);
-                    row1 += sector.Count();
-                }
-
+                // Name alignment
                 var empNames = ws.Range($"{Col(col)}{row}:{Col(col)}{row + empCount}");
                 empNames.Style
                     .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left)
-                    .Border.SetOutsideBorder(XLBorderStyleValues.Medium);
+                    .Border.SetLeftBorder(XLBorderStyleValues.Medium);
+
+                ws.Range($"{Col(col + 1)}{row}:{Col(col + 1)}{row + empCount + 3}").Style
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center);
 
                 // Auto-fit columns
                 ws.Rows().Height = 21;
                 ws.Row(5).Height = 13.5;
                 ws.Columns().AdjustToContents();
-                for (int day = 1; day <= daysInMonth; day++)
+                for (int day = 1; day <= daysInMonth + 1; day++)
                 {
-                    ws.Column(col + day).Width = 4.6; // set your desired width
+                    ws.Column(col + day).Width = 5.5;
                 }
 
                 // Legends
                 row = 6;
-                col = daysInMonth + 4;
-                ws.Column(col).Width = 4.6;
+                col = daysInMonth + 5;
+                ws.Column(col).Width = 5.5;
                 ws.Column(col + 1).Width = 20;
 
                 ws.Cell(row, col).Style.Fill.SetBackgroundColor(XLColor.FromHtml(GetLeaveBgColor(10)));
@@ -288,6 +372,7 @@ namespace Scheduling.Services
                         foreach (var shift in shiftPatterns)
                         {
                             ws.Cell(row, col).Value = shift.Shift_name;
+                            ws.Cell(row, col).Style.Font.SetBold(true);
                             ws.Cell(row, col + 1).Value = $"{shift?.Time_start?.ToString(@"hh\:mm")} - {shift?.Time_end?.ToString(@"hh\:mm")}";
                             row++;
                         }
