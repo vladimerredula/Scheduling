@@ -11,6 +11,8 @@ namespace Scheduling.Models
         public int? Shift_ID { get; set; }
         public string? Comment { get; set; }
         public DateTime Date { get; set; }
+        public TimeSpan? Time_in { get; set; }
+        public TimeSpan? Time_out { get; set; }
 
         [ForeignKey("Personnel_ID")]
         public User? User { get; set; }
