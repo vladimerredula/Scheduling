@@ -11,6 +11,17 @@ namespace Scheduling.Services
             {
                 var monthYear = new DateTime(year, month, 1);
                 var ws = workbook.Worksheets.Add(monthYear.ToString("MMMM yyyy"));
+
+                // Set landscape orientation and print settings
+                ws.PageSetup.PageOrientation = XLPageOrientation.Landscape;
+                ws.PageSetup.PaperSize = XLPaperSize.A4Paper;
+                ws.PageSetup.Margins.Top = 0.5;
+                ws.PageSetup.Margins.Bottom = 0.5;
+                ws.PageSetup.Margins.Left = 0.5;
+                ws.PageSetup.Margins.Right = 0.5;
+
+                ws.PageSetup.FitToPages(1, 1);
+
                 ws.Style.Font.FontSize = 12;
 
                 var daysInMonth = DateTime.DaysInMonth(year, month);
