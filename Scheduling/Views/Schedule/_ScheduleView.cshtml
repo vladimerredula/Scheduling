@@ -46,7 +46,7 @@
                 <table id="schedule" class="table table-sm table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
                     <thead class="text-center sticky-top z-2">
                         <tr>
-                            <th class="border border-secondary">Name</th>
+                            <th class="border border-secondary align-content-center fs-5">Name</th>
                             @for (int day = 1; day <= daysInMonth; day++)
                             {
                                 var date = new DateTime(currentYear, selectedMonth, day);
@@ -148,7 +148,19 @@
                                                     <p class="p-0 m-0 fs-6 text-center">@schedule?.Time_out?.ToString(@"hh\:mm")</p>
                                                 } else
                                                 {
-                                                    <p class="p-0 m-0 fs-5 text-center">@(isCompanyHoliday || leave != null ? "" : shift?.Shift_name)</p>
+                                                    string shiftName = shift?.Shift_name;
+
+                                                    if (shiftName?.Length > 3)
+                                                    {
+                                                        string noVowels = new string(shift?.Shift_name?.Where(c => !"aeiouAEIOU".Contains(c)).ToArray());
+
+                                                        if (!string.IsNullOrWhiteSpace(noVowels))
+                                                        {
+                                                            shiftName = noVowels.Length == 1 ? noVowels : $"{noVowels.First()}{noVowels.Last()}";
+                                                        }
+                                                    }
+
+                                                    <p class="p-0 m-0 fs-5 text-center">@(isCompanyHoliday || leave != null ? "" : shiftName?.ToUpper())</p>
                                                 }
 
                                                 <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @bgClass" @Html.Raw(leavePopover) style="z-index: 1;"></p>
@@ -206,15 +218,12 @@
     <div class="col-12 col-xxl-2" id="legendsAndShifts" style="display:none;">
         @* Leave Legends *@
         <div class="card p-3 mb-3">
-            <small class="text-body-secondary mb-2">Leave applications</small>
-            <p class="mb-2"><span class="eye position-absolute text-secondary" style="display:none;">&nbsp;<i class="bi bi-eye-slash-fill"></i></span><small class="bg-warning-subtle border border-2 border-warning rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</p>
-            <p class="mb-3"><span class="eye position-absolute text-secondary" style="display:none;">&nbsp;<i class="bi bi-eye-slash-fill"></i></span><small class="bg-success-subtle border border-2 border-success rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</p>
             <small class="text-body-secondary mb-2">Reflected leaves</small>
             @foreach (var leaveType in leaveTypes)
             {
-                <p class="mb-2"><span class="eye position-absolute text-white" style="display:none;">&nbsp;<i class="bi bi-eye-slash-fill"></i></span><span class="bg-@leaveType?.BsColor rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;@leaveType?.Leave_type_name</p>
+                <p class="mb-2"><span class="bg-@leaveType?.BsColor rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;@leaveType?.Leave_type_name</p>
             }
-            <p class="mb-2"><span class="bg-secondary rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
+            <p class="mb-0"><span class="bg-secondary rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
         </div>
 
         @* Shift Patterns *@
@@ -232,8 +241,20 @@
                         <tbody>
                             @foreach (var shift in shiftPattern)
                             {
+                                string shiftName = shift?.Shift_name;
+
+                                if (shiftName?.Length > 3)
+                                {
+                                    string noVowels = new string(shift?.Shift_name?.Where(c => !"aeiouAEIOU".Contains(c)).ToArray());
+
+                                    if (!string.IsNullOrWhiteSpace(noVowels))
+                                    {
+                                        shiftName = noVowels.Length == 1 ? noVowels : $"{noVowels.First()}{noVowels.Last()}";
+                                    }
+                                }
+
                                 <tr>
-                                    <td>@shift.Shift_name</td>
+                                    <td>@(shift?.Shift_name?.Length > 3 ? $"{shiftName.ToUpper()} ({shift?.Shift_name})" : shift?.Shift_name)</td>
                                     <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
                                 </tr>
                             }

@@ -237,7 +237,7 @@
                                                 } else 
                                                 {
                                                     <select data-date="@dateString"
-                                                        class="form-control p-1 position-relative text-center z-1 bg-transparent 
+                                                        class="form-control py-1 px-0 position-relative text-center z-1 bg-transparent
                                                         @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "") 
                                                         @(isStillTrainee ? "text-success fw-semibold" : "")"
                                                         onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
@@ -247,13 +247,17 @@
                                                         <option value="0"></option>
                                                         @foreach (var shift in Model.Shifts)
                                                         {
+                                                            var shiftName = shift.Shift_name.Length > 5
+                                                                ? shift.Shift_name.Substring(0, 5)
+                                                                : shift.Shift_name;
+
                                                             if (shift.Shift_ID == shiftId)
                                                             {
-                                                                <option class="text-body" value="@shift.Shift_ID" selected>@shift.Shift_name</option>
+                                                                <option class="text-body" value="@shift.Shift_ID" selected>@shiftName</option>
                                                             }
                                                             else
                                                             {
-                                                                <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
+                                                                <option class="text-body" value="@shift.Shift_ID">@shiftName</option>
                                                             }
                                                         }
 

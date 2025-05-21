@@ -204,6 +204,9 @@ namespace Scheduling.Services
                             } else
                             {
                                 var shift = schedule?.Shift ?? string.Empty;
+                                shift = shift.Length > 5
+                                    ? shift.Substring(0, 5)
+                                    : shift;
                                 var shiftCell = ws.Cell(row, col1 + day);
 
                                 var leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
@@ -382,7 +385,9 @@ namespace Scheduling.Services
 
                         foreach (var shift in shiftPatterns)
                         {
-                            ws.Cell(row, col).Value = shift.Shift_name;
+                            ws.Cell(row, col).Value = shift.Shift_name.Length > 5
+                                ? shift.Shift_name.Substring(0, 5)
+                                : shift.Shift_name;
                             ws.Cell(row, col).Style.Font.SetBold(true);
                             ws.Cell(row, col + 1).Value = $"{shift?.Time_start?.ToString(@"hh\:mm")} - {shift?.Time_end?.ToString(@"hh\:mm")}";
                             row++;
