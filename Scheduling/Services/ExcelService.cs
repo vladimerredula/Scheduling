@@ -196,7 +196,7 @@ namespace Scheduling.Services
                                 var shiftCell = ws.Cell(row, col1 + day);
 
                                 var leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
-                                bool hasLeave = leave != null && leave?.Status == "Approved";
+                                bool hasLeave = leave != null;
 
                                 if (isHoliday || isWeekend)
                                 {

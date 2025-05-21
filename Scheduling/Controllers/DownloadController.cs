@@ -25,6 +25,9 @@ namespace Scheduling.Controllers
         [HttpPost]
         public async Task<IActionResult> DownloadSchedule(int month, int year, int departmentId)
         {
+            var firstDayOfMonth = new DateTime(year, month, 1);
+            var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+
             // Get relevant employee orders for the selected year and month (latest per user)
             var employeeOrders = await _db.Employee_orders
                 .Include(o => o.User)
@@ -57,8 +60,8 @@ namespace Scheduling.Controllers
                     u.Privilege_ID != 4 &&
                     u.Department_ID == departmentId &&
                     u.Status == 1 &&
-                    (u.Date_hired == null || u.Date_hired.Value.Date <= new DateTime(year, month, DateTime.DaysInMonth(year, month)).Date) &&
-                    (u.Last_day == null || u.Last_day.Value.Date >= new DateTime(year, month, 1).Date))
+                    (u.Date_hired == null || u.Date_hired.Value.Date <= lastDayOfMonth.Date) &&
+                    (u.Last_day == null || u.Last_day.Value.Date >= firstDayOfMonth.Date))
                 .ToListAsync();
 
             // Override Sector_IDs based on latest Employee_order
@@ -105,9 +108,11 @@ namespace Scheduling.Controllers
 
             var leaves = await _db.Leaves
                             .Include(l => l.Leave_type)
-                            .Where(l => 
-                            (l.Date_start.Year == year && l.Date_start.Month == month) || (l.Date_end.Year == year && l.Date_end.Month == month) &&
-                            l.User.Department_ID == departmentId)
+                            .Where(l =>
+                                l.Status == "Approved" && 
+                                l.User.Department_ID == departmentId &&
+                                l.Date_start.Date <= lastDayOfMonth.Date &&
+                                l.Date_end.Date >= firstDayOfMonth.Date)
                             .ToListAsync();
 
             var holidays = await _db.Holidays.Where(h => h.Date.Year == year && h.Date.Month == month).ToListAsync();
@@ -116,11 +121,9 @@ namespace Scheduling.Controllers
 
             var excelFile = _excel.Schedule(users.ToList<dynamic>(), schedules, shifts, leaves, holidays, department.Department_name, month, year);
 
-            var date = new DateTime(year, month, 1);
+            await _log.LogInfoAsync($"Downloaded {firstDayOfMonth.ToString("yyyy.MM")} {department.Department_name} Schedule");
 
-            await _log.LogInfoAsync($"Downloaded {date.ToString("yyyy.MM")} {department.Department_name} Schedule");
-
-            return File(excelFile, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{date.ToString("yyyy.MM")} {department.Department_name}.xlsx");
+            return File(excelFile, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{firstDayOfMonth.ToString("yyyy.MM")} {department.Department_name}.xlsx");
         }
     }
 }
