@@ -1,10 +1,12 @@
-﻿@using System.Globalization;
-@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
+﻿@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
 
 @{
     var currentYear = Model.year;
     var selectedMonth = Model.month;
+    var firstDay = new DateTime(currentYear, selectedMonth, 1);
     var daysInMonth = DateTime.DaysInMonth(currentYear, selectedMonth);
+    var prevMonth = firstDay.AddMonths(-1);
+    var nextMonth = firstDay.AddMonths(1);
     var schedules = Model.Schedules;
     var holidays = Model.Holidays;
     var shifts = Model.Shifts;
@@ -27,15 +29,15 @@
             <div class="row justify-content-between mb-3">
                 <div class="col-auto">
                     <a class="btn btn-light border" id="prevBtn">
-                        <i class="bi bi-arrow-bar-left"></i> Previous
+                        <i class="bi bi-arrow-bar-left"></i> @prevMonth.ToString("MMM")
                     </a>
                 </div>
                 <div class="col">
-                    <h3 class="text-center">@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)</h3>
+                    <h3 class="text-center mb-0">@firstDay.ToString("MMMM yyyy")</h3>
                 </div>
                 <div class="col-auto">
                     <a class="btn btn-light border" id="nextBtn">
-                        Next <i class="bi bi-arrow-bar-right"></i>
+                        @nextMonth.ToString("MMM") <i class="bi bi-arrow-bar-right"></i>
                     </a>
                 </div>
             </div>
@@ -61,10 +63,10 @@
                                 ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{holiday.Name}' tabindex='0'"
                                 : "";
 
-                                <th class="border border-start-0 border-secondary p-1 @holidayClass" @Html.Raw(holidayPopover)>
-                                    <p class="m-0">@day</p>
+                                <td class="border border-start-0 border-secondary py-0 px-1 @holidayClass" @Html.Raw(holidayPopover)>
+                                    <p class="m-0 fw-semibold fs-5">@day</p>
                                     <small class="fw-light font-monospace">@date.ToString("ddd")</small>
-                                </th>
+                                </td>
                             }
                         </tr>
                     </thead>
@@ -85,12 +87,35 @@
                                 {
                                     var trainingPeriod = user.Date_hired.HasValue ? user.Date_hired.Value.AddMonths(3) : DateTime.MinValue;
                                     var isTrainee = trainingPeriod.Date >= new DateTime(currentYear, selectedMonth, daysInMonth).Date;
+                                    var isPartTime = user.Employment_type == "PartTime";
 
                                     <tr>
-                                    <td class="border border-top-0 border-secondary text-nowrap text-start
+                                        <td class="border border-top-0 border-secondary text-nowrap text-start py-0 px-1 fs-5
                                             @(isTrainee ? "bg-success-subtle text-success-emphasis" : "")">
-                                            @user.Full_name
-                                    </td>
+                                            <div class="row my-0">
+                                                <div class="col align-self-center text-truncate">
+                                                    @user.Full_name
+                                                </div>
+                                                @if (isPartTime)
+                                                {
+                                                    <div class="col-auto border-start ps-1">
+                                                        <div class="row mx-2" style="width:30px;">
+                                                            <div class="col px-0 text-center fs-6">
+                                                                In
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-secondary">
+                                                            <hr class="m-0">
+                                                        </div>
+                                                        <div class="row mx-2" style="width:30px;">
+                                                            <div class="col px-0 text-center fs-6">
+                                                                Out
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </td>
 
                                         @for (int day = 1; day <= daysInMonth; day++)
                                         {
@@ -113,8 +138,18 @@
 
                                             string bgClass = hasLeave ? "bg-" + leave?.Leave_type?.BsColor + " bg-gradient" : "visually-hidden";
 
-                                            <td id="cell-@user.Personnel_ID-@dateStr" class="p-0 @cellClass @(isStillTrainee ? "text-success fw-semibold" : "") position-relative border-bottom border-end border-secondary">
-                                                <p class="p-1 m-0 text-center">@(isCompanyHoliday || leave != null ? "" : shift?.Shift_name)</p>
+                                            <td id="cell-@user.Personnel_ID-@dateStr" class="py-0 px-1 @cellClass @(isStillTrainee ? "text-success fw-semibold" : "") position-relative border-bottom border-end border-secondary">
+                                                @if (isPartTime)
+                                                {
+                                                    <p class="p-0 m-0 fs-6 text-center">@(schedule?.Time_in != null ? schedule?.Time_in?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
+                                                    <div class="text-secondary">
+                                                        <hr class="m-0">
+                                                    </div>
+                                                    <p class="p-0 m-0 fs-6 text-center">@schedule?.Time_out?.ToString(@"hh\:mm")</p>
+                                                } else
+                                                {
+                                                    <p class="p-0 m-0 fs-5 text-center">@(isCompanyHoliday || leave != null ? "" : shift?.Shift_name)</p>
+                                                }
 
                                                 <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @bgClass" @Html.Raw(leavePopover) style="z-index: 1;"></p>
 
@@ -169,71 +204,43 @@
         </div>
     </div>
     <div class="col-12 col-xxl-2" id="legendsAndShifts" style="display:none;">
-        <div class="row mb-3">
-            <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                <div class="card p-4">
-                    <small class="text-body-secondary mb-3">Reflected leaves</small>
-                    @foreach (var leaveType in leaveTypes)
-                    {
-                        <small class="mb-2"><span class="bg-@leaveType?.BsColor rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;@leaveType?.Leave_type_name</small>
-                    }
-                    <small class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</small>
-                </div>
-            </div>
-            @if (Model.Shifts.Where(s => s.Pattern == "4/2") is var shifts4 && shifts4 != null && shifts4.Count() > 0)
+        @* Leave Legends *@
+        <div class="card p-3 mb-3">
+            <small class="text-body-secondary mb-2">Leave applications</small>
+            <p class="mb-2"><span class="eye position-absolute text-secondary" style="display:none;">&nbsp;<i class="bi bi-eye-slash-fill"></i></span><small class="bg-warning-subtle border border-2 border-warning rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</p>
+            <p class="mb-3"><span class="eye position-absolute text-secondary" style="display:none;">&nbsp;<i class="bi bi-eye-slash-fill"></i></span><small class="bg-success-subtle border border-2 border-success rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</p>
+            <small class="text-body-secondary mb-2">Reflected leaves</small>
+            @foreach (var leaveType in leaveTypes)
             {
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card py-2 px-4">
-                        <table class="table table-sm text-center mb-3">
-                            <thead>
-                                <tr>
-                                    <th colspan="2">4/2 pattern</th>
-                                </tr>
-                                <tr>
-                                    <th>Shift</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var shift in shifts4)
-                                {
-                                    <tr>
-                                        <td>@shift.Shift_name</td>
-                                        <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <p class="mb-2"><span class="eye position-absolute text-white" style="display:none;">&nbsp;<i class="bi bi-eye-slash-fill"></i></span><span class="bg-@leaveType?.BsColor rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;@leaveType?.Leave_type_name</p>
             }
-            @if (Model.Shifts.Where(s => s.Pattern == "5/2") is var shifts5 && shifts5 != null && shifts5.Count() > 0)
-            {
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card py-2 px-4">
-                        <table class="table table-sm text-center mb-3">
-                            <thead>
-                                <tr>
-                                    <th colspan="2">5/2 pattern</th>
-                                </tr>
-                                <tr>
-                                    <th>Shift</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var shift in shifts5)
-                                {
-                                    <tr>
-                                        <td>@shift.Shift_name</td>
-                                        <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            }
+            <p class="mb-2"><span class="bg-secondary rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
         </div>
+
+        @* Shift Patterns *@
+        @foreach (var pattern in new[] { "4/2", "5/2" })
+        {
+            var shiftPattern = Model.Shifts.Where(s => s.Pattern == pattern).ToList();
+            if (shiftPattern.Any())
+            {
+                <div class="card py-2 px-4 mb-3">
+                    <table class="table table-sm text-center">
+                        <thead>
+                            <tr><th colspan="2">@pattern pattern</th></tr>
+                            <tr><th>Shift</th><th>Time</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var shift in shiftPattern)
+                            {
+                                <tr>
+                                    <td>@shift.Shift_name</td>
+                                    <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
     </div>
 </div>
