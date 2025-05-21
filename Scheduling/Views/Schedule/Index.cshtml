@@ -1,5 +1,4 @@
-﻿@using System.Globalization;
-@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
+﻿@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
 @{
     ViewData["Title"] = "Schedules";
 
@@ -233,6 +232,7 @@
         let previousValue;
 
         $(document).ready(function (){
+            initializeFlatpickr();
             initializePopovers();
 
             $('#monthPicker').datepicker({
@@ -309,6 +309,28 @@
             $(window).on('resize', adjustTableColumns); // Optional: handle resizing
             filterTable();
         });
+
+        function initializeFlatpickr() {
+            flatpickr(".timePicker", {
+                enableTime: true,
+                noCalendar: true,
+                disableMobile: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                minuteIncrement: 5,
+                minTime: "00:00",
+                allowInput: true,
+                defaultDate: null,
+                onChange: function(selectedDates, dateStr, instance) {
+                    var input = instance._input; // The original input element
+
+                    var id = input.id;
+                    var [isTimeIn,userId,date] = id.split("|");
+
+                    assignTime(userId, date, dateStr, isTimeIn == "in");
+                }
+            });
+        }
 
         $("#downloadBtn").on("click", function () {
             let date = $('#monthPicker').datepicker("getDate");
@@ -531,6 +553,7 @@
                     adjustTableColumns();
                     filterTable();
                     initializePopovers();
+                    initializeFlatpickr();
                 },
                 error: function () {
                     alert("Error loading schedule.");
@@ -696,6 +719,27 @@
 
         function removeColorClass(e) {
             $(e).removeClass("bg-danger-subtle text-danger-emphasis bg-warning-subtle text-warning-emphasis bg-success-subtle text-success-emphasis bg-success text-white");
+        }
+
+        function assignTime(userId, date, time, isTimeIn) {
+            $.ajax({
+                url: '/Schedule/AssignTime',
+                type: 'POST',
+                data: {
+                    userId: userId,
+                    date: date,
+                    time: time,
+                    isTimeIn: isTimeIn
+                },
+                success: function (response) {
+                    if (!response.success) {
+                        alert('Error assigning time!');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while assigning the time in/out.');
+                }
+            });
         }
     </script>
 }

@@ -12,6 +12,7 @@
 
     var prevMonth = firstDay.AddMonths(-1);
     var prevMonthDays = DateTime.DaysInMonth(prevMonth.Year, prevMonth.Month);
+    var nextMonth = firstDay.AddMonths(1);
 }
 
 <div class="row">
@@ -22,7 +23,7 @@
                 @if (_template.HasPermission("MonthNav"))
                 {
                     <div class="col-auto">
-                        <a class="btn btn-light border" id="prevBtn"><i class="bi bi-arrow-bar-left"></i> Previous</a>
+                        <a class="btn btn-light border" id="prevBtn"><i class="bi bi-arrow-bar-left"></i> @prevMonth.ToString("MMM")</a>
                     </div>
                 }
                 <div class="col text-center">
@@ -33,7 +34,7 @@
                 @if (_template.HasPermission("MonthNav"))
                 {
                     <div class="col-auto">
-                        <a class="btn btn-light border" id="nextBtn">Next <i class="bi bi-arrow-bar-right"></i></a>
+                        <a class="btn btn-light border" id="nextBtn">@nextMonth.ToString("MMM") <i class="bi bi-arrow-bar-right"></i></a>
                     </div>
                 }
             </div>
@@ -91,7 +92,7 @@
                                         bool isCompanyHoliday = holiday?.Type == "Company";
 
                                         // Styling
-                                        string cellClass = isCurrentDay ? "bg-primary text-white fw-bold" : string.Empty;
+                                        string cellClass = isCurrentDay ? "fw-bold" : string.Empty;
 
                                         cellClass = isHoliday
                                         ? (isCompanyHoliday ? "bg-secondary text-white bg-gradient" : "bg-secondary-subtle text-secondary-emphasis")
@@ -149,7 +150,13 @@
                                                 <p class="text-break mt-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">@holiday?.Name</p>
                                             } else 
                                             {
-                                                <p class="mt-1 @(isCurrentDay ? "fs-2" : "fs-3")">@schedule?.Shift?.Shift_name</p>
+                                                if (schedule?.Shift_ID == null && (schedule?.Time_in != null || schedule?.Time_out != null))
+                                                {
+                                                    <p class="mt-2 @(isCurrentDay ? "fs-2" : "fs-3")">@schedule?.Time_in?.ToString(@"hh\:mm") - @schedule?.Time_out?.ToString(@"hh\:mm")</p>
+                                                } else
+                                                {
+                                                    <p class="mt-1 @(isCurrentDay ? "fs-2" : "fs-3")">@schedule?.Shift?.Shift_name</p>
+                                                }
                                             }
 
                                             @if (schedule?.Comment == "cancelled")

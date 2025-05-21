@@ -4,7 +4,12 @@
 @{
     var currentYear = Model.year;
     var selectedMonth = Model.month;
+    var firstDay = new DateTime(currentYear, selectedMonth, 1);
     var daysInMonth = DateTime.DaysInMonth(currentYear, selectedMonth);
+
+    var prevMonth = firstDay.AddMonths(-1);
+    var nextMonth = firstDay.AddMonths(1);
+
     var schedules = Model.Schedules;
     var holidays = Model.Holidays;
     var leaves = Model.Leaves;
@@ -38,17 +43,17 @@
                 <div class="col-auto">
                     @if (_template.HasPermission("MonthNav"))
                     {
-                        <a class="btn btn-light border" id="prevBtn" title="Go to previous month"><i class="bi bi-arrow-bar-left"></i> Previous</a>
+                        <a class="btn btn-light border" id="prevBtn" title="Go to previous month"><i class="bi bi-arrow-bar-left"></i> @prevMonth.ToString("MMM")</a>
                     }
                 </div>
                 <div class="col text-center">
-                    <h3>@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth) @Model.year</h3>
+                    <h3>@firstDay.ToString("MMMM yyyy")</h3>
                 </div>
                 <div class="col-auto">
                     <a class="btn btn-light border me-2" id="reloadBtn" title="Reload schedule"><i class="bi bi-arrow-clockwise"></i></a>
                     @if (_template.HasPermission("MonthNav"))
                     {
-                        <a class="btn btn-light border" id="nextBtn" title="Go to next month">Next <i class="bi bi-arrow-bar-right"></i></a>
+                        <a class="btn btn-light border" id="nextBtn" title="Go to next month">@nextMonth.ToString("MMM") <i class="bi bi-arrow-bar-right"></i></a>
                     }
                 </div>
             </div>
@@ -96,11 +101,34 @@
                                 {
                                     var trainingPeriod = user.Date_hired.HasValue ? user.Date_hired.Value.AddMonths(3) : DateTime.MinValue;
                                     var isTrainee = trainingPeriod.Date >= new DateTime(currentYear, selectedMonth, daysInMonth).Date;
+                                    var isPartTime = user.Employment_type == "PartTime";
 
                                     <tr id="user-@user.Personnel_ID" class="@(canReorder ? "draggable" : "")">
-                                        <td class="border border-top-0 border-secondary text-nowrap text-start ps-2 drag-handle align-content-center @(userId == user.Personnel_ID ? "fw-semibold" : "")
+                                        <td class="border border-top-0 border-secondary text-nowrap text-start ps-2 py-0 drag-handle align-content-center @(userId == user.Personnel_ID ? "fw-semibold" : "")
                                             @(isTrainee ? "bg-success-subtle text-success-emphasis" : "")">
-                                            @user.Full_name
+                                            <div class="row my-0">
+                                                <div class="col align-self-center text-truncate">
+                                                    @user.Full_name
+                                                </div>
+                                                @if (isPartTime)
+                                                {
+                                                    <div class="col-auto border-start ps-1">
+                                                        <div class="row mx-2" style="width:30px;">
+                                                            <div class="col px-0 text-center mb-1">
+                                                                In
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-secondary">
+                                                            <hr class="m-0">
+                                                        </div>
+                                                        <div class="row mx-2" style="width:30px;">
+                                                            <div class="col px-0 text-center mt-1">
+                                                                Out
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
                                         </td>
                                         @for (int day = 1; day <= daysInMonth; day++)
                                         {
@@ -183,39 +211,65 @@
                                             <td id="cell-@user.Personnel_ID-@dateString"
                                                 class="p-1 @cellClass position-relative border-bottom border-end border-secondary">
 
-                                                <select data-date="@dateString"
-                                                    class="form-control p-1 position-relative text-center z-1 bg-transparent 
+                                                @if (isPartTime)
+                                                {
+                                                    <input
+                                                        id="in|@user.Personnel_ID|@dateString"
+                                                        value="@schedule?.Time_in"
+                                                        class="form-control form-control-sm z-1 px-0 bg-transparent text-center timePicker" type="text"
+                                                        style="border: none;@(isCompanyHoliday ? "color: transparent;" : "")"
+                                                        @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
+                                                        @(disabledSelect)
+                                                    />
+
+                                                    <div class="text-secondary">
+                                                        <hr class="m-0">
+                                                    </div>
+
+                                                    <input
+                                                        id="out|@user.Personnel_ID|@dateString"
+                                                        value="@schedule?.Time_out"
+                                                        class="form-control form-control-sm z-1 px-0 bg-transparent text-center timePicker" type="text"
+                                                        style="border: none;@(isCompanyHoliday ? "color: transparent;" : "")"
+                                                        @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
+                                                        @(disabledSelect)
+                                                    />
+                                                } else 
+                                                {
+                                                    <select data-date="@dateString"
+                                                        class="form-control p-1 position-relative text-center z-1 bg-transparent 
                                                         @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "") 
                                                         @(isStillTrainee ? "text-success fw-semibold" : "")"
-                                                    onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
-                                                    style="border: none;@(isCompanyHoliday ? "color: transparent;" : "")" 
-                                                    @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "") 
-                                                    @(disabledSelect)>
-                                                    <option value="0"></option>
-                                                    @foreach (var shift in Model.Shifts)
-                                                    {
-                                                        if (shift.Shift_ID == shiftId)
+                                                        onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
+                                                        style="border: none;@(isCompanyHoliday ? "color: transparent;" : "")" 
+                                                        @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "") 
+                                                        @(disabledSelect)>
+                                                        <option value="0"></option>
+                                                        @foreach (var shift in Model.Shifts)
                                                         {
-                                                            <option class="text-body" value="@shift.Shift_ID" selected>@shift.Shift_name</option>
+                                                            if (shift.Shift_ID == shiftId)
+                                                            {
+                                                                <option class="text-body" value="@shift.Shift_ID" selected>@shift.Shift_name</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
+                                                            }
                                                         }
-                                                        else
-                                                        {
-                                                            <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
-                                                        }
-                                                    }
 
-                                                    @if (schedule?.Shift_ID != null)
-                                                    {
-                                                        @if (schedule?.Comment == "cancelled")
+                                                        @if (schedule?.Shift_ID != null)
                                                         {
-                                                            <option class="text-body" value="998">*Uncancel shift</option>
+                                                            @if (schedule?.Comment == "cancelled")
+                                                            {
+                                                                <option class="text-body" value="998">*Uncancel shift</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option class="text-body" value="999">*Cancel shift</option>
+                                                            }
                                                         }
-                                                        else
-                                                        {
-                                                            <option class="text-body" value="999">*Cancel shift</option>
-                                                        }
-                                                    }
-                                                </select>
+                                                    </select>
+                                                }
 
                                                 @if ((hasLeave && leave?.Status == "Pending") || (hasLeave && shiftId != 0))
                                                 {

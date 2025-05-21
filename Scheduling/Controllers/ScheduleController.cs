@@ -216,14 +216,8 @@ namespace Scheduling.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles = "admin,manager,topManager")]
         public async Task<IActionResult> AssignShift(int userId, int shiftId, DateTime date)
         {
-            if (User.IsInRole("user") || (User.IsInRole("shiftLeader") && GetPersonnelID() != 94)) // TEMPORARY FIX FOR JONNEL TO ASSIGN SHIFTS
-            {
-                return Unauthorized();
-            }
-
             var existingSchedule = await _db.Schedules
                 .FirstOrDefaultAsync(s => s.Personnel_ID == userId && s.Date == date);
 
@@ -278,6 +272,44 @@ namespace Scheduling.Controllers
 
             await _db.SaveChangesAsync();
 
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AssignTime(int userId, string time, DateTime date, bool isTimeIn)
+        {
+            var empName = await GetUserFullname(userId) ?? $"User {userId}";
+            var dateStr = date.ToString("yyyy-MM-dd");
+
+            TimeSpan? parsedTime = TimeSpan.TryParse(time, out var t) ? t : (TimeSpan?)null;
+            var timeStr = parsedTime?.ToString(@"hh\:mm") ?? "[blank]";
+            var timeType = isTimeIn ? "in" : "out";
+
+            var schedule = await _db.Schedules
+                .FirstOrDefaultAsync(s => s.Personnel_ID == userId && s.Date == date);
+
+            if (schedule == null)
+            {
+                schedule = new Schedule
+                {
+                    Personnel_ID = userId,
+                    Date = date
+                };
+                await _db.Schedules.AddAsync(schedule);
+                await _log.LogInfoAsync($"Assigned {timeStr} time {timeType} to {empName} on {dateStr}");
+            }
+            else
+            {
+                _db.Schedules.Update(schedule);
+                await _log.LogInfoAsync($"Updated the time {timeType} of {empName} on {dateStr} to {timeStr}");
+            }
+
+            if (isTimeIn)
+                schedule.Time_in = parsedTime;
+            else
+                schedule.Time_out = parsedTime;
+
+            await _db.SaveChangesAsync();
             return Json(new { success = true });
         }
 
