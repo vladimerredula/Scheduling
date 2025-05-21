@@ -1,6 +1,41 @@
 ﻿$(document).ready(function () {
     getRequestCount();
     getNotifications();
+
+    document.getElementById('passwordForm').addEventListener('submit', function (event) {
+        event.preventDefault(); // Prevent form submission
+
+        const newPassword = document.getElementById('newpass');
+        const confirmPassword = document.getElementById('confirmpass');
+        const errorMessage = document.getElementById('passErrorMessage');
+
+        // Reset the error message
+        errorMessage.textContent = '';
+
+        // Validate the passwords
+        if (newPassword.value !== confirmPassword.value) {
+            errorMessage.textContent = 'New Passwords do not match.';
+        } else {
+            $("#passwordForm").submit();
+        }
+        //else if (!validatePassword(newPassword)) {
+        //    errorMessage.textContent = 'Password does not meet the criteria.';
+        //}
+    });
+
+    // Function to validate the password criteria
+    function validatePassword(password) {
+        // Example criteria: at least 8 characters, 1 uppercase, 1 lowercase, and 1 number
+        const criteria = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
+        return criteria.test(password);
+    }
+
+    if ($("#haserror").length) {
+        if ($("#haserror").val() != "") {
+            $("#wrongpass").append($("#haserror").val());
+            $("#changePassModal").modal("show");
+        }
+    }
 });
 
 function showToast(message, type = "success", duration = 7000) {

@@ -90,6 +90,7 @@
                                     @firstName @lastName
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdownMenu">
+                                    <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#changePassModal"><i class="bi bi-person-fill-gear"></i> Change password</a></li>
                                     <li><a asp-controller="Access" asp-action="Logout" class="dropdown-item"><i class="bi bi-box-arrow-left"></i> Logout</a></li>
                                 </ul>
                             </li>
@@ -109,6 +110,49 @@
             @RenderBody()
         </main>
     @* </div> *@
+
+    <div class="modal fade" id="changePassModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h4 class="modal-title"><i class="bi bi-gear"></i> Change Password</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true"></span>
+                    </button>
+                </div>
+                <form asp-controller="User" asp-action="ChangePassword" method="post" id="passwordForm">
+                    <div class="modal-body border-0">
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <strong>Note:</strong> Updating your password in schedule web app will also update your dailychecklist web app password, as both use the same account credentials.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="currentpass" class="control-label">Current password</label><span class="text-danger" rel="tooltip" data-bs-placement="right" title="Required"> *</span>
+                            <input type="password" name="currentpass" class="form-control" id="currentpass" data-val="true" data-val-required="The Current password field is required." required />
+                            <span id="wrongpass" class="text-danger"></span>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="currentpass" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="newpass" class="control-label">New password</label><span class="text-danger" rel="tooltip" data-bs-placement="right" title="Required"> *</span>
+                            <input type="password" name="newpass" class="form-control" id="newpass" data-val="true" data-val-required="The New password field is required." required />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="newpass" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="confirmpass" class="control-label">Confirm password</label><span class="text-danger" rel="tooltip" data-bs-placement="right" title="Required"> *</span>
+                            <input type="password" name="confirmpass" class="form-control" id="confirmpass" data-val="true" data-val-required="The Confirm password field is required." required />
+                            <span id="passErrorMessage" class="text-danger"></span>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="confirmpass" data-valmsg-replace="true"></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="submit" class="btn btn-primary shadow">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <input id="haserror" value="@(TempData["passerror"] != null ? TempData["passerror"] : "")" hidden />
     
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
