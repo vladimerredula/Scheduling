@@ -44,6 +44,8 @@ namespace Scheduling.Models
         [ForeignKey("Sector")]
         public int? Sector_ID { get; set; }
         public virtual Sector? Sector { get; set; }
+
+        public string? Employment_type { get; set; } // FullTime, PartTime
         public DateTime? Date_hired { get; set; }
         public DateTime? Last_day { get; set; }
 
