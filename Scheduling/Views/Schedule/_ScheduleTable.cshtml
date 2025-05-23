@@ -1,5 +1,4 @@
-﻿@using System.Globalization;
-@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
+﻿@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
 
 @{
     var currentYear = Model.year;
@@ -16,6 +15,9 @@
     var leaveTypes = ViewBag.LeaveTypes as List<Leave_type>;
     var users = Model.Users;
     int userId = int.Parse(User.FindFirst("Personnelid")?.Value);
+
+    var shiftLeaders = ViewBag.ShiftLeaders as List<(DateTime, int, string)>;
+    var expectedShifts = new[] { "A", "B", "C" };
 
     // Permissions
     bool canViewAllLeaveRequest = _template.HasPermission("ViewLeaveRequest");
@@ -63,7 +65,7 @@
                 <table id="schedule" class="table table-sm table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
 
                     <!-- Table Header -->
-                    <thead class="text-center sticky-top z-3">
+                    <thead class="text-center sticky-top" style="z-index:4;">
                         <tr>
                             <th class="border border-secondary align-content-center">Name</th>
                             @for (int day = 1; day <= daysInMonth; day++)
@@ -72,6 +74,29 @@
                                 var isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
                                 var holiday = holidays.FirstOrDefault(h => h.Date == date);
 
+                                var todaysSl = shiftLeaders.Where(s => s.Item1.Date == date.Date).Select(s => s.Item3).ToList();
+                                var missingSl = false;
+
+                                var missingSlPopover = "";
+                                var missingShiftList = "";
+                                if (todaysSl.Count < 3 && canAssignShift && holiday?.Type != "Company")
+                                {
+                                    var missingShifts = expectedShifts.Except(todaysSl).ToList();
+
+                                    var sb = new System.Text.StringBuilder();
+                                    foreach (var missingShift in missingShifts)
+                                    {
+                                        sb.Append($"<span id='{@date.ToString("yyyy-MM-dd")}|{missingShift}'>Missing <strong>{missingShift} shift</strong> shiftleader</br>");
+                                    }
+
+                                    // Escape double quotes to safely embed HTML inside data attribute
+                                    var htmlContent = sb.ToString().Replace("\"", "&quot;").Replace("'", "&#39;");
+
+                                    @* missingSlPopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-custom-class=\"z-3 p-0\" data-bs-trigger=\"focus\" data-bs-html=\"true\" data-bs-content=\"{htmlContent}\" tabindex=\"0\""; *@
+                                    missingSlPopover = $"data-bs-toggle=\"tooltip\" data-bs-placement=\"top\" data-bs-custom-class=\"custom-tooltip\" data-bs-html=\"true\"  data-bs-title=\"{htmlContent}\"";
+                                    missingSl = true;
+                                }
+
                                 var holidayClass = date.Date == DateTime.Today
                                 ? "bg-primary text-white"
                                 : holiday != null
@@ -79,11 +104,13 @@
                                     : (isWeekend ? "bg-secondary-subtle text-secondary-emphasis" : "");
 
                                 var holidayPopover = holiday != null
-                                ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{holiday.Name}' tabindex='0'"
+                                ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='hover' data-bs-content='{holiday.Name}' tabindex='0'"
                                 : "";
 
-                                <th class="border border-start-0 border-secondary p-1 @holidayClass" @Html.Raw(holidayPopover)>
-                                    <p class="m-0">@day</p>
+                                <th id="date|@date.ToString("yyyy-MM-dd")" class="border border-start-0 border-secondary p-1 @holidayClass" @Html.Raw(missingSl ? missingSlPopover : holidayPopover)>
+                                    <p class="m-0 @(missingSl ? "bg-danger-subtle rounded-pill text-danger" : "")">
+                                        @day
+                                    </p>
                                     <small class="fw-light font-monospace">@date.ToString("ddd")</small>
                                 </th>
                             }
@@ -100,15 +127,21 @@
                                 @foreach (var user in sector)
                                 {
                                     var trainingPeriod = user.Date_hired.HasValue ? user.Date_hired.Value.AddMonths(3) : DateTime.MinValue;
+                                    var isShiftLeader = user.Privilege_ID == 2;
                                     var isTrainee = trainingPeriod.Date >= new DateTime(currentYear, selectedMonth, daysInMonth).Date;
                                     var isPartTime = user.Employment_type == "PartTime";
 
                                     <tr id="user-@user.Personnel_ID" class="@(canReorder ? "draggable" : "")">
-                                        <td class="border border-top-0 border-secondary text-nowrap text-start ps-2 py-0 drag-handle align-content-center @(userId == user.Personnel_ID ? "fw-semibold" : "")
-                                            @(isTrainee ? "bg-success-subtle text-success-emphasis" : "")">
+                                        <td id="name-@user.Personnel_ID" class="border border-top-0 border-secondary text-nowrap text-start ps-2 py-0 drag-handle align-content-center position-relative memberName @(userId == user.Personnel_ID ? "fw-semibold" : "")
+                                            @(isTrainee ? "bg-success-subtle text-success-emphasis" : "")
+                                            @(isShiftLeader ? "isShiftLeader" : "")">
                                             <div class="row my-0">
                                                 <div class="col align-self-center text-truncate">
                                                     @user.Full_name
+                                                    @if (isShiftLeader && canAssignShift)
+                                                    {
+                                                        <span class="text-danger fw-bold"> SL</span>
+                                                    }
                                                 </div>
                                                 @if (isPartTime)
                                                 {
@@ -138,6 +171,7 @@
 
                                             var schedule = schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
                                             int shiftId = schedule?.Shift_ID ?? 0;
+                                            bool isCurrentShiftLeader = shiftLeaders.Any(s => s.Item1.Date == date.Date && s.Item2 == user.Personnel_ID);
 
                                             var leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
                                             bool hasLeave = leave != null;
@@ -163,7 +197,7 @@
                                             // Leave coloring and borders
                                             if (leave?.Status == "Approved" && shiftId != 0)
                                             {
-                                                leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'";
+                                                leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-custom-class='as' data-bs-trigger='hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'";
                                                 bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient leave-{leave?.Leave_type_ID}";
                                             }
 
@@ -171,7 +205,7 @@
                                             {
                                                 if (leave?.Approver_1 == null)
                                                 {
-                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
+                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-custom-class=\"z-3\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
                                                     bgClass = "bg-warning bg-opacity-25 leave-pending";
                                                     borderColor = "border-warning";
                                                 }
@@ -179,7 +213,7 @@
                                                 {
                                                     string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i> Approved by " + (leave?.Approver1?.Full_name ?? "");
                                                     string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
-                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-html=\"true\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
+                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-custom-class=\"z-3\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-html=\"true\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
                                                     bgClass = "bg-success bg-opacity-25 leave-approved";
                                                     borderColor = "border-success";
                                                 }
@@ -238,9 +272,12 @@
                                                 {
                                                     <select data-date="@dateString"
                                                         class="form-control py-1 px-0 position-relative text-center z-1 bg-transparent
-                                                        @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "") 
-                                                        @(isStillTrainee ? "text-success fw-semibold" : "")"
-                                                        onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
+                                                            @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "") 
+                                                            @(isStillTrainee ? "text-success fw-semibold" : "")
+                                                            @(isCurrentShiftLeader ? "currentShiftLeader" : "")
+                                                            @(canAssignShift ? "setShiftLeader" : "")"
+                                                        onchange="assignShift(@user.Personnel_ID, '@dateString', this)" 
+                                                        id="select|@user.Personnel_ID|@dateString"
                                                         style="border: none;@(isCompanyHoliday ? "color: transparent;" : "")" 
                                                         @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "") 
                                                         @(disabledSelect)>

@@ -234,6 +234,7 @@
         $(document).ready(function (){
             initializeFlatpickr();
             initializePopovers();
+            initializeContextMenus();
 
             $('#monthPicker').datepicker({
                 format: "MM yyyy",
@@ -309,6 +310,93 @@
             $(window).on('resize', adjustTableColumns); // Optional: handle resizing
             filterTable();
         });
+
+        function initializeContextMenus() {
+            $(".setShiftLeader").on("contextmenu", function (e) {
+                e.preventDefault(); // prevent the default browser menu
+
+                var shift = $(this).find("option:selected").text().trim();
+                var [select,userId,date] = this.id.split("|");
+
+                if (["A", "B", "C"].includes(shift)) {
+
+                    // Remove any existing menu
+                    $(".scheduleMenu").remove();
+
+                    const offset = $(this).offset();
+                    const width = $(this).outerWidth();
+                    const height = $(this).outerHeight();
+
+                    // Build the menu
+                    const $menu = $("<ul>", {
+                        class: "scheduleMenu list-group shadow position-absolute text-nowrap z-3",
+                        css: {
+                            top: 10 + "px",
+                            left: width + "px"
+                        }
+                    });
+
+                    $("<li>", {
+                        class: "list-group-item list-group-item-action",
+                        html:
+                            `
+                            <input class="form-check-input me-1" type="checkbox" value="" id="slSched" onchange="setShiftLeader(${userId},'${date}',this)">
+                            <label class="form-check-label stretched-link" for="slSched">Shift leader for <strong>${shift} shift</strong></label>
+                            `,
+                    }).appendTo($menu);
+
+                    // Append menu to the parent with position-relative (e.g. td or div)
+                    $(this).parent().append($menu);
+
+                    $(".scheduleMenu").find("input[type=checkbox]").prop("checked", $(this).hasClass("currentShiftLeader"));
+                }
+            });
+
+            // $(".memberName").on("click", function () {
+            //     Remove any existing menu
+            //     $(".userMenu").remove();
+
+            //     var [user,userId] = this.id.split("-");
+
+            //     const offset = $(this).offset();
+            //     const width = $(this).outerWidth();
+            //     const height = $(this).outerHeight();
+
+            //     Build the menu
+            //     const $menu = $("<ul>", {
+            //         class: "userMenu list-group shadow position-absolute text-nowrap z-3",
+            //         css: {
+            //             top: 0 + "px",
+            //             left: width - 25 + "px"
+            //         }
+            //     });
+
+            //     $("<li>", {
+            //         class: "list-group-item list-group-item-action",
+            //         html:
+            //             `
+            //             <input class="form-check-input me-1" type="checkbox" value="" id="slUser" onclick="assignShiftLeader(${userId}, this)">
+            //             <label class="form-check-label stretched-link" for="slUser">Shift leader</label>
+            //             `
+            //     }).appendTo($menu);
+
+            //     Append menu to the parent with position-relative (e.g. td or div)
+            //     $(this).append($menu);
+
+            //     $(".userMenu").find("input[type=checkbox]").prop("checked", $(this).hasClass("isShiftLeader"));
+            // });
+
+            // Hide menu on click elsewhere
+            $(document).on("mousedown", function (e) {
+                if (!$(e.target).closest(".scheduleMenu").length) {
+                    $(".scheduleMenu").remove();
+                }
+
+                if (!$(e.target).closest("#userMenu").length) {
+                    $(".userMenu").remove();
+                }
+            });
+        }
 
         function initializeFlatpickr() {
             flatpickr(".timePicker", {
@@ -411,6 +499,70 @@
                     localStorage.setItem("legendsAndShiftsVisible", "hidden"); // Save state
                 }
             });
+        }
+
+        function setShiftLeader(userId, date, checkbox) {
+            var isShiftLeader = $(checkbox).is(":checked");
+            $.ajax({
+                url: '/Schedule/SetShiftLeader',
+                type: 'POST',
+                data: {
+                    userId: userId,
+                    date: date,
+                    isShiftLeader: isShiftLeader
+                },
+                success: function (response) {
+                    var select = $(`[id='select|${userId}|${date}']`);
+
+                    // Remove existing shift leader of the current shift
+                    removeCurrentShiftLeader(select.val(), date);
+
+                    if (isShiftLeader) {
+                        // Set as the current shiftleader
+                        select.addClass("currentShiftLeader");
+                    } else {
+                        // Set as the current shiftleader
+                        select.removeClass("currentShiftLeader");
+                    }
+                    $(".scheduleMenu").remove();
+                },
+                error: function () {
+                    alert("Error loading schedule.");
+                }
+            });
+        }
+
+        // Assinging a user a shift leader position for the current month
+        function assignShiftLeader(userId, checkbox) {
+            $(".userMenu").remove();
+            let date = $('#monthPicker').datepicker("getDate");
+            console.log(date,userId,checkbox);
+            $.ajax({
+                url: '/Schedule/AssignShiftLeader',
+                type: 'POST',
+                data: {
+                    userId: userId,
+                    month: date.getMonth() + 1,
+                    year: date.getFullYear(),
+                    isShiftLeader: $(checkbox).is(":checked")
+                },
+                success: function (response) {
+                    loadSchedule(date.getMonth() + 1, date.getFullYear());
+                },
+                error: function () {
+                    alert("Error loading schedule.");
+                }
+            });
+        }
+
+        function removeCurrentShiftLeader(shiftId, date) {
+            var currentShiftLeader = $(`select[data-date='${date}'].currentShiftLeader`).filter(function () {
+                return $(this).val() == shiftId;
+            });
+            console.log(currentShiftLeader);
+            if (currentShiftLeader.length) {
+                currentShiftLeader.removeClass("currentShiftLeader");
+            }
         }
 
         function filterTable() {
@@ -554,6 +706,7 @@
                     filterTable();
                     initializePopovers();
                     initializeFlatpickr();
+                    initializeContextMenus();
                 },
                 error: function () {
                     alert("Error loading schedule.");

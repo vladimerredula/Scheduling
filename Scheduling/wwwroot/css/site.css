@@ -27,3 +27,24 @@ body {
     background-color: #f2f3f4;
     padding: 20px; /* Add padding to prevent chart from touching edges */
 }
+
+.currentShiftLeader {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.halfDayUp {
+    /* Clip to a triangle from top-left to bottom-right */
+    clip-path: polygon(0 0, 90% 0, 0 90%);
+}
+
+.halfDayDown {
+    /* Clip to a triangle from top-left to bottom-right */
+    clip-path: polygon(100% 10%, 10% 100%, 100% 100%);
+}
+
+/* Tooltip with red background and white text */
+.custom-tooltip {
+    --bs-tooltip-bg: var(--bs-danger);
+    --bs-tooltip-color: var(--bs-white);
+}

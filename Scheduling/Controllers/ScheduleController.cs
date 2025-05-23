@@ -42,28 +42,7 @@ namespace Scheduling.Controllers
             var leaveTypes = await _db.Leave_types.ToListAsync();
 
             // Get relevant employee orders for the selected year and month (latest per user)
-            var employeeOrders = await _db.Employee_orders
-                .Include(o => o.User)
-                .Where(o =>
-                    o.User.Department_ID == departmentId &&
-                    (o.Year < year || (o.Year == year && o.Month <= month)))
-                .GroupBy(o => o.Personnel_ID)
-                .Select(g => g
-                    .OrderByDescending(o => o.Year)
-                    .ThenByDescending(o => o.Month)
-                    .First())
-                .ToListAsync();
-
-            // Map Personnel_ID to Order_index and Sector_ID
-            var orderLookup = employeeOrders
-                .OrderBy(o => o.Order_index)
-                .Select((o, index) => new
-                {
-                    PersonnelId = o.Personnel_ID,
-                    SectorId = o.Sector_ID,
-                    Index = index
-                })
-                .ToList();
+            var employeeOrders = await GetEmployeeOrderIndex(month, year, departmentId);
 
             // Get all users in the department
             var baseUsers = await _db.Users
@@ -80,21 +59,26 @@ namespace Scheduling.Controllers
             // Override Sector_IDs based on latest Employee_order
             foreach (var baseUser in baseUsers)
             {
-                var match = orderLookup.FirstOrDefault(o => o.PersonnelId == baseUser.Personnel_ID);
-                if (match != null && match.SectorId.HasValue)
+                var match = employeeOrders.FirstOrDefault(o => o.Personnel_ID == baseUser.Personnel_ID);
+                if (match != null && match.Sector_ID.HasValue)
                 {
-                    baseUser.Sector_ID = match.SectorId.Value;
-                    baseUser.Sector = await _db.Sectors.FindAsync(match.SectorId.Value);
+                    baseUser.Sector_ID = match.Sector_ID.Value;
+                    baseUser.Sector = await _db.Sectors.FindAsync(match.Sector_ID.Value);
+
+                    if (match.Privilege_ID.HasValue)
+                    {
+                        baseUser.Privilege_ID = match.Privilege_ID.Value;
+                    }
                 }
             }
 
             // Split and sort
             var usersInOrder = baseUsers
-                .Where(u => orderLookup.Any(o => o.PersonnelId == u.Personnel_ID))
-                .OrderBy(u => orderLookup.First(o => o.PersonnelId == u.Personnel_ID).Index);
+                .Where(u => employeeOrders.Any(o => o.Personnel_ID == u.Personnel_ID))
+                .OrderBy(u => employeeOrders.First(o => o.Personnel_ID == u.Personnel_ID).Order_index);
 
             var usersNotInOrder = baseUsers
-                .Where(u => orderLookup.All(o => o.PersonnelId != u.Personnel_ID))
+                .Where(u => employeeOrders.All(o => o.Personnel_ID != u.Personnel_ID))
                 .OrderBy(u => u?.Sector?.Order)
                 .ThenByDescending(u => u.Privilege_ID)
                 .ThenBy(u => u.First_name)
@@ -110,7 +94,7 @@ namespace Scheduling.Controllers
                 .Where(s =>
                     s.Date.Month == month &&
                     s.Date.Year == year &&
-                    s.User.Department_ID == departmentId)
+                    users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID))
                 .ToListAsync();
 
             // Leaves within the selected month/year
@@ -123,12 +107,101 @@ namespace Scheduling.Controllers
                     l.Status != "Cancelled" && l.Status != "Denied")
                 .ToListAsync();
 
+            // Get/determine shift leaders
+            var shiftLeaders = new List<(DateTime, int, string)>();
+            foreach (var day in schedules.GroupBy(s => s.Date)) // Loop through the schedule by date
+            {
+                // Group the schedule by shifts per date
+                var dayShifts = day.Where(d => new[] { "A", "B", "C" }.Contains(d.Shift?.Shift_name)).GroupBy(d => d.Shift?.Shift_name);
+
+                foreach (var dayShift in dayShifts)
+                {
+                    // Check if there is an assigned shift leader on this shift
+                    var dayShiftLeader = dayShift.Where(d => d.Is_shiftleader == true);
+
+                    if (dayShiftLeader.Count() == 1)
+                    {
+                        var leader = dayShiftLeader.FirstOrDefault();
+                        if (leader != null) // Ensure leader is not null
+                        {
+                            var slId = leader.Personnel_ID;
+                            var slDate = leader.Date;
+                            var slShift = leader.Shift?.Shift_name;
+
+                            if (!leaves.Any(l => l.Personnel_ID == slId && slDate >= l.Date_start && slDate <= l.Date_end && l.Status == "Approved"))
+                            {
+                                shiftLeaders.Add((slDate, slId, slShift));
+                                continue;
+                            }
+                        }
+                    }
+
+                    // if no assigned shift leader
+                    // Get the default shift leaders and check that there is only one shiftleader for this shift
+                    var shiftLeaderIds = employeeOrders.Where(o => o.Privilege_ID == 2).Select(o => o.Personnel_ID);
+                    var assignShiftLeaders = dayShift.Where(d => shiftLeaderIds.Contains(d.Personnel_ID));
+                    if (assignShiftLeaders.Count() == 1)
+                    {
+                        var leader = assignShiftLeaders.FirstOrDefault();
+                        if (leader != null) // Ensure leader is not null
+                        {
+                            var slId = leader.Personnel_ID;
+                            var slDate = leader.Date;
+                            var slShift = leader.Shift?.Shift_name;
+
+                            if (!leaves.Any(l => l.Personnel_ID == slId && slDate >= l.Date_start && slDate <= l.Date_end && l.Status == "Approved"))
+                            {
+                                shiftLeaders.Add((slDate, slId, slShift));
+                            }
+                        }
+                    }
+                }
+            }
+
+            ViewBag.ShiftLeaders = shiftLeaders;
+
             ViewBag.Departments = new SelectList(departments, "Department_ID", "Department_name", departmentId);
             ViewBag.LeaveTypes = leaveTypes;
 
             await _log.LogInfoAsync("Visited schedules");
 
             return View((users, shifts, schedules, leaves, holidays, month, year));
+        }
+
+        public async Task<List<Employee_order>> GetEmployeeOrder(int month, int year, int departmentId)
+        {
+            var employeeOrders = await _db.Employee_orders
+                .Include(o => o.User)
+                .Where(o =>
+                    o.Department_ID == departmentId &&
+                    (o.Year < year || (o.Year == year && o.Month <= month)))
+                .GroupBy(o => o.Personnel_ID)
+                .Select(g => g
+                    .OrderByDescending(o => o.Year)
+                    .ThenByDescending(o => o.Month)
+                    .First())
+                .ToListAsync();
+
+            return employeeOrders;
+        }
+
+        public async Task<List<Employee_order>> GetEmployeeOrderIndex(int month, int year, int departmentId)
+        {
+            var employeeOrders = await GetEmployeeOrder(month, year, departmentId);
+
+            var orderLookup = employeeOrders
+                .OrderBy(o => o.Order_index)
+                .Select((o, index) => new Employee_order
+                {
+                    Personnel_ID = o.Personnel_ID,
+                    Sector_ID = o.Sector_ID,
+                    Privilege_ID = o.Privilege_ID,
+                    Department_ID = o.Department_ID,
+                    Order_index = index
+                })
+                .ToList();
+
+            return orderLookup;
         }
 
         public async Task<IActionResult> Calendar(int month = 0, int year = 0)
@@ -219,6 +292,7 @@ namespace Scheduling.Controllers
         public async Task<IActionResult> AssignShift(int userId, int shiftId, DateTime date)
         {
             var existingSchedule = await _db.Schedules
+                .Include(s => s.Shift)
                 .FirstOrDefaultAsync(s => s.Personnel_ID == userId && s.Date == date);
 
             var empName = await GetUserFullname(userId) ?? $"User {userId}";
@@ -252,7 +326,7 @@ namespace Scheduling.Controllers
                         existingSchedule.Shift_ID = shiftId;
                         existingSchedule.Comment = null;
 
-                        await _log.LogInfoAsync($"Updated the shift of {empName} on {dateStr} to {shiftName}");
+                        await _log.LogInfoAsync($"Updated the shift of {empName} on {dateStr} from '{existingSchedule.Shift.Shift_name}' to {shiftName}");
                         _db.Schedules.Update(existingSchedule);
                         break;
                 }
@@ -332,28 +406,7 @@ namespace Scheduling.Controllers
             var leaveTypes = await _db.Leave_types.ToListAsync();
 
             // Get relevant employee orders for the selected year and month (latest per user)
-            var employeeOrders = await _db.Employee_orders
-                .Include(o => o.User)
-                .Where(o =>
-                    o.User.Department_ID == departmentId &&
-                    (o.Year < year || (o.Year == year && o.Month <= month)))
-                .GroupBy(o => o.Personnel_ID)
-                .Select(g => g
-                    .OrderByDescending(o => o.Year)
-                    .ThenByDescending(o => o.Month)
-                    .First())
-                .ToListAsync();
-
-            // Map Personnel_ID to Order_index and Sector_ID
-            var orderLookup = employeeOrders
-                .OrderBy(o => o.Order_index)
-                .Select((o, index) => new
-                {
-                    PersonnelId = o.Personnel_ID,
-                    SectorId = o.Sector_ID,
-                    Index = index
-                })
-                .ToList();
+            var employeeOrders = await GetEmployeeOrderIndex(month, year, departmentId);
 
             // Get all users in the department
             var baseUsers = await _db.Users
@@ -367,24 +420,29 @@ namespace Scheduling.Controllers
                     (u.Last_day == null || u.Last_day.Value.Date >= new DateTime(year, month, 1).Date))
                 .ToListAsync();
 
-            // Override Sector_IDs based on latest Employee_order
+            // Override Sector_IDs and Privilege_IDs based on latest Employee_order
             foreach (var baseUser in baseUsers)
             {
-                var match = orderLookup.FirstOrDefault(o => o.PersonnelId == baseUser.Personnel_ID);
-                if (match != null && match.SectorId.HasValue)
+                var match = employeeOrders.FirstOrDefault(o => o.Personnel_ID == baseUser.Personnel_ID);
+                if (match != null && match.Sector_ID.HasValue)
                 {
-                    baseUser.Sector_ID = match.SectorId.Value;
-                    baseUser.Sector = await _db.Sectors.FindAsync(match.SectorId.Value);
+                    baseUser.Sector_ID = match.Sector_ID.Value;
+                    baseUser.Sector = await _db.Sectors.FindAsync(match.Sector_ID.Value);
+
+                    if (match.Privilege_ID.HasValue)
+                    {
+                        baseUser.Privilege_ID = match.Privilege_ID.Value;
+                    }
                 }
             }
 
             // Split and sort
             var usersInOrder = baseUsers
-                .Where(u => orderLookup.Any(o => o.PersonnelId == u.Personnel_ID))
-                .OrderBy(u => orderLookup.First(o => o.PersonnelId == u.Personnel_ID).Index);
+                .Where(u => employeeOrders.Any(o => o.Personnel_ID == u.Personnel_ID))
+                .OrderBy(u => employeeOrders.First(o => o.Personnel_ID == u.Personnel_ID).Order_index);
 
             var usersNotInOrder = baseUsers
-                .Where(u => orderLookup.All(o => o.PersonnelId != u.Personnel_ID))
+                .Where(u => employeeOrders.All(o => o.Personnel_ID != u.Personnel_ID))
                 .OrderBy(u => u?.Sector?.Order)
                 .ThenByDescending(u => u.Privilege_ID)
                 .ThenBy(u => u.First_name)
@@ -400,7 +458,7 @@ namespace Scheduling.Controllers
                 .Where(s =>
                     s.Date.Month == month &&
                     s.Date.Year == year &&
-                    s.User.Department_ID == departmentId)
+                    users.Select(u => u.Personnel_ID).Contains(s.Personnel_ID))
                 .ToListAsync();
 
             // Leaves within the selected month/year
@@ -414,6 +472,59 @@ namespace Scheduling.Controllers
                 .ToListAsync();
 
             ViewBag.LeaveTypes = leaveTypes;
+
+            // Get/determine shift leaders
+            var shiftLeaders = new List<(DateTime, int, string)>();
+            foreach (var day in schedules.GroupBy(s => s.Date)) // Loop through the schedule by date
+            {
+                // Group the schedule by shifts per date
+                var dayShifts = day.Where(d => new[] { "A", "B", "C" }.Contains(d.Shift?.Shift_name)).GroupBy(d => d.Shift?.Shift_name);
+
+                foreach (var dayShift in dayShifts)
+                {
+                    // Check if there is an assigned shift leader on this shift
+                    var dayShiftLeader = dayShift.Where(d => d.Is_shiftleader == true);
+
+                    if (dayShiftLeader.Count() == 1)
+                    {
+                        var leader = dayShiftLeader.FirstOrDefault();
+                        if (leader != null) // Ensure leader is not null
+                        {
+                            var slId = leader.Personnel_ID;
+                            var slDate = leader.Date;
+                            var slShift = leader.Shift?.Shift_name;
+
+                            if (!leaves.Any(l => l.Personnel_ID == slId && slDate >= l.Date_start && slDate <= l.Date_end && l.Status == "Approved"))
+                            {
+                                shiftLeaders.Add((slDate, slId, slShift));
+                                continue;
+                            }
+                        }
+                    }
+
+                    // if no assigned shift leader
+                    // Get the default shift leaders and check that there is only one shiftleader for this shift
+                    var shiftLeaderIds = employeeOrders.Where(o => o.Privilege_ID == 2).Select(o => o.Personnel_ID);
+                    var assignShiftLeaders = dayShift.Where(d => shiftLeaderIds.Contains(d.Personnel_ID));
+                    if (assignShiftLeaders.Count() == 1)
+                    {
+                        var leader = assignShiftLeaders.FirstOrDefault();
+                        if (leader != null) // Ensure leader is not null
+                        {
+                            var slId = leader.Personnel_ID;
+                            var slDate = leader.Date;
+                            var slShift = leader.Shift?.Shift_name;
+
+                            if (!leaves.Any(l => l.Personnel_ID == slId && slDate >= l.Date_start && slDate <= l.Date_end && l.Status == "Approved"))
+                            {
+                                shiftLeaders.Add((slDate, slId, slShift));
+                            }
+                        }
+                    }
+                }
+            }
+
+            ViewBag.ShiftLeaders = shiftLeaders;
 
             var model = (users, shifts, schedules, leaves, holidays, month, year);
 
@@ -546,6 +657,7 @@ namespace Scheduling.Controllers
 
                 var employeeOrder = await _db.Employee_orders
                     .FirstOrDefaultAsync(e => e.Personnel_ID == userId && e.Year == year && e.Month == month);
+                var employee = await GetUser(userId);
 
                 if (employeeOrder == null)
                 {
@@ -555,7 +667,9 @@ namespace Scheduling.Controllers
                         Year = year,
                         Month = month,
                         Order_index = index,
-                        Sector_ID = sectorId
+                        Sector_ID = employee.Sector_ID,
+                        Department_ID = employee.Department_ID,
+                        Privilege_ID = employee.Privilege_ID
                     };
                     _db.Employee_orders.Add(employeeOrder);
                 }
@@ -563,6 +677,13 @@ namespace Scheduling.Controllers
                 {
                     employeeOrder.Order_index = index;
                     employeeOrder.Sector_ID = sectorId;
+
+                    if (employeeOrder.Privilege_ID == null)
+                        employeeOrder.Privilege_ID = employee.Privilege_ID;
+
+                    if (employeeOrder.Department_ID == null)
+                        employeeOrder.Department_ID = employee.Department_ID;
+
                     _db.Employee_orders.Update(employeeOrder);
                 }
 
@@ -577,6 +698,107 @@ namespace Scheduling.Controllers
             return Ok(new { success = true });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> AssignShiftLeader(int month, int year, int userId, bool isShiftLeader)
+        {
+            var employeeOrder = await _db.Employee_orders
+                .FirstOrDefaultAsync(e => e.Personnel_ID == userId && e.Year == year && e.Month == month);
+
+            if (employeeOrder == null)
+            {
+                var employee = await GetUser(userId);
+
+                employeeOrder = new Employee_order
+                {
+                    Personnel_ID = userId,
+                    Year = year,
+                    Month = month,
+                    Sector_ID = employee.Sector_ID,
+                    Department_ID = employee.Department_ID,
+                    Privilege_ID = isShiftLeader ? 2 : 1
+                };
+                _db.Employee_orders.Add(employeeOrder);
+            }
+            else
+            {
+                employeeOrder.Privilege_ID = isShiftLeader ? 2 : 1;
+                _db.Employee_orders.Update(employeeOrder);
+            }
+
+            var displayDate = new DateTime(year, month, 1).ToString("MMMM yyyy");
+            await _log.LogInfoAsync($"Assigned {await GetUserFullname(userId)} as shift leader for {displayDate}");
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new { success = true });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SetShiftLeader(int userId, DateTime date, bool isShiftLeader)
+        {
+            var existingSchedule = await _db.Schedules
+                .Include(s => s.Shift)
+                .FirstOrDefaultAsync(s => s.Personnel_ID == userId && s.Date == date);
+
+            var empName = await GetUserFullname(userId) ?? $"User {userId}";
+            string dateStr = date.ToString("yyyy-MM-dd");
+
+            if (isShiftLeader) await RemoveCurrentShiftLeader(userId, date);
+
+            if (existingSchedule != null)
+            {
+                existingSchedule.Is_shiftleader = isShiftLeader;
+
+                await _log.LogInfoAsync($"Assigned {empName} as shift '{existingSchedule.Shift?.Shift_name}' shiftleader for {dateStr}");
+                _db.Schedules.Update(existingSchedule);
+            }
+            else
+            {
+                var newSchedule = new Schedule
+                {
+                    Personnel_ID = userId,
+                    Date = date,
+                    Is_shiftleader = isShiftLeader
+                };
+
+                await _db.Schedules.AddAsync(newSchedule);
+                await _log.LogInfoAsync($"Assigned {empName} as shiftleader for {dateStr}");
+            }
+
+            await _db.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
+        public async Task<bool> RemoveCurrentShiftLeader(int userId, DateTime date)
+        {
+            var empSched = await _db.Schedules
+                .FirstOrDefaultAsync(s => s.Personnel_ID == userId && s.Date == date);
+            if (empSched == null) return false;
+
+            var empOrder = await _db.Employee_orders
+                .FirstOrDefaultAsync(o => o.Year == date.Year && o.Month == date.Month && o.Personnel_ID == userId);
+            if (empOrder == null) return false;
+
+            var departmentId = empOrder.Department_ID ?? 0;
+
+            var empIds = (await GetEmployeeOrderIndex(date.Month, date.Year, departmentId))
+                .Select(o => o.Personnel_ID)
+                .ToList();
+
+            var departmentSchedules = await _db.Schedules
+                .Where(s => s.Date == date && s.Shift_ID == empSched.Shift_ID && empIds.Contains(s.Personnel_ID) && s.Is_shiftleader == true)
+                .ToListAsync();
+
+            foreach (var sched in departmentSchedules)
+                sched.Is_shiftleader = false;
+
+            _db.Schedules.UpdateRange(departmentSchedules);
+            await _db.SaveChangesAsync();
+
+            return true;
+        }
+
         public async Task<IActionResult> ScheduleView(int month = 0, int year = 0, int departmentId = 0)
         {
             if (month == 0)
@@ -588,7 +810,7 @@ namespace Scheduling.Controllers
             if (departmentId == 0)
             {
                 var user = await ThisUser();
-                departmentId = user.Department_ID.Value;
+                departmentId = user.Department_ID ?? 1;
             }
 
             var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
@@ -691,7 +913,7 @@ namespace Scheduling.Controllers
             if (departmentId == 0)
             {
                 var user = await ThisUser();
-                departmentId = user.Department_ID.Value;
+                departmentId = user.Department_ID ?? 1;
             }
 
             var shifts = _db.Shifts.Where(s => s.Department_ID == departmentId).ToList();
