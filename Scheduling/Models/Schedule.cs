@@ -13,6 +13,7 @@ namespace Scheduling.Models
         public DateTime Date { get; set; }
         public TimeSpan? Time_in { get; set; }
         public TimeSpan? Time_out { get; set; }
+        public bool? Is_shiftleader { get; set; }
 
         [ForeignKey("Personnel_ID")]
         public User? User { get; set; }
