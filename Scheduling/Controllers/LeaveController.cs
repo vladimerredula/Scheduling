@@ -132,6 +132,41 @@ namespace Scheduling.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        public async Task<IActionResult> Update(int? departmentId, Leave leave)
+        {
+            if (HasOverlappingLeave(leave))
+            {
+                ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
+                await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
+                await PopulateLeaveViewBagsAsync();
+
+                return RedirectToAction(nameof(DepartmentLeaves), new
+                {
+                    departmentId = departmentId != null ? departmentId : leave?.User?.Department_ID
+                });
+            }
+
+            try
+            {
+                _db.Leaves.Update(leave);
+                await _db.SaveChangesAsync();
+                await _log.LogInfoAsync($"Updated leave request", leave);
+
+                TempData["toastMessage"] = "Successfully updated leave request!-success";
+            }
+            catch (Exception ex)
+            {
+                await _log.LogErrorAsync($"Unable to update leave with ID: {leave.Leave_ID}", ex);
+                TempData["toastMessage"] = "Unable to update leave.-danger";
+            }
+
+
+            return RedirectToAction(nameof(DepartmentLeaves), new
+            {
+                departmentId = departmentId != null ? departmentId : leave?.User?.Department_ID
+            });
+        }
+
         public async Task<IActionResult> Apply(Leave request)
         {
             var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
@@ -212,6 +247,34 @@ namespace Scheduling.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        public async Task<IActionResult> Withdraw(int id, int deptId, string Comment)
+        {
+            var leave = await _db.Leaves.FindAsync(id);
+            if (leave == null)
+            {
+                TempData["toastMessage"] = "Leave not found-danger";
+                await _log.LogWarningAsync($"Leave ID: {id} was not found");
+                return RedirectToAction(nameof(DepartmentLeaves), new
+                {
+                    departmentId = deptId != null ? deptId : leave?.User?.Department_ID
+                });
+            }
+
+            leave.Status = "Withdrawn";
+            leave.Comment = Comment;
+
+            _db.Leaves.Update(leave);
+            await _db.SaveChangesAsync();
+            await _log.LogInfoAsync($"Cancelled leave request", leave);
+
+            TempData["toastMessage"] = "Successfully cancelled leave!-success";
+
+            return RedirectToAction(nameof(DepartmentLeaves), new
+            {
+                departmentId = deptId != null ? deptId : leave?.User?.Department_ID
+            });
+        }
+
         // Check if the dates overlap
         private bool HasOverlappingLeave(Leave leave)
         {
@@ -246,8 +309,12 @@ namespace Scheduling.Controllers
                 Date_start = leave?.Date_start_string,
                 Date_end = leave?.Date_end_string,
                 Message = leave?.Message,
-                Approver_1 = leave?.Approver1?.Full_name,
-                Approver_2 = leave?.Approver2?.Full_name,
+                Approver_1 = leave?.Approver_1,
+                Approver_1_name = leave?.Approver1?.Full_name,
+                Date_approved_1 = leave?.Date_approved_1,
+                Approver_2 = leave?.Approver_2,
+                Approver_2_name = leave?.Approver2?.Full_name,
+                Date_approved_2 = leave?.Date_approved_2,
                 Status = leave?.Status,
                 Comment = leave?.Comment
             });

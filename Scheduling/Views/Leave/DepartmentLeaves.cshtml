@@ -40,7 +40,7 @@
             <button class="nav-link fs-5" id="denied" data-bs-toggle="tab" data-bs-target="#content-3" role="tab" aria-controls="2">Denied</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link fs-5" id="cancelled" data-bs-toggle="tab" data-bs-target="#content-4" role="tab" aria-controls="3">Cancelled</button>
+            <button class="nav-link fs-5" id="withdrawn" data-bs-toggle="tab" data-bs-target="#content-4" role="tab" aria-controls="3">Cancelled</button>
         </li>
     </ul>
     <div class="tab-content rounded-bottom p-3 bg-white shadow-sm">
@@ -174,6 +174,12 @@
                         <th>
                             @Html.DisplayNameFor(model => model.Date_approved_2)
                         </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Comment)
+                        </th>
+                        <th class="text-nowrap justify-content-center">
+                            Actions
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -212,6 +218,17 @@
                             </td>
                             <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Date_approved_2)
+                            </td>
+                            <td class="td-control">
+                                @Html.DisplayFor(modelItem => item.Comment)
+                            </td>
+                            <td>
+                                @if (isFinalApprover)
+                                {
+                                    <a class="btn btn-sm btn-warning" onclick="updateLeave(@item?.Leave_ID,@(leaves.Select(l => l?.User?.Department_ID).Distinct().Count() > 1 ? "0" : item?.User?.Department_ID))">Update</a>
+                                    <a class="btn btn-sm btn-light border text-danger" onclick="cancelLeave(@item?.Leave_ID,@(leaves.Select(l => l?.User?.Department_ID).Distinct().Count() > 1 ? "0" : item?.User?.Department_ID))">Cancel</a>
+
+                                }
                             </td>
                         </tr>
                     }
@@ -303,10 +320,11 @@
                 </tbody>
             </table>
         </div>
-        <div class="tab-pane" id="content-4" role="tabpanel" aria-labelledby="cancelled">
-            <table class="table table-hover" id="cancelledTable">
+        <div class="tab-pane" id="content-4" role="tabpanel" aria-labelledby="withdrawn">
+            <table class="table table-hover hasChild" id="withdrawnTable">
                 <thead>
                     <tr>
+                        <th></th>
                         <th>
                             @Html.DisplayNameFor(model => model.User.Full_name)
                         </th>
@@ -320,35 +338,184 @@
                             @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
                         </th>
                         <th>
+                            @Html.DisplayNameFor(model => model.Message)
+                        </th>
+                        <th>
                             @Html.DisplayNameFor(model => model.Status)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Comment)
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in leaves.Where(l => l.Status == "Cancelled" || l.Status == "Withdrawn"))
+                    @foreach (var item in leaves.Where(l => l.Status == "Withdrawn"))
                     {
                         <tr>
-                            <td>
+                            <td></td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.User.Full_name)
                             </td>
-                            <td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Date_start_string)
                             </td>
-                            <td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Date_end_string)
                             </td>
-                            <td>
+                            <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
                             </td>
-                            <td>
+                            <td class="td-control">
+                                @Html.DisplayFor(modelItem => item.Message)
+                            </td>
+                            <td class="td-control">
                                 <span class="badge rounded-pill text-bg-secondary">
                                     @Html.DisplayFor(modelItem => item.Status)
                                 </span>
+                            </td>
+                            <td class="td-control">
+                                @Html.DisplayFor(modelItem => item.Comment)
                             </td>
                         </tr>
                     }
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Update modal -->
+<div class="modal fade" id="leaveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="leaveModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="leaveForm" method="post">
+                <div class="modal-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Leave_ID" />
+                    <input type="hidden" asp-for="Personnel_ID" />
+                    <input type="hidden" asp-for="Message" />
+                    <input type="hidden" asp-for="Approver_1" />
+                    <input type="hidden" asp-for="Date_approved_1" />
+                    <input type="hidden" asp-for="Approver_2" />
+                    <input type="hidden" asp-for="Date_approved_2" />
+                    <input type="hidden" asp-for="Status" />
+                    <div class="row mb-3">
+                        <div class="col">
+                            <p class="mb-0">Name: <span class="fw-semibold" id="empName"></span></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Leave_type_ID" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <select asp-for="Leave_type_ID" class="form-select" asp-items="ViewBag.LeaveTypes">
+                                <option value="" selected disabled>Choose..</option>
+                            </select>
+                            <span asp-validation-for="Leave_type_ID" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Date_start" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <input asp-for="Date_start" type="date" class="form-control" />
+                            <span asp-validation-for="Date_start" class="text-danger"></span>
+                        </div>
+                        <div class="col">
+                            <label asp-for="Date_end" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <input asp-for="Date_end" type="date" class="form-control" />
+                            <span asp-validation-for="Date_end" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label class="form-label" asp-for="Message">Message</label>
+                            <p class="mb-0" id="empMessage">-</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <label class="form-label" for="updateComment">Comment</label><span class="text-danger" title="Required">*</span>
+                            <textarea class="form-control" name="Comment" id="updateComment" data-val="true" data-val-required="Please state the reason for updating the leave." required></textarea>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Comment" data-valmsg-replace="true"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <div class="form-group">
+                        <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
+                        <a href="javascript:void(0)" class="btn btn-primary" id="modalButton"></a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="cancelModalLabel">Are you sure you want to withdraw this leave?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="Withdraw">
+                <div class="modal-body">
+                    <dl class="row">
+                        <dt class="col-sm-5 text-end">
+                            @Html.DisplayNameFor(model => model.User.Full_name)
+                        </dt>
+                        <dd class="col-sm-7" id="cancel_name">
+                        </dd>
+                        <dt class="col-sm-5 text-end">
+                            @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                        </dt>
+                        <dd class="col-sm-7" id="cancel_leave_type_name">
+                        </dd>
+                        <dt class="col-sm-5 text-end">
+                            @Html.DisplayNameFor(model => model.Date_start)
+                        </dt>
+                        <dd class="col-sm-7" id="cancel_date_start">
+                        </dd>
+                        <dt class="col-sm-5 text-end">
+                            @Html.DisplayNameFor(model => model.Date_end)
+                        </dt>
+                        <dd class="col-sm-7" id="cancel_date_end">
+                        </dd>
+                        <dt class="col-sm-5 text-end">
+                            @Html.DisplayNameFor(model => model.Message)
+                        </dt>
+                        <dd class="col-sm-7" id="cancel_message">
+                        </dd>
+                        <dt class="col-sm-5 text-end">
+                            @Html.DisplayNameFor(model => model.Approver_1)
+                        </dt>
+                        <dd class="col-sm-7" id="cancel_approver_1_name">
+                        </dd>
+                        <dt class="col-sm-5 text-end">
+                            @Html.DisplayNameFor(model => model.Approver_2)
+                        </dt>
+                        <dd class="col-sm-7" id="cancel_approver_2_name">
+                        </dd>
+                    </dl>
+                    <div class="row">
+                        <div class="col">
+                            <label for="cancelComment" class="form-label">Reason</label><span class="text-danger" title="Required">*</span>
+                            <textarea name="Comment" id="cancelComment" class="form-control" data-val="true" data-val-required="The Reason field is required." required></textarea>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Comment" data-valmsg-replace="true"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <input type="hidden" name="id" id="cancelID" />
+                    <input type="hidden" name="deptId" id="cancelDepartmentID" />
+                    <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">No</a>
+                    <input type="submit" value="Yes, proceed" class="btn btn-danger" />
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -418,12 +585,17 @@
             'pendingTable': initPendingTable,
             'approvedTable': initApprovedTable,
             'deniedTable': initDeniedTable,
-            'cancelledTable': initCancelledTable,
+            'withdrawnTable': initWithdrawnTable,
         };
 
         $.extend(true, $.fn.dataTable.defaults, {
             colReorder: {
                 columns: ':gt(0)'
+            },
+            stateSave: true,
+            stateSaveParams: function (settings, data) {
+                data.search.search = '';
+                data.start = 0;
             },
             responsive: true,
             fixedHeader: true,
@@ -449,21 +621,21 @@
                             attr: {
                                 title: 'Reset table column visibility and order'
                             },
-                                action: function (e, dt, node, config) {
-                                    const tableId = dt.table().node().id;
+                            action: function (e, dt, node, config) {
+                                const tableId = dt.table().node().id;
 
-                                    dt.state.clear(); // Clear saved state
-                                    dt.destroy(); // Destroy DataTable instance
+                                dt.state.clear(); // Clear saved state
+                                dt.destroy(); // Destroy DataTable instance
 
-                                    // Replace the old table DOM with the original clone
-                                    const $original = originalTableHTML[tableId].clone();
-                                    $('#' + tableId).replaceWith($original);
+                                // Replace the old table DOM with the original clone
+                                const $original = originalTableHTML[tableId].clone();
+                                $('#' + tableId).replaceWith($original);
 
-                                    // Reinitialize
-                                    const reinit = tableReinitMap[tableId];
-                                    if (typeof reinit === 'function') {
-                                        reinit();
-                                    }
+                                // Reinitialize
+                                const reinit = tableReinitMap[tableId];
+                                if (typeof reinit === 'function') {
+                                    reinit();
+                                }
                             }
                         }
                     ]
@@ -511,10 +683,6 @@
         
         function initPendingTable() {
             $("#pendingTable").DataTable({
-                colReorder: {
-                    columns: ':gt(0)'
-                },
-                stateSave: true,
                 columnDefs: [
                     {
                         targets: 0,
@@ -539,7 +707,6 @@
         
         function initApprovedTable() {
             $("#approvedTable").DataTable({
-                stateSave: true,
                 columnDefs: [
                     {
                         targets: 0,
@@ -549,7 +716,7 @@
                         width: '20px'
                     },
                     {
-                        targets: [5,7,8,9,10],
+                        targets: [5,7,8,9,10,11],
                         visible: false,
                         searchable: true
                     }
@@ -559,7 +726,6 @@
         
         function initDeniedTable() {
             $("#deniedTable").DataTable({
-                stateSave: true,
                 columnDefs: [
                     {
                         targets: 0,
@@ -577,9 +743,23 @@
             });
         }
         
-        function initCancelledTable() {
-            $("#cancelledTable").DataTable({
-                order: [[0, 'desc']]
+        function initWithdrawnTable() {
+            $("#withdrawnTable").DataTable({
+                order: [[1, 'desc']],
+                columnDefs: [
+                    {
+                        targets: 0,
+                        className: 'dt-control',
+                        orderable: false,
+                        defaultContent: '',
+                        width: '20px'
+                    },
+                    {
+                        targets: 5,
+                        visible: false,
+                        searchable: false
+                    }
+                ]
             });
         }
 
@@ -611,6 +791,54 @@
                 var tab = new bootstrap.Tab(firstEl)
                 tab.show()
             }
+
+            $("#Date_start").on("click", function () {
+                $(this)[0].showPicker();
+            });
+
+            $("#Date_start").on("change", function () {
+                let startDateVal = new Date($(this).val());
+                let endDate = $("#Date_end").val();
+
+                if (endDate) {
+                    let endDateVal = new Date(endDate);
+                    if (endDateVal < startDateVal) {
+                        $(this)
+                            .closest("form")
+                            .validate()
+                            .showErrors({
+                                "Date_start": "Start date cannot be later than the end date."
+                            });
+                        $(this).val("");
+                    }
+                } else {
+                    $(this).blur();
+                    $("#Date_end").focus();
+                    $("#Date_end")[0].showPicker();
+                }
+            });
+
+            $("#Date_end").on("click", function () {
+                $(this)[0].showPicker();
+            });
+
+            $("#Date_end").on("change", function () {
+                let endDateVal = new Date($(this).val());
+                let startDate = $("#Date_start").val();
+
+                if (startDate) {
+                    let startDateVal = new Date(startDate);
+                    if (endDateVal < startDateVal) {
+                        $(this)
+                            .closest("form")
+                            .validate()
+                            .showErrors({
+                                "Date_end": "End date cannot be earlier than the start date."
+                            });
+                        $(this).val("");
+                    }
+                }
+            });
         });
 
         $("#departmentId").on("change", function() {
@@ -630,7 +858,7 @@
             $("#leaveModal").modal("show");
         }
 
-        function editLeave(id) {
+        function updateLeave(id,departmentId) {
             clearModal();
 
             $.ajax({
@@ -642,12 +870,17 @@
                     // Iterate over the properties of the data object and set the corresponding form field values
                     $.each(data, function (key, value) {
                         var elementId = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize the first letter
-                        $("#" + elementId).val(value);
+
+                        if (key == "name" || key == "message" && value != null) {
+                            $("#emp" + elementId).text(value);
+                        } else {
+                            $("#" + elementId).val(value);
+                        }
                     });
 
                     // Set the action attribute of the form
-                    $("#leaveForm").attr("action", "/Leave/Edit/" + data["leave_ID"]);
-                    $("#leaveModalLabel").text("Edit leave");
+                    $("#leaveForm").attr("action", "/Leave/Update/" + departmentId);
+                    $("#leaveModalLabel").text("Update leave");
                     $("#modalButton").text("Update");
 
                     // Show the modal
@@ -678,8 +911,6 @@
                         }
                     });
 
-                    console.log($("#departmentId").val());
-
                     $("#denyID").val(data["leave_ID"]);
                     $("#departmentID").val($("#departmentId").val());
 
@@ -701,7 +932,7 @@
                 success: function (data) {
                     // Iterate over the properties of the data object and set the corresponding form field values
                     $.each(data, function (key, value) {
-                        var $element = $("#" + key);
+                        var $element = $("#cancel_" + key);
                         if ($element.length) {
                             if (key == "date") {
                                 $element.text(formatDate(value));
@@ -712,6 +943,7 @@
                     });
 
                     $("#cancelID").val(data["leave_ID"]);
+                    $("#cancelDepartmentID").val($("#departmentId").val());
 
                     // Show the modal
                     $("#cancelModal").modal("show");
@@ -729,6 +961,9 @@
 
         function clearModal() {
             $('input[type="text"]').val('');
+            $('input[type="date"]').val('');
+            $("#empName").text('');
+            $("#empMessage").text('-');
             // $('select').prop('selectedIndex', "");
 
             $(".field-validation-error").text("");

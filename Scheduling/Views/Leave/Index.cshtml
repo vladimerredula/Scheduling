@@ -484,6 +484,11 @@
             colReorder: {
                 columns: ':gt(0)'
             },
+            stateSave: true,
+            stateSaveParams: function (settings, data) {
+                data.search.search = '';
+                data.start = 0;
+            },
             responsive: true,
             fixedHeader: true,
             layout: {
@@ -570,7 +575,6 @@
 
         function initPendingTable() {
             $("#pendingTable").DataTable({
-                stateSave: true,
                 columnDefs: [
                     {
                         targets: 0,
@@ -595,7 +599,6 @@
 
         function initApprovedTable() {
             $("#approvedTable").DataTable({
-                stateSave: true,
                 columnDefs: [
                     {
                         targets: 0,
@@ -605,15 +608,9 @@
                         width: '20px'
                     },
                     {
-                        targets: [4,7,9,10],
+                        targets: [4,7,9],
                         visible: false,
                         searchable: false
-                    },
-                    {
-                        targets: 10,
-                        visible: false,
-                        searchable: false,
-                        orderable: false
                     }
                 ]
             });
@@ -621,7 +618,6 @@
 
         function initDeniedTable() {
             $("#deniedTable").DataTable({
-                stateSave: true,
                 columnDefs: [
                     {
                         targets: 0,
