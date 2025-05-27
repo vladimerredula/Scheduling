@@ -42,7 +42,7 @@
                 </div>
             </div>
 
-            <div class="table-responsive" style="max-height: calc(100vh - 325px);" id="printableTable">
+            <div class="table-responsive" style="max-height: calc(100vh - 275px);" id="printableTable">
                 <table id="schedule" class="table table-sm table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
                     <thead class="text-center sticky-top z-2">
                         <tr>
@@ -63,7 +63,7 @@
                                 ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-content='{holiday.Name}' tabindex='0'"
                                 : "";
 
-                                <td class="border border-start-0 border-secondary py-0 px-1 @holidayClass" @Html.Raw(holidayPopover)>
+                                <td class="border border-start-0 border-secondary @holidayClass" @Html.Raw(holidayPopover)>
                                     <p class="m-0 fw-semibold fs-5">@day</p>
                                     <small class="fw-light font-monospace">@date.ToString("ddd")</small>
                                 </td>
@@ -90,7 +90,7 @@
                                     var isPartTime = user.Employment_type == "PartTime";
 
                                     <tr>
-                                        <td class="border border-top-0 border-secondary text-nowrap text-start py-0 px-1 fs-5
+                                        <td class="border border-top-0 border-secondary text-nowrap text-start fs-4
                                             @(isTrainee ? "bg-success-subtle text-success-emphasis" : "")">
                                             <div class="row my-0">
                                                 <div class="col align-self-center text-truncate">
@@ -100,7 +100,7 @@
                                                 {
                                                     <div class="col-auto border-start ps-1">
                                                         <div class="row mx-2" style="width:30px;">
-                                                            <div class="col px-0 text-center fs-6">
+                                                            <div class="col px-0 text-center fs-5">
                                                                 In
                                                             </div>
                                                         </div>
@@ -108,7 +108,7 @@
                                                             <hr class="m-0">
                                                         </div>
                                                         <div class="row mx-2" style="width:30px;">
-                                                            <div class="col px-0 text-center fs-6">
+                                                            <div class="col px-0 text-center fs-5">
                                                                 Out
                                                             </div>
                                                         </div>
@@ -138,14 +138,14 @@
 
                                             string bgClass = hasLeave ? "bg-" + leave?.Leave_type?.BsColor + " bg-gradient" : "visually-hidden";
 
-                                            <td id="cell-@user.Personnel_ID-@dateStr" class="py-0 px-1 @cellClass @(isStillTrainee ? "text-success fw-semibold" : "") position-relative border-bottom border-end border-secondary">
+                                            <td id="cell-@user.Personnel_ID-@dateStr" class="px-0 @cellClass @(isStillTrainee ? "text-success fw-semibold" : "") position-relative border-bottom border-end border-secondary">
                                                 @if (isPartTime)
                                                 {
-                                                    <p class="p-0 m-0 fs-6 text-center">@(schedule?.Time_in != null ? schedule?.Time_in?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
+                                                    <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_in != null ? schedule?.Time_in?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
                                                     <div class="text-secondary">
                                                         <hr class="m-0">
                                                     </div>
-                                                    <p class="p-0 m-0 fs-6 text-center">@schedule?.Time_out?.ToString(@"hh\:mm")</p>
+                                                    <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_out != null ? schedule?.Time_out?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
                                                 } else
                                                 {
                                                     string shiftName = shift?.Shift_name;
@@ -160,7 +160,7 @@
                                                         }
                                                     }
 
-                                                    <p class="p-0 m-0 fs-5 text-center">@(isCompanyHoliday || leave != null ? "" : shiftName?.ToUpper())</p>
+                                                    <p class="p-0 m-0 fs-4 text-center">@(isCompanyHoliday || leave != null ? "" : shiftName?.ToUpper())</p>
                                                 }
 
                                                 <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @bgClass" @Html.Raw(leavePopover) style="z-index: 1;"></p>
@@ -184,7 +184,7 @@
                         @foreach (var shift in shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
                         {
                             <tr>
-                                <td class="border-end border-secondary fw-semibold text-end">Shift @shift.Shift_name</td>
+                                <td class="border-end border-secondary fw-semibold text-end fs-5">Shift @shift.Shift_name</td>
                                 @for (int day = 1; day <= daysInMonth; day++)
                                 {
                                     var date = new DateTime(currentYear, selectedMonth, day);
@@ -204,7 +204,7 @@
                                         _ => "bg-success text-white"
                                     };
 
-                                    <td class="border-bottom border-end border-secondary text-center @bgColor" id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
+                                    <td class="border-bottom border-end border-secondary text-center fs-5 @bgColor" id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
                                         @count
                                     </td>
                                 }
@@ -217,7 +217,7 @@
     </div>
     <div class="col-12 col-xxl-2" id="legendsAndShifts" style="display:none;">
         @* Leave Legends *@
-        <div class="card p-3 mb-3">
+        <div class="card p-3 mb-3 fs-5">
             <small class="text-body-secondary mb-2">Reflected leaves</small>
             @foreach (var leaveType in leaveTypes)
             {
@@ -233,7 +233,7 @@
             if (shiftPattern.Any())
             {
                 <div class="card py-2 px-4 mb-3">
-                    <table class="table table-sm text-center">
+                    <table class="table table-sm text-center fs-5">
                         <thead>
                             <tr><th colspan="2">@pattern pattern</th></tr>
                             <tr><th>Shift</th><th>Time</th></tr>
