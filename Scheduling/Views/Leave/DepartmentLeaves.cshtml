@@ -410,6 +410,12 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col">
+                            <label class="form-label" asp-for="Message">Message:</label>
+                            <p class="mb-0" id="empMessage">-</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
                             <label asp-for="Leave_type_ID" class="form-label"></label><span class="text-danger" title="Required">*</span>
                             <select asp-for="Leave_type_ID" class="form-select" asp-items="ViewBag.LeaveTypes">
                                 <option value="" selected disabled>Choose..</option>
@@ -429,12 +435,24 @@
                             <span asp-validation-for="Date_end" class="text-danger"></span>
                         </div>
                     </div>
-                    <div class="row mb-3">
+                    <fieldset class="row mb-3">
+                        <legend class="col-form-label">Leave day type<span class="text-danger" title="Required">*</span></legend>
                         <div class="col">
-                            <label class="form-label" asp-for="Message">Message</label>
-                            <p class="mb-0" id="empMessage">-</p>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" asp-for="Day_type" id="FullDay" value="FullDay" autocomplete="off" checked>
+                                <label class="form-check-label" for="FullDay">Full day</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" asp-for="Day_type" id="HalfDay1" value="HalfDay1" autocomplete="off" disabled>
+                                <label class="form-check-label" for="HalfDay1">First half of day</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" asp-for="Day_type" id="HalfDay2" value="HalfDay2" autocomplete="off" disabled>
+                                <label class="form-check-label" for="HalfDay2">Second half of day</label>
+                            </div>
+                            <span asp-validation-for="Day_type" class="text-danger"></span>
                         </div>
-                    </div>
+                    </fieldset>
                     <div class="row">
                         <div class="col">
                             <label class="form-label" for="updateComment">Comment</label><span class="text-danger" title="Required">*</span>
@@ -446,7 +464,7 @@
                 <div class="modal-footer border-0">
                     <div class="form-group">
                         <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
-                        <a href="javascript:void(0)" class="btn btn-primary" id="modalButton"></a>
+                        <a href="javascript:void(0)" class="btn btn-warning" id="modalButton"></a>
                     </div>
                 </div>
             </form>
@@ -484,6 +502,11 @@
                             @Html.DisplayNameFor(model => model.Date_end)
                         </dt>
                         <dd class="col-sm-7" id="cancel_date_end">
+                        </dd>
+                        <dt class="col-sm-5 text-end">
+                            @Html.DisplayNameFor(model => model.Day_type)
+                        </dt>
+                        <dd class="col-sm-7" id="cancel_day_type">
                         </dd>
                         <dt class="col-sm-5 text-end">
                             @Html.DisplayNameFor(model => model.Message)
@@ -550,6 +573,11 @@
                             @Html.DisplayNameFor(model => model.Date_end)
                         </dt>
                         <dd class="col-sm-9" id="date_end">
+                        </dd>
+                        <dt class="col-sm-3 text-end">
+                            @Html.DisplayNameFor(model => model.Day_type)
+                        </dt>
+                        <dd class="col-sm-9" id="date_type">
                         </dd>
                         <dt class="col-sm-3 text-end">
                             @Html.DisplayNameFor(model => model.Message)
@@ -816,6 +844,8 @@
                     $("#Date_end").focus();
                     $("#Date_end")[0].showPicker();
                 }
+
+                toggleHalfDayRadio();
             });
 
             $("#Date_end").on("click", function () {
@@ -838,8 +868,23 @@
                         $(this).val("");
                     }
                 }
+
+                toggleHalfDayRadio();
             });
         });
+
+        function toggleHalfDayRadio() {
+            let startDate = $("#Date_start").val();
+            let endDate = $("#Date_end").val();
+
+            if (startDate && endDate) {
+                let startDateVal = new Date(startDate);
+                let endDateVal = new Date(endDate);
+
+                $("#HalfDay1").prop("disabled", startDateVal.getTime() !== endDateVal.getTime());
+                $("#HalfDay2").prop("disabled", startDateVal.getTime() !== endDateVal.getTime());
+            }
+        }
 
         $("#departmentId").on("change", function() {
             $("#changeDepartment").submit();
@@ -873,10 +918,14 @@
 
                         if (key == "name" || key == "message" && value != null) {
                             $("#emp" + elementId).text(value);
+                        } else if (key == "day_type") {
+                            $("#" + value).prop("checked", true);
                         } else {
                             $("#" + elementId).val(value);
                         }
                     });
+
+                    toggleHalfDayRadio();
 
                     // Set the action attribute of the form
                     $("#leaveForm").attr("action", "/Leave/Update/" + departmentId);
@@ -905,6 +954,8 @@
                         if ($element.length) {
                             if (key == "date") {
                                 $element.text(formatDate(value));
+                            } else if (key == "day_type") {
+                                $element.text((value != "FullDay" ? "Half day" : "Full day"));
                             } else {
                                 $element.text(value);
                             }
@@ -936,6 +987,8 @@
                         if ($element.length) {
                             if (key == "date") {
                                 $element.text(formatDate(value));
+                            } else if (key == "day_type") {
+                                $element.text((value != "FullDay" ? "Half day" : "Full day"));
                             } else {
                                 $element.text(value);
                             }

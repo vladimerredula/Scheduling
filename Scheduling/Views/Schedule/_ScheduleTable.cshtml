@@ -197,8 +197,8 @@
                                             // Leave coloring and borders
                                             if (leave?.Status == "Approved" && shiftId != 0)
                                             {
-                                                leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-custom-class='as' data-bs-trigger='hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'";
-                                                bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient leave-{leave?.Leave_type_ID}";
+                                                leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-custom-class='as' data-bs-trigger='hover' data-bs-html='true' data-bs-content='<strong>{(leave?.Day_type != "FullDay" ? "Half day " : "")}{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'";
+                                                bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient leave-{leave?.Leave_type_ID} {leave?.Day_type}";
                                             }
 
                                             if (hasLeave && canViewRequests)
@@ -243,7 +243,8 @@
                                             string disabledSelect = (!canAssignShift || isCompanyHoliday) ? "disabled" : "";
 
                                             <td id="cell-@user.Personnel_ID-@dateString"
-                                                class="p-1 @cellClass position-relative border-bottom border-end border-secondary">
+                                                class="p-1 @cellClass position-relative border-bottom border-end border-secondary"
+                                                @Html.Raw(leavePopover)>
 
                                                 @if (isPartTime)
                                                 {
@@ -271,11 +272,12 @@
                                                 } else 
                                                 {
                                                     <select data-date="@dateString"
-                                                        class="form-control py-1 px-0 position-relative text-center z-1 bg-transparent
+                                                        class="form-control py-1 px-0 position-relative text-center bg-transparent text-truncate
                                                             @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "") 
                                                             @(isStillTrainee ? "text-success fw-semibold" : "")
                                                             @(isCurrentShiftLeader ? "currentShiftLeader" : "")
-                                                            @(canAssignShift ? "setShiftLeader" : "")"
+                                                            @(canAssignShift ? "setShiftLeader" : "")
+                                                            @(hasLeave && (leave?.Day_type != "FullDay") ? "z-2" : "z-1")"
                                                         onchange="assignShift(@user.Personnel_ID, '@dateString', this)" 
                                                         id="select|@user.Personnel_ID|@dateString"
                                                         style="border: none;@(isCompanyHoliday ? "color: transparent;" : "")" 
@@ -284,17 +286,13 @@
                                                         <option value="0"></option>
                                                         @foreach (var shift in Model.Shifts)
                                                         {
-                                                            var shiftName = shift.Shift_name.Length > 5
-                                                                ? shift.Shift_name.Substring(0, 5)
-                                                                : shift.Shift_name;
-
                                                             if (shift.Shift_ID == shiftId)
                                                             {
-                                                                <option class="text-body" value="@shift.Shift_ID" selected>@shiftName</option>
+                                                                <option class="text-body" value="@shift.Shift_ID" selected>@shift.Shift_name</option>
                                                             }
                                                             else
                                                             {
-                                                                <option class="text-body" value="@shift.Shift_ID">@shiftName</option>
+                                                                <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
                                                             }
                                                         }
 
@@ -315,8 +313,9 @@
                                                 @if ((hasLeave && leave?.Status == "Pending") || (hasLeave && shiftId != 0))
                                                 {
                                                     <p id="p-@user.Personnel_ID-@dateString"
-                                                        class="position-absolute start-0 top-0 w-100 h-100 text-center z-2 @borderClass @(hasLeave ? bgClass : "")"
-                                                        @Html.Raw(action) @Html.Raw(leavePopover)
+                                                        class="position-absolute start-0 top-0 w-100 h-100 text-center @borderClass @(hasLeave ? bgClass : "")
+                                                        @(hasLeave && (leave?.Day_type != "FullDay") && leave?.Status == "Approved" ? "z-1" : "z-2")"
+                                                        @Html.Raw(action)
                                                         style="@(action != string.Empty ? "cursor: pointer;" : "")">
                                                     </p>
                                                 }

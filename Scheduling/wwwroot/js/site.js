@@ -154,6 +154,7 @@ function getNotifications() {
                 }
 
                 var status = notification["status"];
+                status = status == "Approved" && notification["comment"] != null ? "updated" : status;
                 small = $("<small>").text(`${leaveType} request has been ${status}.`);
                 button.append(small);
                 item.append(button);

@@ -92,7 +92,7 @@ namespace Scheduling.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> Edit(int id, [Bind("Leave_ID,Personnel_ID,Leave_type_ID,Message,Status,Date_start,Date_end")] Leave leave)
+        public async Task<IActionResult> Edit(int id, [Bind("Leave_ID,Personnel_ID,Leave_type_ID,Message,Status,Date_start,Date_end,Day_type")] Leave leave)
         {
             if (id != leave.Leave_ID)
             {
@@ -149,6 +149,9 @@ namespace Scheduling.Controllers
             try
             {
                 _db.Leaves.Update(leave);
+
+                leave.Notify = 1;
+
                 await _db.SaveChangesAsync();
                 await _log.LogInfoAsync($"Updated leave request", leave);
 
@@ -262,6 +265,7 @@ namespace Scheduling.Controllers
 
             leave.Status = "Withdrawn";
             leave.Comment = Comment;
+            leave.Notify = 1;
 
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
@@ -308,6 +312,7 @@ namespace Scheduling.Controllers
                 Leave_type_name = leave?.Leave_type?.Leave_type_name,
                 Date_start = leave?.Date_start_string,
                 Date_end = leave?.Date_end_string,
+                Day_type = leave?.Day_type,
                 Message = leave?.Message,
                 Approver_1 = leave?.Approver_1,
                 Approver_1_name = leave?.Approver1?.Full_name,

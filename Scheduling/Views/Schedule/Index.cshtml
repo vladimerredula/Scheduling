@@ -111,6 +111,24 @@
                             <span class="text-danger field-validation-valid" data-valmsg-for="Date_end" data-valmsg-replace="true"></span>
                         </div>
                     </div>
+                    <fieldset class="row mb-3">
+                        <legend class="col-form-label">Day type<span class="text-danger" title="Required">*</span></legend>
+                        <div class="col">
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="Day_type" id="FullDay" value="FullDay" autocomplete="off" data-val="true" data-val-required="The Day type field is required." checked required>
+                                <label class="form-check-label" for="FullDay">Full day</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="Day_type" id="HalfDay1" value="HalfDay1" autocomplete="off" disabled>
+                                <label class="form-check-label" for="HalfDay1">First half of day</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="Day_type" id="HalfDay2" value="HalfDay2" autocomplete="off" disabled>
+                                <label class="form-check-label" for="HalfDay2">Second half of day</label>
+                            </div>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Day_type" data-valmsg-replace="true"></span>
+                        </div>
+                    </fieldset>
                     <div class="row">
                         <div class="col">
                             <label class="form-label" for="requestmsg">Message</label>
@@ -272,6 +290,8 @@
                     $("#Date_end").focus();
                     $("#Date_end")[0].showPicker();
                 }
+
+                toggleHalfDayRadio();
             });
 
             $("#Date_end").on("click", function () {
@@ -294,6 +314,8 @@
                         $(this).val("");
                     }
                 }
+
+                toggleHalfDayRadio();
             });
 
             initializeToggleLegends(); // Initialize the toggle legends button
@@ -468,7 +490,23 @@
         });
 
         function initializePopovers() {
+            $('.tooltip').remove();
+            $('[data-bs-toggle="tooltip"]').each(function () {
+                const tooltipInstance = bootstrap.Tooltip.getInstance(this);
+                if (tooltipInstance) {
+                    tooltipInstance.dispose(); // fully remove tooltip instance
+                }
+            });
             $('[data-bs-toggle="tooltip"]').tooltip();
+
+
+            $('.popover').remove();
+            $('[data-bs-toggle="popover"]').each(function () {
+                const popoverInstance = bootstrap.Popover.getInstance(this);
+                if (popoverInstance) {
+                    popoverInstance.dispose(); // completely removes it
+                }
+            });
             $('[data-bs-toggle="popover"]').popover();
         }
 
@@ -768,6 +806,19 @@
                     }
                 });
             // }
+        }
+
+        function toggleHalfDayRadio() {
+            let startDate = $("#Date_start").val();
+            let endDate = $("#Date_end").val();
+
+            if (startDate && endDate) {
+                let startDateVal = new Date(startDate);
+                let endDateVal = new Date(endDate);
+
+                $("#HalfDay1").prop("disabled", startDateVal.getTime() !== endDateVal.getTime());
+                $("#HalfDay2").prop("disabled", startDateVal.getTime() !== endDateVal.getTime());
+            }
         }
 
         function removeCancelOption(select) {

@@ -33,14 +33,14 @@ body {
     text-decoration: underline;
 }
 
-.halfDayUp {
+.HalfDay1 {
     /* Clip to a triangle from top-left to bottom-right */
-    clip-path: polygon(0 0, 90% 0, 0 90%);
+    clip-path: polygon(0 0, 100% 0, 0 100%);
 }
 
-.halfDayDown {
+.HalfDay2 {
     /* Clip to a triangle from top-left to bottom-right */
-    clip-path: polygon(100% 10%, 10% 100%, 100% 100%);
+    clip-path: polygon(100% 0, 0 100%, 100% 100%);
 }
 
 /* Tooltip with red background and white text */

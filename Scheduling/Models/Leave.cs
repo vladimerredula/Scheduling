@@ -13,6 +13,9 @@ namespace Scheduling.Models
 
         [Display(Name = "Date end")]
         public DateTime Date_end { get; set; }
+
+        [Display(Name = "Day type")]
+        public string Day_type { get; set; }
         public string? Message { get; set; } // Leave request message
         public string? Comment { get; set; } // Leave approval comment
         public string? Status { get; set; } // "Pending", "Approved", "Denied", "Cancelled"
