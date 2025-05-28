@@ -364,24 +364,43 @@ namespace Scheduling.Controllers
 
             if (schedule == null)
             {
+                if (parsedTime == null)
+                    return Json(new { success = true }); // Nothing to assign and no existing record
+
                 schedule = new Schedule
                 {
                     Personnel_ID = userId,
                     Date = date
                 };
+
+                if (isTimeIn)
+                    schedule.Time_in = parsedTime;
+                else
+                    schedule.Time_out = parsedTime;
+
                 await _db.Schedules.AddAsync(schedule);
                 await _log.LogInfoAsync($"Assigned {timeStr} time {timeType} to {empName} on {dateStr}");
             }
             else
             {
-                _db.Schedules.Update(schedule);
-                await _log.LogInfoAsync($"Updated the time {timeType} of {empName} on {dateStr} to {timeStr}");
-            }
-
+                // Update the schedule with the new time
             if (isTimeIn)
                 schedule.Time_in = parsedTime;
             else
                 schedule.Time_out = parsedTime;
+
+                // If both Time_in and Time_out are null, delete the schedule
+                if (schedule.Time_in == null && schedule.Time_out == null)
+                {
+                    _db.Schedules.Remove(schedule);
+                    await _log.LogInfoAsync($"Removed schedule for {empName} on {dateStr} as both time in and out are blank");
+                }
+                else
+                {
+                    _db.Schedules.Update(schedule);
+                    await _log.LogInfoAsync($"Updated the time {timeType} of {empName} on {dateStr} to {timeStr}");
+                }
+            }
 
             await _db.SaveChangesAsync();
             return Json(new { success = true });
