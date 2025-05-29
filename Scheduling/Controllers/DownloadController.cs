@@ -29,7 +29,7 @@ namespace Scheduling.Controllers
             var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
 
             // Get relevant employee orders for the selected year and month (latest per user)
-            var employeeOrders = await _db.Employee_orders
+            var employeeOrders = await _db.Schedule_orders
                 .Include(o => o.User)
                 .Where(o =>
                     o.User.Department_ID == departmentId &&
