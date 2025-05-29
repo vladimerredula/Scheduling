@@ -14,6 +14,7 @@ namespace Scheduling
         public DbSet<Leave_type> Leave_types { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
         public DbSet<Schedule_order> Schedule_orders { get; set; }
+        public DbSet<Schedule_shiftleader> Schedule_shiftleaders { get; set; }
         public DbSet<Holiday> Holidays { get; set; }
 
         // Templates
