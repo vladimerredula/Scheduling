@@ -241,6 +241,23 @@
     </div>
 </div>
 
+<!-- Confirm modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="confirmModalLabel">Remove <span id="slname"></span> from shift leader list?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-footer border-0">
+                <a class="btn btn-outline-secondary px-5" id="confirmNo">No</a>
+                <a class="btn btn-outline-danger px-5" id="confirmYes" data-slid="">Yes</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
@@ -333,9 +350,127 @@
             filterTable();
         });
 
+        $(document).on("click", "#viewSl", function () {
+            let date = $('#monthPicker').datepicker("getDate");
+            let month = date.getMonth() + 1;
+            let year = date.getFullYear();
+            let departmentId = $("#departmentId").val();
+
+            $.ajax({
+                url: '/Schedule/GetShiftLeaders',
+                type: 'POST',
+                data: {
+                    month: month,
+                    year: year,
+                    departmentId: departmentId
+                },
+                success: function (response) {
+                    let list = $("#slList");
+                    list.empty();
+
+                    if (response.length > 0) {
+                        list.removeClass("visually-hidden");
+                        response.forEach(function(item, index) {
+                            list.append(`<li class="list-group-item" id="sl-${item.personnel_ID}" data-slfn="${item.full_name}">${item.full_name}<a href="#" data-slid="${item.personnel_ID}" class="float-end text-danger removeSl" title="Remove"><i class="bi bi-dash-circle-fill"></i></a></li>`);
+                        });
+                    }
+
+                    $("#shiftleaderModal").modal("show");
+                },
+                error: function () {
+                    alert("Error loading shiftleaders.");
+                }
+            });
+        });
+
+        function addShiftLeader() {
+            let selectSl = $("#selectSl");
+
+            if (selectSl.val() != null) {
+                let slId = selectSl.val();
+                let slFn = selectSl.find("option:selected").text().trim();
+
+                let list = $("#slList");
+                list.removeClass("visually-hidden");
+
+                let date = $('#monthPicker').datepicker("getDate");
+                let month = date.getMonth() + 1;
+                let year = date.getFullYear();
+
+                $.ajax({
+                    url: '/Schedule/AssignShiftLeader',
+                    type: 'POST',
+                    data: {
+                        month: month,
+                        year: year,
+                        userId: slId,
+                        isShiftLeader: true
+                    },
+                    success: function (response) {
+                        list.append(`<li class="list-group-item" id="sl-${slId}" data-slfn="${slFn}">${slFn}<a href="#" data-slid="${slId}" class="float-end text-danger removeSl" title="Remove"><i class="bi bi-dash-circle-fill"></i></a></li>`);
+
+                        selectSl.find("option:selected").remove();
+                        selectSl.val("");
+                    },
+                    error: function () {
+                        alert("Error assigning shift leader.");
+                    }
+                });
+            }
+        }
+
+        $(document).on("click", ".removeSl", function () {
+            $("#shiftleaderModal").modal("hide");
+
+            let slId = $(this).data("slid");
+            let slFn = $("#sl-" + slId).data("slfn");
+
+            $("#slname").text(slFn);
+            $("#confirmYes").attr("data-slid", slId);
+
+            $("#confirmModal").modal("show");
+        });
+
+        $("#confirmNo").on("click", function () {
+            $("#confirmModal").modal("hide");
+            $("#shiftleaderModal").modal("show");
+        });
+
+        $("#confirmYes").on("click", function () {
+            let date = $('#monthPicker').datepicker("getDate");
+            let month = date.getMonth() + 1;
+            let year = date.getFullYear();
+            let slId = $(this).data("slid");
+
+            $.ajax({
+                url: '/Schedule/RemoveShiftLeader',
+                type: 'POST',
+                data: {
+                    month: month,
+                    year: year,
+                    userId: slId
+                },
+                success: function (response) {
+                    $("#confirmModal").modal("hide");
+                    $("#confirmModal").on("hidden.bs.modal", function () {
+                        $(this).off("hidden.bs.modal");
+                        loadSchedule(month, year);
+                    });
+                },
+                error: function (response) {
+                    alert("Error assigning shift leader.");
+                    console.error(response);
+                }
+            });
+        });
+
         function initializeContextMenus() {
             $(".setShiftLeader").on("contextmenu", function (e) {
                 e.preventDefault(); // prevent the default browser menu
+
+                if ($(this).hasClass("currentShiftLeader")) {
+                    return;
+                }
 
                 var shift = $(this).find("option:selected").text().trim();
                 var [select,userId,date] = this.id.split("|");
@@ -350,7 +485,7 @@
                     const height = $(this).outerHeight();
 
                     // Build the menu
-                    const $menu = $("<ul>", {
+                    const $menu = $("<div>", {
                         class: "scheduleMenu list-group shadow position-absolute text-nowrap z-3",
                         css: {
                             top: 10 + "px",
@@ -358,13 +493,11 @@
                         }
                     });
 
-                    $("<li>", {
+                    $("<a>", {
                         class: "list-group-item list-group-item-action",
-                        html:
-                            `
-                            <input class="form-check-input me-1" type="checkbox" value="" id="slSched" onchange="setShiftLeader(${userId},'${date}',this)">
-                            <label class="form-check-label stretched-link" for="slSched">Shift leader for <strong>${shift} shift</strong></label>
-                            `,
+                        href:"#",
+                        html:`Set as shift leader for <strong>${shift} shift</strong>`,
+                        onclick:`setShiftLeader(${userId},'${date}')`
                     }).appendTo($menu);
 
                     // Append menu to the parent with position-relative (e.g. td or div)
@@ -374,48 +507,10 @@
                 }
             });
 
-            // $(".memberName").on("click", function () {
-            //     Remove any existing menu
-            //     $(".userMenu").remove();
-
-            //     var [user,userId] = this.id.split("-");
-
-            //     const offset = $(this).offset();
-            //     const width = $(this).outerWidth();
-            //     const height = $(this).outerHeight();
-
-            //     Build the menu
-            //     const $menu = $("<ul>", {
-            //         class: "userMenu list-group shadow position-absolute text-nowrap z-3",
-            //         css: {
-            //             top: 0 + "px",
-            //             left: width - 25 + "px"
-            //         }
-            //     });
-
-            //     $("<li>", {
-            //         class: "list-group-item list-group-item-action",
-            //         html:
-            //             `
-            //             <input class="form-check-input me-1" type="checkbox" value="" id="slUser" onclick="assignShiftLeader(${userId}, this)">
-            //             <label class="form-check-label stretched-link" for="slUser">Shift leader</label>
-            //             `
-            //     }).appendTo($menu);
-
-            //     Append menu to the parent with position-relative (e.g. td or div)
-            //     $(this).append($menu);
-
-            //     $(".userMenu").find("input[type=checkbox]").prop("checked", $(this).hasClass("isShiftLeader"));
-            // });
-
             // Hide menu on click elsewhere
             $(document).on("mousedown", function (e) {
                 if (!$(e.target).closest(".scheduleMenu").length) {
                     $(".scheduleMenu").remove();
-                }
-
-                if (!$(e.target).closest("#userMenu").length) {
-                    $(".userMenu").remove();
                 }
             });
         }
@@ -539,15 +634,13 @@
             });
         }
 
-        function setShiftLeader(userId, date, checkbox) {
-            var isShiftLeader = $(checkbox).is(":checked");
+        function setShiftLeader(userId, date) {
             $.ajax({
                 url: '/Schedule/SetShiftLeader',
                 type: 'POST',
                 data: {
                     userId: userId,
-                    date: date,
-                    isShiftLeader: isShiftLeader
+                    date: date
                 },
                 success: function (response) {
                     var select = $(`[id='select|${userId}|${date}']`);
@@ -555,37 +648,10 @@
                     // Remove existing shift leader of the current shift
                     removeCurrentShiftLeader(select.val(), date);
 
-                    if (isShiftLeader) {
-                        // Set as the current shiftleader
-                        select.addClass("currentShiftLeader");
-                    } else {
-                        // Set as the current shiftleader
-                        select.removeClass("currentShiftLeader");
-                    }
-                    $(".scheduleMenu").remove();
-                },
-                error: function () {
-                    alert("Error loading schedule.");
-                }
-            });
-        }
+                    // Set as the current shiftleader
+                    select.addClass("currentShiftLeader");
 
-        // Assinging a user a shift leader position for the current month
-        function assignShiftLeader(userId, checkbox) {
-            $(".userMenu").remove();
-            let date = $('#monthPicker').datepicker("getDate");
-            console.log(date,userId,checkbox);
-            $.ajax({
-                url: '/Schedule/AssignShiftLeader',
-                type: 'POST',
-                data: {
-                    userId: userId,
-                    month: date.getMonth() + 1,
-                    year: date.getFullYear(),
-                    isShiftLeader: $(checkbox).is(":checked")
-                },
-                success: function (response) {
-                    loadSchedule(date.getMonth() + 1, date.getFullYear());
+                    $(".scheduleMenu").remove();
                 },
                 error: function () {
                     alert("Error loading schedule.");

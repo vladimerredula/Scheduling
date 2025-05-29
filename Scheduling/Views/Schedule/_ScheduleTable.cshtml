@@ -52,6 +52,7 @@
                     <h3>@firstDay.ToString("MMMM yyyy")</h3>
                 </div>
                 <div class="col-auto">
+                    <a class="btn btn-light border me-2" id="viewSl" title="View Shift leaders for this month">Shift leaders</a>
                     <a class="btn btn-light border me-2" id="reloadBtn" title="Reload schedule"><i class="bi bi-arrow-clockwise"></i></a>
                     @if (_template.HasPermission("MonthNav"))
                     {
@@ -73,26 +74,26 @@
                                 var date = new DateTime(currentYear, selectedMonth, day);
                                 var isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
                                 var holiday = holidays.FirstOrDefault(h => h.Date == date);
+                                var hasSchedule = schedules.Any(s => s.Date == date);
 
                                 var todaysSl = shiftLeaders.Where(s => s.Item1.Date == date.Date).Select(s => s.Item3).ToList();
                                 var missingSl = false;
 
                                 var missingSlPopover = "";
                                 var missingShiftList = "";
-                                if (todaysSl.Count < 3 && canAssignShift && holiday?.Type != "Company")
+                                if (todaysSl.Count < 3 && canAssignShift && holiday?.Type != "Company" && hasSchedule)
                                 {
                                     var missingShifts = expectedShifts.Except(todaysSl).ToList();
 
                                     var sb = new System.Text.StringBuilder();
                                     foreach (var missingShift in missingShifts)
                                     {
-                                        sb.Append($"<span id='{@date.ToString("yyyy-MM-dd")}|{missingShift}'>Missing <strong>{missingShift} shift</strong> shiftleader</br>");
+                                        sb.Append($"<span id='{@date.ToString("yyyy-MM-dd")}|{missingShift}'>No <strong>{missingShift} shift</strong> shiftleader</br>");
                                     }
 
                                     // Escape double quotes to safely embed HTML inside data attribute
                                     var htmlContent = sb.ToString().Replace("\"", "&quot;").Replace("'", "&#39;");
 
-                                    @* missingSlPopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-custom-class=\"z-3 p-0\" data-bs-trigger=\"focus\" data-bs-html=\"true\" data-bs-content=\"{htmlContent}\" tabindex=\"0\""; *@
                                     missingSlPopover = $"data-bs-toggle=\"tooltip\" data-bs-placement=\"top\" data-bs-custom-class=\"custom-tooltip\" data-bs-html=\"true\"  data-bs-title=\"{htmlContent}\"";
                                     missingSl = true;
                                 }
@@ -140,7 +141,7 @@
                                                     @user.Full_name
                                                     @if (isShiftLeader && canAssignShift)
                                                     {
-                                                        <span class="text-danger fw-bold"> SL</span>
+                                                        @* <span class="text-danger fw-bold"> SL</span> *@
                                                     }
                                                 </div>
                                                 @if (isPartTime)
@@ -173,7 +174,15 @@
                                             int shiftId = schedule?.Shift_ID ?? 0;
                                             bool isCurrentShiftLeader = shiftLeaders.Any(s => s.Item1.Date == date.Date && s.Item2 == user.Personnel_ID);
 
-                                            var leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
+                                            var leave = new Leave();
+                                            if (user.Personnel_ID == 900)
+                                            {
+                                                leave = leaves.FirstOrDefault(l => l.Personnel_ID == 35 && date >= l.Date_start && date <= l.Date_end);
+                                            } else
+                                            {
+                                                leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
+                                            }
+
                                             bool hasLeave = leave != null;
                                             string leavePopover = string.Empty;
 
@@ -203,7 +212,7 @@
 
                                             if (hasLeave && canViewRequests)
                                             {
-                                                if (leave?.Approver_1 == null)
+                                                if (leave?.Approver_1 == null && leave?.Approver_2 == null)
                                                 {
                                                     leavePopover = $"data-bs-toggle=\"popover\" data-bs-custom-class=\"z-3\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
                                                     bgClass = "bg-warning bg-opacity-25 leave-pending";
@@ -233,7 +242,7 @@
                                                 }
 
                                                 // Leave actions
-                                                if (isFirstApprover && leave?.Approver_1 == null)
+                                                if (isFirstApprover && leave?.Approver_1 == null && leave?.Approver_2 == null)
                                                     action = $"onclick=getLeave({leave?.Leave_ID})";
                                                 else if (isFinalApprover && leave?.Approver_1 != null && leave?.Approver_2 == null)
                                                     action = $"onclick=getLeave({leave?.Leave_ID})";
@@ -411,5 +420,42 @@
                 </div>
             }
         }
+    </div>
+</div>
+
+
+<!-- Shiftleader modal -->
+<div class="modal fade" id="shiftleaderModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="shiftleaderModalLabel">Shift leaders</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group list-group-flush mb-4 visually-hidden" id="slList">
+                    <li class="list-group-item">An item<a href="#" class="float-end text-danger" title="Remove"><i class="bi bi-dash-circle-fill"></i></a></li>
+                    <li class="list-group-item">A second item<a href="#" class="float-end text-danger" title="Remove"><i class="bi bi-dash-circle-fill"></i></a></li>
+                    <li class="list-group-item">A third item<a href="#" class="float-end text-danger" title="Remove"><i class="bi bi-dash-circle-fill"></i></a></li>
+                    <li class="list-group-item">A fourth item<a href="#" class="float-end text-danger" title="Remove"><i class="bi bi-dash-circle-fill"></i></a></li>
+                    <li class="list-group-item">And a fifth one<a href="#" class="float-end text-danger" title="Remove"><i class="bi bi-dash-circle-fill"></i></a></li>
+                </ul>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label">Members</label>
+                        <select class="form-select" id="selectSl">
+                            <option value="" disabled selected>Choose...</option>
+                            @foreach (var user in Model.Users.Where(u => u.Privilege_ID != 3 && u.Privilege_ID != 2).OrderBy(u => u.Full_name))
+                            {
+                                <option value="@user.Personnel_ID">@user.Full_name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="d-grid">
+                    <a href="#" class="btn bg-primary-subtle text-primary" onclick="addShiftLeader()"><i class="bi bi-plus-circle"></i> Add</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

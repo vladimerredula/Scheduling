@@ -15,6 +15,7 @@
     var users = Model.Users;
     var companyHolidayDates = holidays.Where(h => h.Type == "Company").Select(h => h.Date).ToHashSet();
     var userIds = users.Select(u => u.Personnel_ID).ToHashSet();
+    var shiftLeaders = ViewBag.ShiftLeaders as List<(DateTime, int, string)>;
 }
 
 <div class="row">
@@ -128,17 +129,18 @@
                                             var hasLeave = leave != null && shift != null;
                                             var holiday = holidays.FirstOrDefault(h => h.Date == date);
 
+                                            bool isCurrentShiftLeader = shiftLeaders.Any(s => s.Item1.Date == date.Date && s.Item2 == user.Personnel_ID);
                                             bool isStillTrainee = trainingPeriod.Date >= date.Date;
                                             bool isCompanyHoliday = holiday?.Type == "Company";
                                             var cellClass = holiday != null
                                             ? (isCompanyHoliday ? "bg-secondary" : "bg-secondary-subtle")
                                             : (isWeekend ? "bg-secondary-subtle" : "");
 
-                                            string leavePopover = hasLeave ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'" : "";
+                                            string leavePopover = hasLeave ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='hover' data-bs-html='true' data-bs-content='<strong>{(leave?.Day_type != "FullDay" ? "Half day " : "")}{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'" : "";
 
-                                            string bgClass = hasLeave ? "bg-" + leave?.Leave_type?.BsColor + " bg-gradient" : "visually-hidden";
+                                            string bgClass = hasLeave ? $"bg-{leave?.Leave_type?.BsColor} bg-gradient {leave?.Day_type}" : "visually-hidden";
 
-                                            <td id="cell-@user.Personnel_ID-@dateStr" class="px-0 @cellClass @(isStillTrainee ? "text-success fw-semibold" : "") position-relative border-bottom border-end border-secondary">
+                                            <td id="cell-@user.Personnel_ID-@dateStr" class="px-0 @cellClass @(isStillTrainee ? "text-success fw-semibold" : "") position-relative border-bottom border-end border-secondary" @Html.Raw(leavePopover)>
                                                 @if (isPartTime)
                                                 {
                                                     <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_in != null ? schedule?.Time_in?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
@@ -160,18 +162,18 @@
                                                         }
                                                     }
 
-                                                    <p class="p-0 m-0 fs-4 text-center">@(isCompanyHoliday || leave != null ? "" : shiftName?.ToUpper())</p>
+                                                <p class="p-0 m-0 fs-4 text-center position-absolute start-0 w-100 h-100 @(isCurrentShiftLeader ? "currentShiftLeader" : "") @(leave != null && leave.Day_type != "FullDay" ? "z-2" : "z-1")">@(isCompanyHoliday || (leave != null && leave.Day_type == "FullDay") ? "" : shiftName?.ToUpper())</p>
                                                 }
 
-                                                <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @bgClass" @Html.Raw(leavePopover) style="z-index: 1;"></p>
+                                                <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @(leave != null && leave.Day_type != "FullDay" ? "z-1" : "z-2") @bgClass"></p>
 
-                                                    @if (schedule?.Comment == "cancelled")
-                                                    {
-                                                    <svg class="position-absolute top-0 start-0 w-100 h-100">
-                                                        <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
-                                                        <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
-                                                    </svg>
-                                                    }
+                                                @if (schedule?.Comment == "cancelled")
+                                                {
+                                                <svg class="position-absolute top-0 start-0 w-100 h-100">
+                                                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
+                                                    <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
+                                                </svg>
+                                                }
                                             </td>
                                         }
                                 </tr>
