@@ -71,6 +71,7 @@ namespace Scheduling.Services
                     action = "DepartmentLeaves";
                     break;
                 case "Add":
+                case "AddLeave":
                     if (controller == "Leave")
                     {
                         action = "DepartmentLeaves";
@@ -78,7 +79,7 @@ namespace Scheduling.Services
                     {
                         action = "Index";
                     }
-                        break;
+                    break;
                 default:
                     break;
             }

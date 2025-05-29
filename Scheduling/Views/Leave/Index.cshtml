@@ -163,6 +163,9 @@
                         <th>
                             @Html.DisplayNameFor(model => model.Date_approved_2)
                         </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Comment)
+                        </th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -199,6 +202,9 @@
                             </td>
                             <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Date_approved_2)
+                            </td>
+                            <td class="td-control">
+                                @Html.DisplayFor(modelItem => item.Comment)
                             </td>
                             <td class="text-nowrap align-content-center">
                                 @if (canWithdrawLeave && item?.Date_start > DateTime.Now)
@@ -646,7 +652,7 @@
                         width: '20px'
                     },
                     {
-                        targets: [4,7,9],
+                        targets: [4,7,9,10],
                         visible: false,
                         searchable: false
                     }

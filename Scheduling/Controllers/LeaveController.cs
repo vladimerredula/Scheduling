@@ -45,14 +45,6 @@ namespace Scheduling.Controllers
             return View();
         }
 
-        public async Task<IActionResult> Leaves()
-        {
-            await PopulateLeaveViewBagsAsync();
-            await _log.LogInfoAsync("Visited leaves");
-
-            return View();
-        }
-
         public async Task<IActionResult> Add(Leave leave)
         {
             if (HasOverlappingLeave(leave))
@@ -90,6 +82,46 @@ namespace Scheduling.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> AddLeave(Leave leave)
+        {
+            if (HasOverlappingLeave(leave))
+            {
+                ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
+
+                await PopulateLeaveViewBagsAsync();
+                await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
+                return View(nameof(DepartmentLeaves), leave);
+            }
+
+            try
+            {
+                leave.Status = "Approved";
+                leave.Notify = 1;
+
+                if (_template.HasPermission("FinalApprover"))
+                {
+                    var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
+                    leave.Approver_2 = personnelId;
+                    leave.Date_approved_2 = DateTime.Today;
+                }
+
+                _db.Leaves.Add(leave);
+
+                await _db.SaveChangesAsync();
+                await _log.LogInfoAsync($"Added leave request", leave);
+
+                var employee = await GetUser(leave.Personnel_ID);
+                TempData["toastMessage"] = $"Successfully added leave for {employee.Full_name}!-success";
+            }
+            catch (Exception ex)
+            {
+                await _log.LogErrorAsync("Unable to add leave request", ex);
+                TempData["toastMessage"] = "Unable to request leave.-danger";
+            }
+
+            return RedirectToAction(nameof(DepartmentLeaves));
         }
 
         public async Task<IActionResult> Edit(int id, [Bind("Leave_ID,Personnel_ID,Leave_type_ID,Message,Status,Date_start,Date_end,Day_type")] Leave leave)
@@ -545,6 +577,11 @@ namespace Scheduling.Controllers
             return _db.Users.Find(GetPersonnelID());
         }
 
+        public async Task<User> GetUser(int id)
+        {
+            return await _db.Users.FindAsync(id);
+        }
+
         private async Task PopulateLeaveViewBagsAsync(int? departmentId = null)
         {
             if (departmentId == 0)
@@ -561,6 +598,17 @@ namespace Scheduling.Controllers
                     "Department_ID", 
                     "Department_name", 
                     departmentId
+                );
+
+                ViewBag.Users = new SelectList(
+                    _db.Users
+                        .Where(u => u.Privilege_ID != 0 && u.Privilege_ID != 4 && u.Status == 1)
+                        .AsEnumerable()
+                        .OrderBy(u => u.Full_name)
+                        .Select(u => new { u.Personnel_ID, u.Full_name })
+                        .ToList(),
+                    "Personnel_ID",
+                    "Full_name"
                 );
             }
             else if (departmentId != null && departmentId != 0)

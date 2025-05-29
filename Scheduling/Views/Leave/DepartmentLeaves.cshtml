@@ -14,11 +14,18 @@
 }
 
 <div class="container">
-    <h1 class="mb-3">@ViewData["Title"]</h1>
+    <h1>@ViewData["Title"]</h1>
+
+    @if (isFinalApprover)
+    {
+        <p class="mb-3">
+            <a class="btn btn-primary shadow" onclick="addLeave()">Create New</a>
+        </p>
+    }
 
     @if (canSelectDept)
     {
-        <div class="row mb-3">
+        <div class="row">
             <div class="col-auto">
                 <form asp-action="DepartmentLeaves" id="changeDepartment">
                     <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
@@ -29,7 +36,7 @@
         </div>
     }
 
-    <ul class="nav nav-tabs leavesTab" id="leavesTab" role="tablist">
+    <ul class="nav nav-tabs leavesTab mt-3" id="leavesTab" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link fs-5" id="pending" data-bs-toggle="tab" data-bs-target="#content-1" role="tab" aria-controls="0">Requests</button>
         </li>
@@ -114,7 +121,7 @@
                                 }
                             </td>
                             <td class="text-nowrap justify-content-center">
-                                @if ((isFirstApprover && item?.Approver_1 == null) || (isFinalApprover && item?.Approver_1 != null && item?.Approver_2 == null))
+                                @if ((isFirstApprover && item?.Approver_1 == null && item?.Approver_2 != null) || (isFinalApprover && item?.Approver_1 != null && item?.Approver_2 == null))
                                 {
                                     if (canApprove)
                                     {
@@ -225,7 +232,7 @@
                             <td>
                                 @if (isFinalApprover)
                                 {
-                                    <a class="btn btn-sm btn-warning" onclick="updateLeave(@item?.Leave_ID,@(leaves.Select(l => l?.User?.Department_ID).Distinct().Count() > 1 ? "0" : item?.User?.Department_ID))">Update</a>
+                                    <a class="btn btn-sm btn-warning" onclick="updateLeave(@item?.Leave_ID)">Update</a>
                                     <a class="btn btn-sm btn-light border text-danger" onclick="cancelLeave(@item?.Leave_ID,@(leaves.Select(l => l?.User?.Department_ID).Distinct().Count() > 1 ? "0" : item?.User?.Department_ID))">Cancel</a>
 
                                 }
@@ -384,7 +391,7 @@
     </div>
 </div>
 
-<!-- Update modal -->
+<!-- Add modal -->
 <div class="modal fade" id="leaveModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -392,26 +399,20 @@
                 <h5 class="modal-title" id="leaveModalLabel"></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="leaveForm" method="post">
+            <form asp-action="AddLeave" id="leaveForm" method="post">
                 <div class="modal-body">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                    <input type="hidden" asp-for="Leave_ID" />
-                    <input type="hidden" asp-for="Personnel_ID" />
-                    <input type="hidden" asp-for="Message" />
-                    <input type="hidden" asp-for="Approver_1" />
-                    <input type="hidden" asp-for="Date_approved_1" />
-                    <input type="hidden" asp-for="Approver_2" />
-                    <input type="hidden" asp-for="Date_approved_2" />
-                    <input type="hidden" asp-for="Status" />
-                    <div class="row mb-3">
-                        <div class="col">
-                            <p class="mb-0">Name: <span class="fw-semibold" id="empName"></span></p>
-                        </div>
+                    <div class="alert alert-primary alert-dismissible fade show" role="alert">
+                        <strong>Note:</strong> Leaves added by the HR will have a default <span class="fw-semibold">Approved</span> status
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     <div class="row mb-3">
                         <div class="col">
-                            <label class="form-label" asp-for="Message">Message:</label>
-                            <p class="mb-0" id="empMessage">-</p>
+                            <label class="form-label" asp-for="Message">Employee</label>
+                            <select asp-for="Personnel_ID" class="form-select" asp-items="ViewBag.Users">
+                                <option value="" selected disabled>Choose..</option>
+                            </select>
+                            <span asp-validation-for="Personnel_ID" class="text-danger"></span>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -435,7 +436,7 @@
                             <span asp-validation-for="Date_end" class="text-danger"></span>
                         </div>
                     </div>
-                    <fieldset class="row mb-3">
+                    <fieldset class="row">
                         <legend class="col-form-label">Leave day type<span class="text-danger" title="Required">*</span></legend>
                         <div class="col">
                             <div class="form-check">
@@ -453,18 +454,100 @@
                             <span asp-validation-for="Day_type" class="text-danger"></span>
                         </div>
                     </fieldset>
+                </div>
+                <div class="modal-footer border-0">
+                    <div class="form-group">
+                        <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
+                        <a href="javascript:void(0)" class="btn btn-primary" id="createButton">Create</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Update modal -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="updateModalLabel">Update leave</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="Update" id="updateForm" method="post">
+                <div class="modal-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Leave_ID" id="update_Leave_ID" />
+                    <input type="hidden" asp-for="Personnel_ID" id="update_Personnel_ID" />
+                    <input type="hidden" asp-for="Message" id="update_Message" />
+                    <input type="hidden" asp-for="Approver_1" id="update_Approver_1" />
+                    <input type="hidden" asp-for="Date_approved_1" id="update_Date_approved_1" />
+                    <input type="hidden" asp-for="Approver_2" id="update_Approver_2" />
+                    <input type="hidden" asp-for="Date_approved_2" id="update_Date_approved_2" />
+                    <input type="hidden" asp-for="Status" id="update_Status" />
+                    <div class="row mb-3">
+                        <div class="col">
+                            <p class="mb-0">Name: <span class="fw-semibold" id="empName"></span></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label class="form-label" asp-for="Message">Message:</label>
+                            <p class="mb-0" id="empMessage">-</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Leave_type_ID" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <select asp-for="Leave_type_ID" class="form-select" asp-items="ViewBag.LeaveTypes" id="update_Leave_type_ID">
+                                <option value="" selected disabled>Choose..</option>
+                            </select>
+                            <span asp-validation-for="Leave_type_ID" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label asp-for="Date_start" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <input asp-for="Date_start" type="date" class="form-control" id="update_Date_start" />
+                            <span asp-validation-for="Date_start" class="text-danger"></span>
+                        </div>
+                        <div class="col">
+                            <label asp-for="Date_end" class="form-label"></label><span class="text-danger" title="Required">*</span>
+                            <input asp-for="Date_end" type="date" class="form-control" id="update_Date_end" />
+                            <span asp-validation-for="Date_end" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <fieldset class="row mb-3">
+                        <legend class="col-form-label">Leave day type<span class="text-danger" title="Required">*</span></legend>
+                        <div class="col">
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" asp-for="Day_type" id="update_FullDay" value="FullDay" autocomplete="off" checked>
+                                <label class="form-check-label" for="update_FullDay">Full day</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" asp-for="Day_type" id="update_HalfDay1" value="HalfDay1" autocomplete="off" disabled>
+                                <label class="form-check-label" for="update_HalfDay1">First half of day</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" asp-for="Day_type" id="update_HalfDay2" value="HalfDay2" autocomplete="off" disabled>
+                                <label class="form-check-label" for="update_HalfDay2">Second half of day</label>
+                            </div>
+                            <span asp-validation-for="Day_type" class="text-danger"></span>
+                        </div>
+                    </fieldset>
                     <div class="row">
                         <div class="col">
                             <label class="form-label" for="updateComment">Comment</label><span class="text-danger" title="Required">*</span>
-                            <textarea class="form-control" name="Comment" id="updateComment" data-val="true" data-val-required="Please state the reason for updating the leave." required></textarea>
+                            <textarea class="form-control" name="Comment" id="update_Comment" data-val="true" data-val-required="Please state the reason for updating the leave." required></textarea>
                             <span class="text-danger field-validation-valid" data-valmsg-for="Comment" data-valmsg-replace="true"></span>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
                     <div class="form-group">
+                        <input type="hidden" name="departmentId" id="update_departmentID" />
                         <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">Cancel</a>
-                        <a href="javascript:void(0)" class="btn btn-warning" id="modalButton"></a>
+                        <a href="javascript:void(0)" class="btn btn-warning" id="updateButton">Update</a>
                     </div>
                 </div>
             </form>
@@ -603,6 +686,12 @@
         </div>
     </div>
 </div>
+
+
+@if (Model != null)
+{
+    <input type="hidden" id="action" data-id="@Model.Leave_ID" value="@(Model.Leave_ID != 0 ? "edit" : "add")" />
+}
 
 @section Scripts {
     @{
@@ -808,6 +897,16 @@
 
             $('[data-bs-toggle="tooltip"]').tooltip();
 
+            var action = $("#action");
+            var actionVal = action.val();
+            if (actionVal != null) {
+                if (actionVal == "add") {
+                    $("#leaveModal").modal("show");
+                } else {
+                    $("#updateModal").modal("show");
+                }
+            }
+
             var tabs = document.getElementsByClassName('nav nav-tabs')
 
             // Selecting all nav tabs and showing the first tab open
@@ -871,6 +970,58 @@
 
                 toggleHalfDayRadio();
             });
+
+            $("#update_Date_start").on("click", function () {
+                $(this)[0].showPicker();
+            });
+
+            $("#update_Date_start").on("change", function () {
+                let startDateVal = new Date($(this).val());
+                let endDate = $("#update_Date_end").val();
+
+                if (endDate) {
+                    let endDateVal = new Date(endDate);
+                    if (endDateVal < startDateVal) {
+                        $(this)
+                            .closest("form")
+                            .validate()
+                            .showErrors({
+                                "Date_start": "Start date cannot be later than the end date."
+                            });
+                        $(this).val("");
+                    }
+                } else {
+                    $(this).blur();
+                    $("#update_Date_end").focus();
+                    $("#update_Date_end")[0].showPicker();
+                }
+
+                toggleUpdateHalfDayRadio();
+            });
+
+            $("#update_Date_end").on("click", function () {
+                $(this)[0].showPicker();
+            });
+
+            $("#update_Date_end").on("change", function () {
+                let endDateVal = new Date($(this).val());
+                let startDate = $("#update_Date_start").val();
+
+                if (startDate) {
+                    let startDateVal = new Date(startDate);
+                    if (endDateVal < startDateVal) {
+                        $(this)
+                            .closest("form")
+                            .validate()
+                            .showErrors({
+                                "Date_end": "End date cannot be earlier than the start date."
+                            });
+                        $(this).val("");
+                    }
+                }
+
+                toggleUpdateHalfDayRadio();
+            });
         });
 
         function toggleHalfDayRadio() {
@@ -886,16 +1037,25 @@
             }
         }
 
+        function toggleUpdateHalfDayRadio() {
+            let startDate = $("#update_Date_start").val();
+            let endDate = $("#update_Date_end").val();
+
+            if (startDate && endDate) {
+                let startDateVal = new Date(startDate);
+                let endDateVal = new Date(endDate);
+
+                $("#update_HalfDay1").prop("disabled", startDateVal.getTime() !== endDateVal.getTime());
+                $("#update_HalfDay2").prop("disabled", startDateVal.getTime() !== endDateVal.getTime());
+            }
+        }
+
         $("#departmentId").on("change", function() {
             $("#changeDepartment").submit();
         });
 
         function addLeave() {
-            $(".modal-title").text("Add Leave");
-
-            $("#modalButton").text("Create");
-
-            $("#leaveForm").attr("action", "/Leave/Add");
+            $("#leaveForm").attr("action", "/Leave/AddLeave");
 
             clearModal();
 
@@ -903,7 +1063,7 @@
             $("#leaveModal").modal("show");
         }
 
-        function updateLeave(id,departmentId) {
+        function updateLeave(id) {
             clearModal();
 
             $.ajax({
@@ -919,21 +1079,18 @@
                         if (key == "name" || key == "message" && value != null) {
                             $("#emp" + elementId).text(value);
                         } else if (key == "day_type") {
-                            $("#" + value).prop("checked", true);
+                            $("#update_" + value).prop("checked", true);
                         } else {
-                            $("#" + elementId).val(value);
+                            $("#update_" + elementId).val(value);
                         }
                     });
 
-                    toggleHalfDayRadio();
+                    toggleUpdateHalfDayRadio();
 
-                    // Set the action attribute of the form
-                    $("#leaveForm").attr("action", "/Leave/Update/" + departmentId);
-                    $("#leaveModalLabel").text("Update leave");
-                    $("#modalButton").text("Update");
+                    $("#update_departmentID").val($("#departmentId").val());
 
                     // Show the modal
-                    $("#leaveModal").modal("show");
+                    $("#updateModal").modal("show");
                 },
                 error: function (response) {
                     console.error("Error:", response.status, response.responseJSON.message);
@@ -1008,8 +1165,12 @@
             });
         }
 
-        $("#modalButton").on("click", function() {
+        $("#createButton").on("click", function() {
             $("#leaveForm").submit();
+        });
+
+        $("#updateButton").on("click", function() {
+            $("#updateForm").submit();
         });
 
         function clearModal() {
