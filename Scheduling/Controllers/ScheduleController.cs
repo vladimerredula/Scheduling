@@ -71,7 +71,7 @@ namespace Scheduling.Controllers
 
                 var matchShiftleaders = scheduleShiftleaders.FirstOrDefault(o => o.Personnel_ID == baseUser.Personnel_ID);
                 if (matchShiftleaders != null && matchShiftleaders.Is_shiftleader.HasValue)
-                    baseUser.Privilege_ID = matchShiftleaders.Is_shiftleader.Value ? 2 : 1;
+                    baseUser.Privilege_ID = baseUser.Privilege_ID != 3 ? matchShiftleaders.Is_shiftleader.Value ? 2 : 1 : baseUser.Privilege_ID;
             }
 
             // Split and sort
@@ -668,21 +668,21 @@ namespace Scheduling.Controllers
                 }
 
                 // Add schedule shiftleader data if not exists
-                var scheduleShiftleader = await _db.Schedule_shiftleaders
-                    .FirstOrDefaultAsync(e => e.Personnel_ID == userId && e.Year == year && e.Month == month);
+                //var scheduleShiftleader = await _db.Schedule_shiftleaders
+                //    .FirstOrDefaultAsync(e => e.Personnel_ID == userId && e.Year == year && e.Month == month);
 
-                if (scheduleShiftleader == null)
-                {
-                    scheduleShiftleader = new Schedule_shiftleader
-                    {
-                        Personnel_ID = userId,
-                        Year = year,
-                        Month = month,
-                        Is_shiftleader = employee.Privilege_ID == 2,
-                        Department_ID = employee.Department_ID
-                    };
-                    _db.Schedule_shiftleaders.Add(scheduleShiftleader);
-                }
+                //if (scheduleShiftleader == null)
+                //{
+                //    scheduleShiftleader = new Schedule_shiftleader
+                //    {
+                //        Personnel_ID = userId,
+                //        Year = year,
+                //        Month = month,
+                //        Is_shiftleader = employee.Privilege_ID == 2,
+                //        Department_ID = employee.Department_ID
+                //    };
+                //    _db.Schedule_shiftleaders.Add(scheduleShiftleader);
+                //}
 
                 index++;
             }
@@ -770,6 +770,43 @@ namespace Scheduling.Controllers
 
                 await _db.Schedules.AddAsync(newSchedule);
                 await _log.LogInfoAsync($"Assigned {empName} as shiftleader for {dateStr}");
+            }
+
+            await _db.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UnsetShiftLeader(int userId, DateTime date)
+        {
+            var existingSchedule = await _db.Schedules
+                .Include(s => s.Shift)
+                .FirstOrDefaultAsync(s => s.Personnel_ID == userId && s.Date == date);
+
+            var empName = await GetUserFullname(userId) ?? $"User {userId}";
+            string dateStr = date.ToString("yyyy-MM-dd");
+
+            await RemoveCurrentShiftLeader(userId, date);
+
+            if (existingSchedule != null)
+            {
+                existingSchedule.Is_shiftleader = false;
+
+                await _log.LogInfoAsync($"Removed {empName} as shift '{existingSchedule.Shift?.Shift_name}' shiftleader for {dateStr}");
+                _db.Schedules.Update(existingSchedule);
+            }
+            else
+            {
+                var newSchedule = new Schedule
+                {
+                    Personnel_ID = userId,
+                    Date = date,
+                    Is_shiftleader = false
+                };
+
+                await _db.Schedules.AddAsync(newSchedule);
+                await _log.LogInfoAsync($"Removed {empName} as shiftleader for {dateStr}");
             }
 
             await _db.SaveChangesAsync();

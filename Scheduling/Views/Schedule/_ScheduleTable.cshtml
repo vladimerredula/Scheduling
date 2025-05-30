@@ -62,7 +62,7 @@
             </div>
 
             <!-- Schedule Table -->
-            <div class="table-responsive" style="max-height: calc(100vh - 355px);" id="printableTable">
+            <div class="table-responsive" style="max-height: calc(100vh - 355px);" id="tableContainer">
                 <table id="schedule" class="table table-sm table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
 
                     <!-- Table Header -->
@@ -283,6 +283,7 @@
                                                     <select data-date="@dateString"
                                                         class="form-control py-1 px-0 position-relative text-center bg-transparent text-truncate
                                                             @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "") 
+                                                            @(isShiftLeader ? "isShiftLeader" : "")
                                                             @(isStillTrainee ? "text-success fw-semibold" : "")
                                                             @(isCurrentShiftLeader ? "currentShiftLeader" : "")
                                                             @(canAssignShift ? "setShiftLeader" : "")
@@ -453,7 +454,7 @@
                     </div>
                 </div>
                 <div class="d-grid">
-                    <a href="#" class="btn bg-primary-subtle text-primary" onclick="addShiftLeader()"><i class="bi bi-plus-circle"></i> Add</a>
+                    <a href="#" class="btn btn-outline-primary" onclick="addShiftLeader()"><i class="bi bi-plus-circle"></i> Add</a>
                 </div>
             </div>
         </div>

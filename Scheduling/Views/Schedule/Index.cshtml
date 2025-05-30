@@ -468,7 +468,9 @@
             $(".setShiftLeader").on("contextmenu", function (e) {
                 e.preventDefault(); // prevent the default browser menu
 
-                if ($(this).hasClass("currentShiftLeader")) {
+                let isCurrentShiftleader = $(this).hasClass("currentShiftLeader");
+
+                if ($(this).hasClass("isShiftLeader") && isCurrentShiftleader) {
                     return;
                 }
 
@@ -480,30 +482,60 @@
                     // Remove any existing menu
                     $(".scheduleMenu").remove();
 
-                    const offset = $(this).offset();
-                    const width = $(this).outerWidth();
-                    const height = $(this).outerHeight();
-
                     // Build the menu
                     const $menu = $("<div>", {
-                        class: "scheduleMenu list-group shadow position-absolute text-nowrap z-3",
+                        class: "scheduleMenu list-group shadow position-absolute text-nowrap",
                         css: {
-                            top: 10 + "px",
-                            left: width + "px"
+                            zIndex: 10
                         }
                     });
 
-                    $("<a>", {
-                        class: "list-group-item list-group-item-action",
-                        href:"#",
-                        html:`Set as shift leader for <strong>${shift} shift</strong>`,
-                        onclick:`setShiftLeader(${userId},'${date}')`
-                    }).appendTo($menu);
+                    if (isCurrentShiftleader) {
+                        $("<a>", {
+                            class: "list-group-item list-group-item-action border border-secondary-subtle",
+                            href:"#",
+                            html:`Unset shift leader for <strong>${shift} shift</strong>`,
+                            onclick:`removeShiftLeader(${userId},'${date}')`
+                        }).appendTo($menu);
+                    } else {
+                        $("<a>", {
+                            class: "list-group-item list-group-item-action border border-secondary-subtle",
+                            href:"#",
+                            html:`Set as shift leader for <strong>${shift} shift</strong>`,
+                            onclick:`setShiftLeader(${userId},'${date}')`
+                        }).appendTo($menu);
+                    }
+
+                    const $target = $(this);
+                    const offset = $target.offset();
+                    const targetWidth = $target.outerWidth() + 5;
+                    const menuWidth = $menu.outerWidth();
+                    const menuHeight = $menu.outerHeight();
+                    const windowWidth = $(window).width();
+                    const windowHeight = $(window).height();
+
+                    // Calculate default position (right of element)
+                    let top = offset.top;
+                    let left = offset.left + targetWidth;
+
+                    // Adjust if it goes off-screen horizontally
+                    if (left + menuWidth > windowWidth) {
+                        left = offset.left - menuWidth;
+                    }
+
+                    // Adjust if it goes off-screen vertically
+                    if (top + menuHeight > windowHeight) {
+                        top = windowHeight - menuHeight - 10;
+                    }
+
+                    // Position and show
+                    $menu.css({
+                        top: top + "px",
+                        left: left + "px"
+                    });
 
                     // Append menu to the parent with position-relative (e.g. td or div)
-                    $(this).parent().append($menu);
-
-                    $(".scheduleMenu").find("input[type=checkbox]").prop("checked", $(this).hasClass("currentShiftLeader"));
+                    $("body").append($menu);
                 }
             });
 
@@ -545,39 +577,6 @@
             // console.log($("#month").val(),$("#year").val());
             $("#downloadForm").submit();
         });
-
-        function printSchedule() {
-            let date = $('#monthPicker').datepicker("getDate");
-            let month = date.getMonth() + 1;
-            let year = date.getFullYear();
-            let departmentId = $("#departmentId").val();
-
-            $.ajax({
-                url: '/Schedule/PrintSchedule',
-                type: 'GET',
-                data: {
-                    month: month,
-                    year: year,
-                    departmentId: departmentId
-                },
-                success: function (response) {
-                    var headstr = "<html><head><title></title></head><body>";
-                    var footstr = "</"+"body></html>";
-                    var newstr = response;
-                    newstr = newstr.replace("sticky-top", ""); // remove sticky-bottom class
-                    newstr = newstr.replace("sticky-bottom", ""); // remove sticky-bottom class
-                    newstr = newstr.replace("control-form", "control-form control-form-sm"); // remove sticky-bottom class
-                    newstr = newstr.replace("table table-borderless", "table table-borderless table-sm"); // remove sticky-bottom class
-                    var oldstr = document.body.innerHTML;
-                    document.body.innerHTML = headstr + newstr + footstr;
-                    window.print();
-                    document.body.innerHTML = oldstr;
-                },
-                error: function () {
-                    alert("Error loading schedule.");
-                }
-            });
-        }
 
         // Search functionality
         $("#searchBox").on("input", function () {
@@ -650,6 +649,27 @@
 
                     // Set as the current shiftleader
                     select.addClass("currentShiftLeader");
+
+                    $(".scheduleMenu").remove();
+                },
+                error: function () {
+                    alert("Error loading schedule.");
+                }
+            });
+        }
+
+        function removeShiftLeader(userId, date) {
+            $.ajax({
+                url: '/Schedule/UnsetShiftLeader',
+                type: 'POST',
+                data: {
+                    userId: userId,
+                    date: date
+                },
+                success: function (response) {
+                    var select = $(`[id='select|${userId}|${date}']`);
+
+                    select.removeClass("currentShiftLeader");
 
                     $(".scheduleMenu").remove();
                 },
