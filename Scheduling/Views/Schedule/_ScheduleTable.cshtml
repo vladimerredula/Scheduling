@@ -214,7 +214,7 @@
                                             {
                                                 if (leave?.Approver_1 == null && leave?.Approver_2 == null)
                                                 {
-                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-custom-class=\"z-3\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
+                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-custom-class=\"z-3\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
                                                     bgClass = "bg-warning bg-opacity-25 leave-pending";
                                                     borderColor = "border-warning";
                                                 }
@@ -222,7 +222,7 @@
                                                 {
                                                     string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i> Approved by " + (leave?.Approver1?.Full_name ?? "");
                                                     string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
-                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-custom-class=\"z-3\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-html=\"true\" data-bs-title=\"Request for {leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
+                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-custom-class=\"z-3\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-html=\"true\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
                                                     bgClass = "bg-success bg-opacity-25 leave-approved";
                                                     borderColor = "border-success";
                                                 }
