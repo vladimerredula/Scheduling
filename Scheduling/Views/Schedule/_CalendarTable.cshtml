@@ -40,15 +40,15 @@
             </div>
             <div class="table-responsive">
                 <table class="table table-bordered border-secondary-subtle text-center" id="calendar" style="table-layout:fixed;">
-                    <thead class="table-light">
+                    <thead>
                         <tr class="text-nowrap">
-                            <th style="width:80px;">Sun</th>
-                            <th style="width:80px;">Mon</th>
-                            <th style="width:80px;">Tue</th>
-                            <th style="width:80px;">Wed</th>
-                            <th style="width:80px;">Thu</th>
-                            <th style="width:80px;">Fri</th>
-                            <th style="width:80px;">Sat</th>
+                            <th class="bg-light-subtle" style="width:80px;">Sun</th>
+                            <th class="bg-light-subtle" style="width:80px;">Mon</th>
+                            <th class="bg-light-subtle" style="width:80px;">Tue</th>
+                            <th class="bg-light-subtle" style="width:80px;">Wed</th>
+                            <th class="bg-light-subtle" style="width:80px;">Thu</th>
+                            <th class="bg-light-subtle" style="width:80px;">Fri</th>
+                            <th class="bg-light-subtle" style="width:80px;">Sat</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -62,14 +62,14 @@
                                     if (cellDay < 1)
                                     {
                                         var prevDate = new DateTime(prevMonth.Year, prevMonth.Month, prevMonthDays + cellDay);
-                                        <td class="text-muted bg-light" style="height:100px;">
+                                        <td class="text-muted bg-light-subtle" style="height:100px;">
                                             <p class="text-start">@prevDate.Day</p>
                                         </td>
                                     }
                                     else if (cellDay > daysInMonth)
                                     {
                                         var nextDate = new DateTime(year, month, 1).AddMonths(1).AddDays(cellDay - daysInMonth - 1);
-                                        <td class="text-muted bg-light" style="height:100px;">
+                                        <td class="text-muted bg-light-subtle" style="height:100px;">
                                             <p class="text-start">@nextDate.Day</p>
                                         </td>
                                     }

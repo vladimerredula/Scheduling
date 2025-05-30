@@ -2,7 +2,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head data-bs-theme="light">
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Scheduling</title>
@@ -19,8 +19,16 @@
 
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>
+        (function () {
+          const theme = localStorage.getItem('theme') || 'auto';
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const resolved = theme === 'auto' ? (prefersDark ? 'dark' : 'light') : theme;
+          document.documentElement.setAttribute('data-bs-theme', resolved);
+        })();
+    </script>
 </head>
-<body>
+<body class="bg-body-secondary text-body">
     @{
         var routeData = ViewContext.RouteData.Values;
         var controller = routeData["controller"]?.ToString();
@@ -30,7 +38,7 @@
     }
 
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm bg-body-tertiary border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Schedule" asp-action="Index">Scheduling</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
@@ -44,7 +52,7 @@
                             if (module.Pages.Count > 1)
                             {
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link text-dark dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="@(module.Module_name)DropdownMenu">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="@(module.Module_name)DropdownMenu">
                                         @module.Module_name
                                     </a>
                                     <ul class="dropdown-menu" aria-labelledby="@(module.Module_name)DropdownMenu">
@@ -57,7 +65,7 @@
                             } else
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="@module.Controller_name" asp-action="@module.Pages.First().Action_name">@module.Pages.First().Page_name</a>
+                                    <a class="nav-link" asp-area="" asp-controller="@module.Controller_name" asp-action="@module.Pages.First().Action_name">@module.Pages.First().Page_name</a>
                                 </li>
                             }
                         }
@@ -71,6 +79,29 @@
                     }
 
                     <ul class="navbar-nav navbar-right">
+                        @* <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="bd-theme" data-bs-toggle="dropdown" data-bs-display="static">
+                                <i id="bd-theme-icon" class="bi"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-text" data-bs-popper="static">
+                                <li>
+                                    <a class="dropdown-item" id="light" data-bs-theme-value="light">
+                                        <i class="bi bi-sun-fill"></i> Light
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" id="dark" data-bs-theme-value="dark">
+                                        <i class="bi bi-moon-stars-fill"></i> Dark
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" id="auto" data-bs-theme-value="auto">
+                                        <i class="bi bi-circle-half"></i> Auto
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <div class="vr mx-2"></div> *@
                         @if (User.Identity.IsAuthenticated)
                         {
                             <li class="nav-item dropdown" id="notifDropdown">
@@ -174,6 +205,46 @@
                 let [message, type] = tempMessage.split("-");
                 showToast(message, type || "success");
             }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggle = document.querySelectorAll('[data-bs-theme-value]');
+            const themeIcon = document.querySelector('#bd-theme i');
+            const themeStorageKey = 'theme';
+            const storedTheme = localStorage.getItem(themeStorageKey) || 'auto';
+
+            // Set the data-bs-theme attribute to the stored or default theme
+            document.documentElement.setAttribute('data-bs-theme', storedTheme);
+
+            // Helper to update active class and icon
+            function updateActiveTheme(theme) {
+                themeToggle.forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.getAttribute('data-bs-theme-value') === theme) {
+                        btn.classList.add('active');
+                    }
+                });
+
+                // Update icon
+                const icons = {
+                    light: 'bi-sun-fill',
+                    dark: 'bi-moon-stars-fill',
+                    auto: 'bi-circle-half'
+                };
+                themeIcon.className = `bi ${icons[theme]}`;
+            }
+
+            updateActiveTheme(storedTheme);
+
+            // Handle theme change
+            themeToggle.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const selectedTheme = btn.getAttribute('data-bs-theme-value');
+                    localStorage.setItem(themeStorageKey, selectedTheme);
+                    document.documentElement.setAttribute('data-bs-theme', selectedTheme);
+                    updateActiveTheme(selectedTheme);
+                });
+            });
         });
     </script>
 
