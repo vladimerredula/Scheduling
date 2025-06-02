@@ -183,6 +183,25 @@
         </div>
     </div>
 
+    <div class="position-fixed end-0 bottom-0 me-4 mb-4">
+        <div class="row">
+            <div class="col align-self-end">
+                <div class="text-bg-info rounded-circle text-center" style="height:50px; width:50px;" title="Help us improve the webapp">
+                    <a href="" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWidthExample" class="text-white"><i class="bi bi-chat-dots fs-2"></i></a>
+                </div>
+            </div>
+            <div class="col px-0">
+                <div class="collapse collapse-horizontal" id="collapseWidthExample">
+                    <div class="card card-body" style="width: 350px;">
+                        <strong> Help us improve the Schedule web app! </strong>
+                        <a href="https://forms.gle/UruKU9ALc2aDKq8F7" target="_blank" class="text-decoration-underline fw-bold stretched-link">Fill out the feedback form</a>
+                        <small>(You can submit anonymously.)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <input id="haserror" value="@(TempData["passerror"] != null ? TempData["passerror"] : "")" hidden />
     
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -207,45 +226,45 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const themeToggle = document.querySelectorAll('[data-bs-theme-value]');
-            const themeIcon = document.querySelector('#bd-theme i');
-            const themeStorageKey = 'theme';
-            const storedTheme = localStorage.getItem(themeStorageKey) || 'auto';
+        // document.addEventListener('DOMContentLoaded', () => {
+        //     const themeToggle = document.querySelectorAll('[data-bs-theme-value]');
+        //     const themeIcon = document.querySelector('#bd-theme i');
+        //     const themeStorageKey = 'theme';
+        //     const storedTheme = localStorage.getItem(themeStorageKey) || 'auto';
 
-            // Set the data-bs-theme attribute to the stored or default theme
-            document.documentElement.setAttribute('data-bs-theme', storedTheme);
+        //     Set the data-bs-theme attribute to the stored or default theme
+        //     document.documentElement.setAttribute('data-bs-theme', storedTheme);
 
-            // Helper to update active class and icon
-            function updateActiveTheme(theme) {
-                themeToggle.forEach(btn => {
-                    btn.classList.remove('active');
-                    if (btn.getAttribute('data-bs-theme-value') === theme) {
-                        btn.classList.add('active');
-                    }
-                });
+        //     Helper to update active class and icon
+        //     function updateActiveTheme(theme) {
+        //         themeToggle.forEach(btn => {
+        //             btn.classList.remove('active');
+        //             if (btn.getAttribute('data-bs-theme-value') === theme) {
+        //                 btn.classList.add('active');
+        //             }
+        //         });
 
-                // Update icon
-                const icons = {
-                    light: 'bi-sun-fill',
-                    dark: 'bi-moon-stars-fill',
-                    auto: 'bi-circle-half'
-                };
-                themeIcon.className = `bi ${icons[theme]}`;
-            }
+        //         Update icon
+        //         const icons = {
+        //             light: 'bi-sun-fill',
+        //             dark: 'bi-moon-stars-fill',
+        //             auto: 'bi-circle-half'
+        //         };
+        //         themeIcon.className = `bi ${icons[theme]}`;
+        //     }
 
-            updateActiveTheme(storedTheme);
+        //     updateActiveTheme(storedTheme);
 
-            // Handle theme change
-            themeToggle.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const selectedTheme = btn.getAttribute('data-bs-theme-value');
-                    localStorage.setItem(themeStorageKey, selectedTheme);
-                    document.documentElement.setAttribute('data-bs-theme', selectedTheme);
-                    updateActiveTheme(selectedTheme);
-                });
-            });
-        });
+        //     Handle theme change
+        //     themeToggle.forEach(btn => {
+        //         btn.addEventListener('click', () => {
+        //             const selectedTheme = btn.getAttribute('data-bs-theme-value');
+        //             localStorage.setItem(themeStorageKey, selectedTheme);
+        //             document.documentElement.setAttribute('data-bs-theme', selectedTheme);
+        //             updateActiveTheme(selectedTheme);
+        //         });
+        //     });
+        // });
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
