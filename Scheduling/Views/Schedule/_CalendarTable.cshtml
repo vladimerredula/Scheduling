@@ -157,7 +157,9 @@
                                             }
                                             <p class="position-absolute start-0 top-0 w-100 h-100 text-start p-2 mb-0 @borderClass @(hasLeave ? bgClass : "")
                                                 @(hasLeave && (leave?.Day_type != "FullDay") && leave?.Status == "Approved" ? "z-1" : "z-2")">
-                                                <span class="@(isCurrentDay ? "bg-primary text-white rounded-circle font-monospace fw-bold p-1" : "")">@cellDay</span>
+                                                <span class="@(isCurrentDay ? "bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center fw-bold" : "")" style="width: 1.5rem; height: 1.5rem;">
+                                                    @cellDay
+                                                </span>
                                             </p>
 
                                             @if (schedule?.Comment == "cancelled")

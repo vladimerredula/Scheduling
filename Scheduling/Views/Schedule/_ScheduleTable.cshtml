@@ -52,7 +52,10 @@
                     <h3>@firstDay.ToString("MMMM yyyy")</h3>
                 </div>
                 <div class="col-auto">
-                    <a class="btn btn-light border me-2" id="viewSl" title="View Shift leaders for this month">Shift leaders</a>
+                    @if (canAssignShift)
+                    {
+                        <a class="btn btn-light border me-2" id="viewSl" title="View Shift leaders for this month">Shift leaders</a>
+                    }
                     <a class="btn btn-light border me-2" id="reloadBtn" title="Reload schedule"><i class="bi bi-arrow-clockwise"></i></a>
                     @if (_template.HasPermission("MonthNav"))
                     {
