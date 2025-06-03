@@ -23,7 +23,7 @@ namespace Scheduling.Services
                 return null;
 
             var modules = _db.Users
-                .Where(u => u.Personnel_ID == userId)
+                .Where(u => u.Personnel_ID == userId && u.Template.App_name == "SCH")
                 .Include(u => u.Template)
                     .ThenInclude(t => t.Modules)
                         .ThenInclude(m => m.Pages)

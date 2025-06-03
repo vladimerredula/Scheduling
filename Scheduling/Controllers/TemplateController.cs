@@ -34,6 +34,7 @@ namespace Scheduling.Controllers
                 .Include(t => t.Modules)
                     .ThenInclude(t => t.Pages)
                         .ThenInclude(t => t.Components)
+                .Where(t => t.App_name == "SCH")
                 .AsSplitQuery()
                 .Select(t => new {
                     t.Template_ID,
@@ -91,7 +92,8 @@ namespace Scheduling.Controllers
             // Create a new template
             var template = new Template
             {
-                Template_name = Template_name
+                Template_name = Template_name,
+                App_name = "SCH"
             };
 
             // Save the template
