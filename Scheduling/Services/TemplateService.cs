@@ -1,8 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Scheduling.Models.Templates;
 
 namespace Scheduling.Services
 {
+    [Authorize]
     public class TemplateService
     {
         private readonly ApplicationDbContext _db;
@@ -36,6 +39,7 @@ namespace Scheduling.Services
                     Pages = m.Pages.Select(p => new Page
                     {
                         Page_name = p.Page.Page_name,
+                        Controller_name = p.Page.Controller_name,
                         Action_name = p.Page.Action_name,
                         Components = p.Components.Select(c => new Component
                         {
@@ -90,9 +94,8 @@ namespace Scheduling.Services
                 return new List<Component>();
 
             var components = modules
-                .Where(m => m.Controller_name == controller)
                 .SelectMany(m => m.Pages)
-                .Where(p => p.Action_name == action)
+                .Where(p => p.Controller_name == controller && p.Action_name == action)
                 .SelectMany(p => p.Components)
                 .ToList();
 

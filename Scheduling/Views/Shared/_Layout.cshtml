@@ -20,12 +20,12 @@
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script>
-        (function () {
-          const theme = localStorage.getItem('theme') || 'auto';
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const resolved = theme === 'auto' ? (prefersDark ? 'dark' : 'light') : theme;
-          document.documentElement.setAttribute('data-bs-theme', resolved);
-        })();
+        // (function () {
+        //   const theme = localStorage.getItem('theme') || 'auto';
+        //   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        //   const resolved = theme === 'auto' ? (prefersDark ? 'dark' : 'light') : theme;
+        //   document.documentElement.setAttribute('data-bs-theme', resolved);
+        // })();
     </script>
 </head>
 <body class="bg-body-secondary text-body">
@@ -58,14 +58,14 @@
                                     <ul class="dropdown-menu" aria-labelledby="@(module.Module_name)DropdownMenu">
                                         @foreach (var templatePage in module.Pages)
                                         {
-                                            <li><a asp-controller="@module.Controller_name" asp-action="@templatePage.Action_name" class="dropdown-item">@templatePage.Page_name</a></li>
+                                            <li><a asp-controller="@templatePage.Controller_name" asp-action="@templatePage.Action_name" class="dropdown-item">@templatePage.Page_name</a></li>
                                         }
                                     </ul>
                                 </li>
                             } else
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="@module.Controller_name" asp-action="@module.Pages.First().Action_name">@module.Pages.First().Page_name</a>
+                                    <a class="nav-link" asp-area="" asp-controller="@module.Pages.First().Controller_name" asp-action="@module.Pages.First().Action_name">@module.Pages.First().Page_name</a>
                                 </li>
                             }
                         }
@@ -183,7 +183,7 @@
         </div>
     </div>
 
-    <div class="position-fixed end-0 bottom-0 me-4 mb-4">
+    <div class="position-fixed end-0 bottom-0 me-4 mb-4" style="z-index:10;">
         <div class="row">
             <div class="col align-self-end">
                 <div class="text-bg-info rounded-circle text-center" style="height:50px; width:50px;" title="Help us improve the webapp">

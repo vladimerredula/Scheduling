@@ -10,6 +10,7 @@ namespace Scheduling.Models.Templates
         [Required]
         [Display(Name = "Template name")]
         public string Template_name { get; set; }
+        public string App_name { get; set; }
 
         public ICollection<Template_module> Modules { get; set; } = new List<Template_module>();
     }

@@ -8,6 +8,7 @@ namespace Scheduling.Models.Templates
         [Key]
         public int Page_ID { get; set; }
         public string? Page_name { get; set; }
+        public string? Controller_name { get; set; }
         public string? Action_name { get; set; }
         public string? Route_data { get; set; }
 
