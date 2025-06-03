@@ -144,9 +144,11 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
-
 app.UseAuthorization();
+
 app.UseSession();
+
+app.UseMiddleware<SessionTrackingMiddleware>();
 
 app.MapControllerRoute(
     name: "default",

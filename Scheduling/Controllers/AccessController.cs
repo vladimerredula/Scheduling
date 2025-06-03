@@ -107,6 +107,9 @@ namespace Scheduling.Controllers
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity), properties);
 
+                // Force session creation by setting a value
+                HttpContext.Session.SetString("SessionInitialized", "true");
+
                 await _log.LogInfoAsync("Logged in", usernameOverride: userdetails.Username);
 
                 return RedirectToAction("Index", "Access");
@@ -117,7 +120,14 @@ namespace Scheduling.Controllers
 
         public async Task<IActionResult> Logout()
         {
-            ClaimsPrincipal claimUser = HttpContext.User;
+            var sessionId = HttpContext.Session.Id;
+            var session = await _db.Sessions.FindAsync(sessionId);
+            if (session != null)
+            {
+                _db.Sessions.Remove(session);
+                await _db.SaveChangesAsync();
+            }
+
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             HttpContext.Session.Clear();

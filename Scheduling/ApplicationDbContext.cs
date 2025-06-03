@@ -26,6 +26,8 @@ namespace Scheduling
         public DbSet<Template_page> Template_pages { get; set; }
         public DbSet<Template_component> Template_components { get; set; }
 
+        public DbSet<Session> Sessions { get; set; }
+
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
     }
 }

@@ -1,0 +1,62 @@
+﻿@model List<Session>
+
+@{
+    ViewData["Title"] = "Active Sessions";
+}
+
+<div class="container">
+    <h1 class="mb-4">@ViewData["Title"]</h1>
+
+    <div class="card p-3 border-0 shadow-sm">
+        <table class="table table-hover" id="sessionTable">
+            <thead>
+                <tr>
+                    <th>
+                        Session ID
+                    </th>
+                    <th>
+                        IP Address
+                    </th>
+                    <th>
+                        User
+                    </th>
+                    <th>
+                        User Agent
+                    </th>
+                    <th>
+                        Last Active
+                    </th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        var table = $('#sessionTable').DataTable({
+            ajax: {
+                url: '@Url.Action("GetActiveUsers", "Session")',
+                dataSrc: ''
+            },
+            columns: [
+                { data: 'session_ID' },
+                { data: 'ip_address' },
+                { data: 'full_name' },
+                { data: 'user_agent' },
+                { data: 'last_activity' },
+            ],
+            order: [[4, 'asc']]
+        });
+
+        $(document).ready(function () {
+
+        setInterval(function () {
+            table.ajax.reload(null, false); // false to keep current pagination
+        }, 1000); // 60000 ms = 1 minute
+        });
+    </script>
+}
