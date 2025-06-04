@@ -4,6 +4,7 @@ using Scheduling;
 using Scheduling.Services;
 using NReco.Logging.File;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddTransient<ExcelService>();
 
 builder.Services.AddScoped(typeof(LogService<>));
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownProxies.Add(IPAddress.Parse("127.0.0.1")); // or your Nginx IP
+});
 
 // Add authentication services
 builder.Services.AddAuthentication(
@@ -137,6 +144,8 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+app.UseForwardedHeaders();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

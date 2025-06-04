@@ -19,6 +19,7 @@ namespace Scheduling.Services
                 var userId = context.User.FindFirst("Personnelid")?.Value;
                 var sessionId = context.Session.Id;
                 var ip = context.Connection.RemoteIpAddress?.ToString();
+                if (ip == "::1") ip = "127.0.0.1";
                 var userAgent = context.Request.Headers["User-Agent"].ToString();
 
                 if (int.TryParse(userId, out var personnelId))
@@ -32,23 +33,14 @@ namespace Scheduling.Services
                     }
                     else
                     {
-                        var sessionbypid = await db.Sessions.FirstOrDefaultAsync(s => s.Personnel_ID == personnelId);
-                        if (sessionbypid != null)
+                        db.Sessions.Add(new Session
                         {
-                            sessionbypid.Last_activity = DateTime.Now;
-                            sessionbypid.Ip_address = ip;
-                            sessionbypid.User_agent = userAgent;
-                        } else
-                        {
-                            db.Sessions.Add(new Session
-                            {
-                                Session_ID = sessionId,
-                                Personnel_ID = personnelId,
-                                Ip_address = ip,
-                                User_agent = userAgent,
-                                Last_activity = DateTime.Now
-                            });
-                        }
+                            Session_ID = sessionId,
+                            Personnel_ID = personnelId,
+                            Ip_address = ip,
+                            User_agent = userAgent,
+                            Last_activity = DateTime.Now
+                        });
                     }
 
                     await db.SaveChangesAsync();

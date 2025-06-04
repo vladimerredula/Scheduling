@@ -108,7 +108,7 @@ namespace Scheduling.Controllers
                     new ClaimsPrincipal(claimsIdentity), properties);
 
                 // Force session creation by setting a value
-                HttpContext.Session.SetString("SessionInitialized", "true");
+                HttpContext.Session.SetString("SessionInitialized", HttpContext.Session.Id);
 
                 await _log.LogInfoAsync("Logged in", usernameOverride: userdetails.Username);
 
