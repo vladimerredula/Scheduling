@@ -4,7 +4,7 @@ using Scheduling;
 using Scheduling.Services;
 using NReco.Logging.File;
 using Microsoft.AspNetCore.DataProtection;
-//using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
 using Scheduling.Helpers;
 
@@ -25,11 +25,11 @@ builder.Services.AddScoped(typeof(LogService<>));
 
 
 // use if server is behind proxy
-//builder.Services.Configure<ForwardedHeadersOptions>(options =>
-//{
-//    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-//    options.KnownProxies.Add(IPAddress.Parse("192.168.161.112")); // or your Nginx IP
-//});
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownProxies.Add(IPAddress.Parse("192.168.161.112")); // or your Nginx IP
+});
 
 // Add authentication services
 builder.Services.AddAuthentication(

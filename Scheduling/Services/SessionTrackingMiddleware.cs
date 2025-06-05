@@ -18,7 +18,10 @@ namespace Scheduling.Services
             {
                 var userId = context.User.FindFirst("Personnelid")?.Value;
                 var sessionId = context.Session.Id;
-                var ip = context.Connection.RemoteIpAddress?.ToString();
+
+                var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                      ?? context.Connection.RemoteIpAddress?.ToString();
+
                 if (ip == "::1") ip = "127.0.0.1";
                 var userAgent = context.Request.Headers["User-Agent"].ToString();
 
