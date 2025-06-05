@@ -5,6 +5,7 @@ using Scheduling.Services;
 using NReco.Logging.File;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Scheduling.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +56,9 @@ builder.Services.AddDataProtection()
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<TemplateService>();
+
+// Helpers
+builder.Services.AddScoped<ScheduleHelper>();
 
 builder.Logging.AddFile(builder.Configuration.GetSection("Logging:File"), fileLoggerOpts =>
 {
