@@ -40,8 +40,6 @@ namespace Scheduling.Controllers
             ViewBag.LeaveTypes = await GetLeaveTypes();
             ViewBag.Departments = new SelectList(await GetDepartments(), "Department_ID", "Department_name", departmentId);
 
-            await _log.LogInfoAsync("Visited schedules");
-
             return View((month, year));
         }
 
@@ -146,8 +144,6 @@ namespace Scheduling.Controllers
             if (year == 0) year = today.Year;
 
             ViewBag.LeaveTypes = await GetLeaveTypes();
-
-            await _log.LogInfoAsync("Visited calendar");
 
             return View((month, year));
         }
