@@ -52,6 +52,9 @@
                             @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
                         </th>
                         <th>
+                            @Html.DisplayNameFor(model => model.Day_type)
+                        </th>
+                        <th>
                             @Html.DisplayNameFor(model => model.Status)
                         </th>
                         <th>
@@ -59,9 +62,6 @@
                         </th>
                         <th>
                             @Html.DisplayNameFor(model => model.Date_approved_1)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.Approver_2)
                         </th>
                         <th>
                             @Html.DisplayNameFor(model => model.Message)
@@ -82,6 +82,20 @@
                             </td>
                             <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td class="td-control">
+                                @switch (item.Day_type)
+                                {
+                                    case "HalfDay1":
+                                        <span>First half of day</span>
+                                        break;
+                                    case "HalfDay2":
+                                        <span>Second half of day</span>
+                                        break;
+                                    default:
+                                        <span>Full day</span>
+                                        break;
+                                }
                             </td>
                             <td class="td-control">
                                 @{
@@ -105,12 +119,6 @@
                             </td>
                             <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Date_approved_1)
-                            </td>
-                            <td class="td-control">
-                                @if (item?.Approver_2 != null)
-                                {
-                                    <i class="bi bi-check-circle text-success"></i> @Html.DisplayFor(modelItem => item.Approver2.Full_name)
-                                }
                             </td>
                             <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Message)
@@ -144,6 +152,9 @@
                         </th>
                         <th>
                             @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Day_type)
                         </th>
                         <th>
                             @Html.DisplayNameFor(model => model.Message)
@@ -182,6 +193,20 @@
                             </td>
                             <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td class="td-control">
+                                @switch (item.Day_type)
+                                {
+                                    case "HalfDay1":
+                                        <span>First half of day</span>
+                                        break;
+                                    case "HalfDay2":
+                                        <span>Second half of day</span>
+                                        break;
+                                    default:
+                                        <span>Full day</span>
+                                        break;
+                                }
                             </td>
                             <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Message)
@@ -628,7 +653,7 @@
                         width: '20px'
                     },
                     {
-                        targets: [6,8],
+                        targets: [7,8],
                         visible: false,
                         searchable: true
                     },
@@ -652,7 +677,7 @@
                         width: '20px'
                     },
                     {
-                        targets: [4,7,9,10],
+                        targets: [5,8,10,11],
                         visible: false,
                         searchable: false
                     }

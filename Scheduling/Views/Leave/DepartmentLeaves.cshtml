@@ -68,6 +68,9 @@
                         <th class="text-nowrap">
                             @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
                         </th>
+                        <th class="text-nowrap">
+                            @Html.DisplayNameFor(model => model.Day_type)
+                        </th>
                         <th>
                             @Html.DisplayNameFor(model => model.Message)
                         </th>
@@ -99,6 +102,20 @@
                             </td>
                             <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td class="td-control">
+                                @switch (item.Day_type)
+                                {
+                                    case "HalfDay1":
+                                        <span>First half of day</span>
+                                        break;
+                                    case "HalfDay2":
+                                        <span>Second half of day</span>
+                                        break;
+                                    default:
+                                        <span>Full day</span>
+                                        break;
+                                }
                             </td>
                             <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Message)
@@ -164,6 +181,9 @@
                             @Html.DisplayNameFor(model => model.Leave_type.Leave_type_name)
                         </th>
                         <th>
+                            @Html.DisplayNameFor(model => model.Day_type)
+                        </th>
+                        <th>
                             @Html.DisplayNameFor(model => model.Message)
                         </th>
                         <th>
@@ -205,6 +225,20 @@
                             </td>
                             <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Leave_type.Leave_type_name)
+                            </td>
+                            <td class="td-control">
+                                @switch (item.Day_type)
+                                {
+                                    case "HalfDay1":
+                                        <span>First half of day</span>
+                                        break;
+                                    case "HalfDay2":
+                                        <span>Second half of day</span>
+                                        break;
+                                    default:
+                                        <span>Full day</span>
+                                        break;
+                                }
                             </td>
                             <td class="td-control">
                                 @Html.DisplayFor(modelItem => item.Message)
@@ -809,15 +843,23 @@
                         width: '20px'
                     },
                     {
-                        targets: [5,8],
+                        targets: [5,6,9],
                         visible: false,
                         searchable: true
                     },
                     {
-                        targets: 9,
+                        targets: 8,
+                        visible: true,
+                        searchable: false
+                    },
+                    {
+                        targets: 10,
                         searchable: false,
-                        orderable: false
                     }
+                ],
+                order: [
+                    [10, 'asc'],
+                    [2, 'desc']
                 ]
             });
         }
@@ -833,10 +875,14 @@
                         width: '20px'
                     },
                     {
-                        targets: [5,7,8,9,10,11],
+                        targets: [6,8,9,10,11,12],
                         visible: false,
                         searchable: true
                     }
+                ],
+                order: [
+                    [11, 'desc'],
+                    [2, 'desc']
                 ]
             });
         }

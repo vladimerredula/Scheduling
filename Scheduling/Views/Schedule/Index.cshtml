@@ -166,6 +166,11 @@
                     <dd class="col-sm-9" id="leaveType">
                     </dd>
                     <dt class="col-sm-3 text-end">
+                        Day type
+                    </dt>
+                    <dd class="col-sm-9" id="dayType">
+                    </dd>
+                    <dt class="col-sm-3 text-end">
                         Date
                     </dt>
                     <dd class="col-sm-9" id="date">
@@ -211,6 +216,11 @@
                             Leave type
                         </dt>
                         <dd class="col-sm-9" id="denyLeaveType">
+                        </dd>
+                        <dt class="col-sm-3 text-end">
+                            Day type
+                        </dt>
+                        <dd class="col-sm-9" id="denyDayType">
                         </dd>
                         <dt class="col-sm-3 text-end">
                             Date
@@ -969,7 +979,16 @@
                 success: function (response) {
                     $("#name").text(response.name);
                     $("#leaveType").text(response.leave_type_name);
-                    $("#date").text(`${response.date_start} to ${response.date_end}`);
+                    $("#dayType").text(response.day_type_name);
+
+                    let data = "";
+                    if (response.date_start == response.date_end) {
+                        date = response.date_start;
+                    } else {
+                        date = `${response.date_start} to ${response.date_end}`;
+                    }
+
+                    $("#date").text(date);
                     $("#message").text(response.message);
 
                     $("#approveBtn").attr("href", `/Leave/Approve1/${response.leave_ID}`);
@@ -995,6 +1014,7 @@
             console.log("Yes");
             $("#denyName").text($("#name").text());
             $("#denyLeaveType").text($("#leaveType").text());
+            $("#denyDayType").text($("#dayType").text());
             $("#denyDate").text($("#date").text());
             $("#denyMessage").text($("#message").text());
             $("#denyID").val($(this).data("id"));

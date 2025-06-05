@@ -335,6 +335,21 @@ namespace Scheduling.Controllers
 
             if (leave == null) return NotFound();
 
+            var dayType = string.Empty;
+
+            switch (leave?.Day_type)
+            {
+                case "HalfDay1":
+                    dayType = "First half of day";
+                    break;
+                case "HalfDay2":
+                    dayType = "Second half of day";
+                    break;
+                default:
+                    dayType = "Full day";
+                    break;
+            }
+
             return Ok(new
             {
                 Name = leave.User.Full_name,
@@ -345,6 +360,7 @@ namespace Scheduling.Controllers
                 Date_start = leave?.Date_start_string,
                 Date_end = leave?.Date_end_string,
                 Day_type = leave?.Day_type,
+                Day_type_name = dayType,
                 Message = leave?.Message,
                 Approver_1 = leave?.Approver_1,
                 Approver_1_name = leave?.Approver1?.Full_name,
