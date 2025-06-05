@@ -4,7 +4,8 @@ using Scheduling;
 using Scheduling.Services;
 using NReco.Logging.File;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.HttpOverrides;
+//using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 using Scheduling.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,11 +23,13 @@ builder.Services.AddTransient<ExcelService>();
 
 builder.Services.AddScoped(typeof(LogService<>));
 
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownProxies.Add(IPAddress.Parse("127.0.0.1")); // or your Nginx IP
-});
+
+// use if server is behind proxy
+//builder.Services.Configure<ForwardedHeadersOptions>(options =>
+//{
+//    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+//    options.KnownProxies.Add(IPAddress.Parse("192.168.161.112")); // or your Nginx IP
+//});
 
 // Add authentication services
 builder.Services.AddAuthentication(
@@ -46,7 +49,7 @@ builder.Services.AddSession(options =>
     options.Cookie.Name = ".Scheduling.Session";
     options.Cookie.HttpOnly = true; // Ensure session cookie is not accessible to client-side scripts
     options.Cookie.IsEssential = true; // Indicate that the session cookie is essential for the application
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Send session cookie only over HTTPS
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Send session cookie only over HTTPS. Set None if not
     options.IdleTimeout = TimeSpan.FromMinutes(30); // Session timeout set to 30 minutes
 });
 
