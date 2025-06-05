@@ -1,4 +1,4 @@
-﻿@model (List<User> Users, List<Schedule> Schedules, List<Leave> Leaves, int month, int year)
+﻿@model (int month, int year)
 @{
     ViewData["Title"] = "Schedules";
 
@@ -50,6 +50,7 @@
         let previousValue;
 
         $(document).ready(function (){
+            loadSchedule(@Model.month, @Model.year);
             initializePopovers();
 
             $('#monthPicker').datepicker({

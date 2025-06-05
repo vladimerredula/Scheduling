@@ -26,7 +26,7 @@ namespace Scheduling.Controllers
 
             var activeUsers = await _db.Sessions
                 .Include(s => s.User)
-                .Where(s => s.Last_activity >= threshold && s.Personnel_ID != 0)
+                .Where(s => s.Last_activity >= threshold)
                 .OrderByDescending(s => s.Last_activity)
                 .Select(s => new
                 {

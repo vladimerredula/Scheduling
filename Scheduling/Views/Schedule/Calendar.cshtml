@@ -1,4 +1,4 @@
-﻿@model (List<Schedule> Schedules, List<Leave> Leaves, int Month, int Year)
+﻿@model (int Month, int Year)
 
 @{
     ViewData["Title"] = "Calendar";
@@ -107,6 +107,7 @@
     }
     <script>
         $(document).ready(function (){
+            loadSchedule(@Model.Month, @Model.Year);
             initializePopovers();
             // adjustTableColumns();
 
