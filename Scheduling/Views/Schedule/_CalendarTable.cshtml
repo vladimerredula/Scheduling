@@ -33,9 +33,7 @@
                     </div>
                 }
                 <div class="col text-center">
-                    <h4 class="text-center">
-                        @firstDay.ToString("MMMM yyyy")
-                    </h4>
+                    <span class="fs-3 fw-semibold">@firstDay.ToString("MMMM yyyy")</span>
                 </div>
                 @if (_template.HasPermission("MonthNav"))
                 {
@@ -161,7 +159,7 @@
                                                     <p class="mt-2 @(isCurrentDay ? "fs-2" : "fs-3")">@schedule?.Time_in?.ToString(@"hh\:mm") - @schedule?.Time_out?.ToString(@"hh\:mm")</p>
                                                 } else
                                                 {
-                                                    <p class="mb-0 position-absolute start-0 w-100 @(isCurrentDay ? "fs-2" : "fs-3") @(hasLeave && (leave?.Day_type != "FullDay") ? "z-2" : "z-1")">@schedule?.Shift?.Shift_name</p>
+                                                    <p class="mb-0 position-absolute top-50 start-50 translate-middle @(isCurrentDay ? "fs-2" : "fs-3") @(hasLeave && (leave?.Day_type != "FullDay") ? "z-2" : "z-1")">@schedule?.Shift?.Shift_name</p>
                                                 }
                                             }
                                             <p class="position-absolute start-0 top-0 w-100 h-100 text-start p-2 mb-0 @borderClass @(hasLeave ? bgClass : "")

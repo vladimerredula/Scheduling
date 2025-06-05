@@ -35,13 +35,6 @@
     <div class="col mb-3">
         <div class="card p-3">
 
-            <!-- Spinner -->
-            <div id="loading-spinner" class="position-absolute top-50 start-50 z-3 d-none">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-
             <!-- Month Header Navigation -->
             <div class="row justify-content-between mb-3">
 
@@ -52,7 +45,7 @@
                     }
                 </div>
                 <div class="col text-center">
-                    <h3>@firstDay.ToString("MMMM yyyy")</h3>
+                    <span class="fs-3 fw-semibold">@firstDay.ToString("MMMM yyyy")</span>
                 </div>
                 <div class="col-auto">
                     @if (canAssignShift)
@@ -214,7 +207,7 @@
                                             // Leave coloring and borders
                                             if (leave?.Status == "Approved" && shiftId != 0)
                                             {
-                                                leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-custom-class='as' data-bs-trigger='hover' data-bs-html='true' data-bs-content='<strong>{(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}</strong>' tabindex='0'";
+                                                leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='hover' data-bs-html='true' data-bs-content='<strong>{(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}</strong>' tabindex='0'";
                                                 bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient leave-{leave?.Leave_type_ID} {leave?.Day_type}";
                                             }
 
@@ -222,7 +215,7 @@
                                             {
                                                 if (leave?.Approver_1 == null && leave?.Approver_2 == null)
                                                 {
-                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-custom-class=\"z-3\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
+                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
                                                     bgClass = "bg-warning bg-opacity-25 leave-pending";
                                                     borderColor = "border-warning";
                                                 }
@@ -230,7 +223,7 @@
                                                 {
                                                     string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i> Approved by " + (leave?.Approver1?.Full_name ?? "");
                                                     string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
-                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-custom-class=\"z-3\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-html=\"true\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
+                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-html=\"true\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
                                                     bgClass = "bg-success bg-opacity-25 leave-approved";
                                                     borderColor = "border-success";
                                                 }

@@ -6,20 +6,20 @@
 }
 
 <div class="container">
-    <h2 class="mb-0">@ViewData["Title"]</h2>
+    <h1 class="mb-0">@ViewData["Title"]</h1>
     <p class="mb-3"><a asp-action="Index">View all schedules</a></p>
-    <div class="row mb-3 justify-content-between">
+    <div class="row mb-2 justify-content-between">
         <!-- Month Selection -->
-        <div class="col-auto">
+        <div class="col-auto mb-2">
             @if (_template.HasPermission("MonthSelect"))
             {
                 <input type="text" class="form-control" id="monthPicker">
             }
         </div>
-        <div class="col-auto align-self-end">
+        <div class="col-auto align-self-end mb-2 hstack gap-2">
             @if (_template.HasPermission("LeaveBtn"))
             {
-                <a class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
+                <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveModal">Apply for leave</a>
             }
             @if (_template.HasPermission("LegendBtn"))
             {
@@ -27,8 +27,8 @@
             }
         </div>
     </div>
+
     <div id="calendarTable">
-        <partial name="_CalendarTable"/>
     </div>
 </div>
 
@@ -258,16 +258,7 @@
             }
         });
 
-        function showSpinner() {
-            $("#loading-spinner").removeClass("d-none");
-        }
-
-        function hideSpinner() {
-            $("#loading-spinner").addClass("d-none");
-        }
-
         function loadSchedule(month, year) {
-            showSpinner();
             $.ajax({
                 url: '/Schedule/GetCalendar',
                 type: 'GET',
@@ -277,7 +268,6 @@
                 },
                 success: function (response) {
                     $("#calendarTable").html(response);
-                    hideSpinner();
                     initializeToggleLegends(); // Reinitialize the toggle legends button
                     initializePopovers();
                     // adjustTableColumns();

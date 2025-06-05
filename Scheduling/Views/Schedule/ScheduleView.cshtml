@@ -39,8 +39,15 @@
         </div>
     </div>
 
+
+    <!-- Spinner -->
+    <div id="loading-spinner" class="position-absolute top-50 start-50 z-3 d-none">
+        <button class="btn btn-secondary rounded-circle pt-2 pb-1 px-2 type="button" disabled>
+            <span class="spinner-border" aria-hidden="true"></span>
+        </button>
+    </div>
+
     <div id="scheduleTable">
-        <partial name="_ScheduleView" />
     </div>
 </div>
 
@@ -67,7 +74,7 @@
 
             adjustTableColumns();
             initializeToggleLegends(); // Initialize the toggle legends button
-            $(window).on('resize', adjustTableColumns); // Optional: handle resizing
+            $(window).on('resize', adjustTableColumns); // Handle resizing
 
             $('.fullscreenBtn').on('click', function () {
                 const scheduleContainer = $("#viewSchedule").get(0); // Get the native DOM element
@@ -98,11 +105,10 @@
             });
 
             setInterval(() => {
-                // Your code to run every 1 minute
                 console.log("Running refresh");
                 let date = $('#monthPicker').datepicker("getDate");
                 loadSchedule(date.getMonth() + 1, date.getFullYear());
-            }, 300000);
+            }, 300000); // run every 5 minutes
         });
 
         function adjustTableColumns() {
@@ -183,9 +189,17 @@
             }
         });
 
+        function showSpinner() {
+            $("#loading-spinner").removeClass("d-none");
+        }
+
+        function hideSpinner() {
+            $("#loading-spinner").addClass("d-none");
+        }
+
         function loadSchedule(month, year) {
             let departmentId = $("#departmentId").val();
-
+            showSpinner();
             $.ajax({
                 url: '/Schedule/LoadScheduleView',
                 type: 'GET',
@@ -199,6 +213,7 @@
                     adjustTableColumns();
                     initializeToggleLegends(); // Reinitialize the toggle legends button
                     initializePopovers();
+                    hideSpinner();
                 },
                 error: function () {
                     alert("Error loading schedule.");
