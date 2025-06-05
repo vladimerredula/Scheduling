@@ -1,8 +1,8 @@
-﻿@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
+﻿@model (List<User> Users, List<Schedule> Schedules, List<Leave> Leaves, int month, int year)
 @{
     ViewData["Title"] = "Schedules";
 
-    var leaves = ViewBag.LeaveTypes as List<Leave_type> ?? new List<Leave_type>();
+    var leaveTypes = ViewBag.LeaveTypes as List<Leave_type> ?? new List<Leave_type>();
 
     // Permissions
     var deptSelect = _template.HasPermission("DeptSelect");
@@ -91,7 +91,7 @@
                             <label class="form-label">Leave type</label><span class="text-danger" title="Required">*</span>
                             <select name="Leave_type_ID" id="Leave_type_ID" class="form-select" data-val="true" data-val-required="The Leave type field is required." required>
                                 <option value="" disabled selected>Choose..</option>
-                                @foreach (var leave in leaves)
+                                @foreach (var leave in leaveTypes)
                                 {
                                     <option value="@leave.Leave_type_ID">@leave.Leave_type_name</option>
                                 }

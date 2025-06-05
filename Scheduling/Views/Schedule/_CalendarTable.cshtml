@@ -1,9 +1,15 @@
-﻿@model (List<Schedule> Schedules, List<Shift> Shifts, List<Leave> Leaves, List<Holiday> Holidays, int Month, int Year)
+﻿@model (List<Schedule> Schedules, List<Leave> Leaves, int Month, int Year)
 
 @{
     var year = Model.Year;
     var month = Model.Month;
+    var leaves = Model.Leaves;
     var userSchedules = Model.Schedules;
+
+    var holidays = ViewBag.Holidays as List<Holiday> ?? new List<Holiday>();
+    var shifts = ViewBag.Shifts as List<Shift> ?? new List<Shift>();
+    var leaveTypes = ViewBag.LeaveTypes as List<Leave_type> ?? new List<Leave_type>();
+
     var firstDay = new DateTime(year, month, 1);
     var daysInMonth = DateTime.DaysInMonth(year, month);
     var startDayOfWeek = (int)firstDay.DayOfWeek;
@@ -80,14 +86,17 @@
                                         bool isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
                                         var isCurrentDay = today.Date == date.Date;
 
-                                        var schedule = Model.Schedules.FirstOrDefault(s => s.Date == date);
+                                        var schedule = userSchedules.FirstOrDefault(s => s.Date == date);
                                         int shiftId = schedule?.Shift_ID ?? 0;
 
-                                        var leave = Model.Leaves.FirstOrDefault(l => date >= l.Date_start && date <= l.Date_end);
+                                        var leave = leaves.FirstOrDefault(l => date >= l.Date_start && date <= l.Date_end);
                                         bool hasLeave = leave != null;
+                                        string leaveTypeName = hasLeave
+                                            ? leaveTypes.FirstOrDefault(l => l.Leave_type_ID == leave?.Leave_type_ID)?.Leave_type_name ?? string.Empty
+                                            : string.Empty;
                                         string leavePopover = string.Empty;
 
-                                        var holiday = Model.Holidays.FirstOrDefault(h => h.Date == date);
+                                        var holiday = holidays.FirstOrDefault(h => h.Date == date);
                                         bool isHoliday = holiday != null;
                                         bool isCompanyHoliday = holiday?.Type == "Company";
 
@@ -105,7 +114,7 @@
                                         // Leave coloring and borders
                                         if (hasLeave && leave?.Status == "Approved" && shiftId != 0)
                                         {
-                                            leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{(leave?.Day_type != "FullDay" ? "Half day " : "")}{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'";
+                                            leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='focus hover' data-bs-html='true' data-bs-content='<strong>{(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}</strong>' tabindex='0'";
                                             bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient {leave?.Day_type}";
                                         }
 
@@ -113,7 +122,7 @@
                                         {
                                             if (leave?.Approver_1 == null)
                                             {
-                                                leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
+                                                leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
                                                 bgClass = "bg-warning bg-opacity-25";
                                                 borderColor = "border-warning";
                                             }
@@ -121,7 +130,7 @@
                                             {
                                                 string contentHtml = $"<i class='bi bi-check-circle me-1 text-success'></i>Approved: {leave?.Approver1?.Full_name ?? ""}</br><span class='text-secondary fw-italic'>- Needs final approval from HR</span>";
                                                 string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
-                                                leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-html=\"true\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leave?.Leave_type?.Leave_type_name}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
+                                                leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"focus hover\" data-bs-html=\"true\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
                                                 bgClass = "bg-success bg-opacity-25";
                                                 borderColor = "border-success";
                                             }
@@ -180,73 +189,43 @@
         </div>
     </div>
     <div class="col-12 col-xxl-2" id="legendsAndShifts" style="display:none;">
-        <div class="row mb-3">
-            <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                <div class="card p-4">
-                    <small class="text-body-secondary mb-2">Leave applications</small>
-                    <small class="mb-2"><small class="bg-warning-subtle border border-2 border-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</small>
-                    <small class="mb-3"><small class="bg-success-subtle border border-2 border-success rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</small>
-                    <small class="text-body-secondary mb-2">Reflected leaves</small>
-                    <small class="mb-2"><span class="bg-warning rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Business trip</small>
-                    <small class="mb-2"><span class="bg-info rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Paid leave</small>
-                    <small class="mb-2"><span class="bg-info-subtle rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Unpaid leave</small>
-                    <small class="mb-2"><span class="bg-secondary rounded-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</small>
-                </div>
-            </div>
-            @if (Model.Shifts.Where(s => s.Pattern == "4/2") is var shifts4 && shifts4 != null && shifts4.Count() > 0)
+        @* Leave Legends *@
+        <div class="card p-3 mb-3">
+            <small class="text-body-secondary mb-2">Leave applications</small>
+            <p class="mb-2"><small class="bg-warning-subtle border border-2 border-warning rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Pending</p>
+            <p class="mb-3"><small class="bg-success-subtle border border-2 border-success rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</small>&nbsp;&nbsp;Approved by manager</p>
+            <small class="text-body-secondary mb-2">Reflected leaves</small>
+            @foreach (var leaveType in leaveTypes)
             {
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card py-2 px-4">
-                        <table class="table table-sm text-center mb-3">
-                            <thead>
-                                <tr>
-                                    <th colspan="2">4/2 pattern</th>
-                                </tr>
-                                <tr>
-                                    <th>Shift</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var shift in shifts4)
-                                {
-                                    <tr>
-                                        <td>@shift.Shift_name</td>
-                                        <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <p class="mb-2"><span class="bg-@leaveType?.BsColor rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;@leaveType?.Leave_type_name</p>
             }
-            @if (Model.Shifts.Where(s => s.Pattern == "5/2") is var shifts5 && shifts5 != null && shifts5.Count() > 0)
-            {
-                <div class="col col-md-6 col-xl-4 col-xxl-12 mb-3">
-                    <div class="card py-2 px-4">
-                        <table class="table table-sm text-center mb-3">
-                            <thead>
-                                <tr>
-                                    <th colspan="2">5/2 pattern</th>
-                                </tr>
-                                <tr>
-                                    <th>Shift</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var shift in shifts5)
-                                {
-                                    <tr>
-                                        <td>@shift.Shift_name</td>
-                                        <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            }
+            <p class="mb-2"><span class="bg-secondary rounded-1 font-monospace">&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;Company holiday</p>
         </div>
+
+        @* Shift Patterns *@
+        @foreach (var pattern in new[] { "4/2", "5/2" })
+        {
+            var shiftPattern = shifts.Where(s => s.Pattern == pattern).ToList();
+            if (shiftPattern.Any())
+            {
+                <div class="card py-2 px-4 mb-3">
+                    <table class="table table-sm text-center">
+                        <thead>
+                            <tr><th colspan="2">@pattern pattern</th></tr>
+                            <tr><th>Shift</th><th>Time</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var shift in shiftPattern)
+                            {
+                                <tr>
+                                    <td>@shift.Shift_name</td>
+                                    <td>@($"{shift?.Time_start?.ToString(@"hh\:mm")} - {shift?.Time_end?.ToString(@"hh\:mm")}")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
     </div>
 </div>

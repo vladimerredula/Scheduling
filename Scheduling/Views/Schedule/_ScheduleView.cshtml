@@ -1,4 +1,4 @@
-﻿@model (List<User> Users, List<Shift> Shifts, List<Schedule> Schedules, List<Leave> Leaves, List<Holiday> Holidays, int month, int year)
+﻿@model (List<User> Users, List<Schedule> Schedules, List<Leave> Leaves, int month, int year)
 
 @{
     var currentYear = Model.year;
@@ -7,15 +7,18 @@
     var daysInMonth = DateTime.DaysInMonth(currentYear, selectedMonth);
     var prevMonth = firstDay.AddMonths(-1);
     var nextMonth = firstDay.AddMonths(1);
+
     var schedules = Model.Schedules;
-    var holidays = Model.Holidays;
-    var shifts = Model.Shifts;
     var leaves = Model.Leaves;
-    var leaveTypes = ViewBag.LeaveTypes as List<Leave_type>;
     var users = Model.Users;
-    var companyHolidayDates = holidays.Where(h => h.Type == "Company").Select(h => h.Date).ToHashSet();
     var userIds = users.Select(u => u.Personnel_ID).ToHashSet();
-    var shiftLeaders = ViewBag.ShiftLeaders as List<(DateTime, int, string)>;
+
+    var shiftLeaders = ViewBag.ShiftLeaders as List<(DateTime, int, string)> ?? new List<(DateTime, int, string)>();
+    var shifts = ViewBag.Shifts as List<Shift> ?? new List<Shift>();
+    var sectors = ViewBag.Sectors as List<Sector> ?? new List<Sector>();
+    var leaveTypes = ViewBag.LeaveTypes as List<Leave_type> ?? new List<Leave_type>();
+    var holidays = ViewBag.Holidays as List<Holiday> ?? new List<Holiday>();
+    var companyHolidayDates = holidays.Where(h => h.Type == "Company").Select(h => h.Date).ToHashSet();
 }
 
 <div class="row">
@@ -43,7 +46,7 @@
                 </div>
             </div>
 
-            <div class="table-responsive" style="max-height: calc(100vh - 275px);" id="printableTable">
+            <div class="table-responsive" style="max-height: calc(100vh - 275px);">
                 <table id="schedule" class="table table-sm table-borderless table-hover m-0" style="border-collapse: separate; border-spacing: 0;">
                     <thead class="text-center sticky-top z-2">
                         <tr>
@@ -72,115 +75,120 @@
                         </tr>
                     </thead>
 
-                    <tbody>
-                        @foreach (var sector in users.GroupBy(u => u.Sector_ID))
-                        {
-                            <tbody class="sector">
-                                <tr class="sectorName">
-                                    <td class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">
-                                        <small class="fw-bold">
-                                            @sector?.FirstOrDefault()?.Sector?.Sector_name
-                                        </small>
-                                    </td>
-                                </tr>
+                    @foreach (var sector in users.GroupBy(u => u.Sector_ID))
+                    {
+                        <tbody class="sector">
+                            <tr class="sectorName">
+                                <td class="border-bottom border-secondary pb-1" colspan="@(daysInMonth + 1)">
+                                    <small class="fw-bold">
+                                        @sectors?.FirstOrDefault(s => s.Sector_ID == sector.Key)?.Sector_name
+                                    </small>
+                                </td>
+                            </tr>
 
-                                @foreach (var user in sector)
-                                {
-                                    var trainingPeriod = user.Date_hired.HasValue ? user.Date_hired.Value.AddMonths(3) : DateTime.MinValue;
-                                    var isTrainee = trainingPeriod.Date >= new DateTime(currentYear, selectedMonth, daysInMonth).Date;
-                                    var isPartTime = user.Employment_type == "PartTime";
+                            @foreach (var user in sector)
+                            {
+                                var trainingPeriod = user.Date_hired.HasValue ? user.Date_hired.Value.AddMonths(3) : DateTime.MinValue;
+                                var isTrainee = trainingPeriod.Date >= new DateTime(currentYear, selectedMonth, daysInMonth).Date;
+                                var isPartTime = user.Employment_type == "PartTime";
 
-                                    <tr>
-                                        <td class="border border-top-0 border-secondary text-nowrap text-start fs-4
-                                            @(isTrainee ? "bg-success-subtle text-success-emphasis" : "")">
-                                            <div class="row my-0">
-                                                <div class="col align-self-center text-truncate">
-                                                    @user.Full_name
-                                                </div>
-                                                @if (isPartTime)
-                                                {
-                                                    <div class="col-auto border-start ps-1">
-                                                        <div class="row mx-2" style="width:30px;">
-                                                            <div class="col px-0 text-center fs-5">
-                                                                In
-                                                            </div>
-                                                        </div>
-                                                        <div class="text-secondary">
-                                                            <hr class="m-0">
-                                                        </div>
-                                                        <div class="row mx-2" style="width:30px;">
-                                                            <div class="col px-0 text-center fs-5">
-                                                                Out
-                                                            </div>
+                                <tr>
+                                    <td class="border border-top-0 border-secondary text-nowrap text-start fs-4
+                                        @(isTrainee ? "bg-success-subtle text-success-emphasis" : "")">
+                                        <div class="row my-0">
+                                            <div class="col align-self-center text-truncate">
+                                                @user.Full_name
+                                            </div>
+                                            @if (isPartTime)
+                                            {
+                                                <div class="col-auto border-start ps-1">
+                                                    <div class="row mx-2" style="width:30px;">
+                                                        <div class="col px-0 text-center fs-5">
+                                                            In
                                                         </div>
                                                     </div>
-                                                }
-                                            </div>
-                                        </td>
-
-                                        @for (int day = 1; day <= daysInMonth; day++)
-                                        {
-                                            var date = new DateTime(currentYear, selectedMonth, day);
-                                            var dateStr = date.ToString("yyyy-MM-dd");
-                                            var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
-                                            var schedule = schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
-                                            var shift = shifts.FirstOrDefault(s => s.Shift_ID == (schedule?.Shift_ID ?? 0));
-                                            var leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
-                                            var hasLeave = leave != null && shift != null;
-                                            var holiday = holidays.FirstOrDefault(h => h.Date == date);
-
-                                            bool isCurrentShiftLeader = shiftLeaders.Any(s => s.Item1.Date == date.Date && s.Item2 == user.Personnel_ID);
-                                            bool isStillTrainee = trainingPeriod.Date >= date.Date;
-                                            bool isCompanyHoliday = holiday?.Type == "Company";
-                                            var cellClass = holiday != null
-                                            ? (isCompanyHoliday ? "bg-secondary" : "bg-secondary-subtle")
-                                            : (isWeekend ? "bg-secondary-subtle" : "");
-
-                                            string leavePopover = hasLeave ? $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='hover' data-bs-html='true' data-bs-content='<strong>{(leave?.Day_type != "FullDay" ? "Half day " : "")}{leave?.Leave_type?.Leave_type_name}</strong>' tabindex='0'" : "";
-
-                                            string bgClass = hasLeave ? $"bg-{leave?.Leave_type?.BsColor} bg-gradient {leave?.Day_type}" : "visually-hidden";
-
-                                            <td id="cell-@user.Personnel_ID-@dateStr" class="px-0 @cellClass @(isStillTrainee ? "text-success fw-semibold" : "") position-relative border-bottom border-end border-secondary" @Html.Raw(leavePopover)>
-                                                @if (isPartTime)
-                                                {
-                                                    <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_in != null ? schedule?.Time_in?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
                                                     <div class="text-secondary">
                                                         <hr class="m-0">
                                                     </div>
-                                                    <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_out != null ? schedule?.Time_out?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
-                                                } else
+                                                    <div class="row mx-2" style="width:30px;">
+                                                        <div class="col px-0 text-center fs-5">
+                                                            Out
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+
+                                    @for (int day = 1; day <= daysInMonth; day++)
+                                    {
+                                        var date = new DateTime(currentYear, selectedMonth, day);
+                                        var dateStr = date.ToString("yyyy-MM-dd");
+                                        var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                                        var schedule = schedules.FirstOrDefault(s => s.Personnel_ID == user.Personnel_ID && s.Date == date);
+                                        var shift = shifts.FirstOrDefault(s => s.Shift_ID == (schedule?.Shift_ID ?? 0));
+                                        var leave = leaves.FirstOrDefault(l => l.Personnel_ID == user.Personnel_ID && date >= l.Date_start && date <= l.Date_end);
+                                        var hasLeave = leave != null && shift != null;
+                                        var holiday = holidays.FirstOrDefault(h => h.Date == date);
+
+                                        bool isCurrentShiftLeader = shiftLeaders.Any(s => s.Item1.Date == date.Date && s.Item2 == user.Personnel_ID);
+                                        bool isStillTrainee = trainingPeriod.Date >= date.Date;
+                                        bool isCompanyHoliday = holiday?.Type == "Company";
+                                        var cellClass = holiday != null
+                                        ? (isCompanyHoliday ? "bg-secondary" : "bg-secondary-subtle")
+                                        : (isWeekend ? "bg-secondary-subtle" : "");
+
+                                        string leaveTypeName = string.Empty;
+                                        string leavePopover = string.Empty;
+                                        string bgClass = "visually-hidden";
+
+                                        if (hasLeave)
+                                        {
+                                            leaveTypeName = leaveTypes?.FirstOrDefault(l => l.Leave_type_ID == leave?.Leave_type_ID)?.Leave_type_name ?? string.Empty;
+                                            leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='hover' data-bs-html='true' data-bs-content='<strong>{(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}</strong>' tabindex='0'";
+                                            bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient {leave?.Day_type}";
+                                        }
+
+                                        <td id="cell-@user.Personnel_ID-@dateStr" class="px-0 @cellClass @(isStillTrainee ? "text-success fw-semibold" : "") position-relative border-bottom border-end border-secondary" @Html.Raw(leavePopover)>
+                                            @if (isPartTime)
+                                            {
+                                                <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_in != null ? schedule?.Time_in?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
+                                                <div class="text-secondary">
+                                                    <hr class="m-0">
+                                                </div>
+                                                <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_out != null ? schedule?.Time_out?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
+                                            } else
+                                            {
+                                                string shiftName = shift?.Shift_name ?? string.Empty;
+
+                                                if (shiftName?.Length > 3)
                                                 {
-                                                    string shiftName = shift?.Shift_name;
+                                                    string noVowels = new string(shift?.Shift_name?.Where(c => !"aeiouAEIOU".Contains(c)).ToArray());
 
-                                                    if (shiftName?.Length > 3)
+                                                    if (!string.IsNullOrWhiteSpace(noVowels))
                                                     {
-                                                        string noVowels = new string(shift?.Shift_name?.Where(c => !"aeiouAEIOU".Contains(c)).ToArray());
-
-                                                        if (!string.IsNullOrWhiteSpace(noVowels))
-                                                        {
-                                                            shiftName = noVowels.Length == 1 ? noVowels : $"{noVowels.First()}{noVowels.Last()}";
-                                                        }
+                                                        shiftName = noVowels.Length == 1 ? noVowels : $"{noVowels.First()}{noVowels.Last()}";
                                                     }
+                                                }
 
                                                 <p class="p-0 m-0 fs-4 text-center position-absolute start-0 w-100 h-100 @(isCurrentShiftLeader ? "currentShiftLeader" : "") @(leave != null && leave.Day_type != "FullDay" ? "z-2" : "z-1")">@(isCompanyHoliday || (leave != null && leave.Day_type == "FullDay") ? "" : shiftName?.ToUpper())</p>
-                                                }
+                                            }
 
-                                                <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @(leave != null && leave.Day_type != "FullDay" ? "z-1" : "z-2") @bgClass"></p>
+                                            <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @(leave != null && leave.Day_type != "FullDay" ? "z-1" : "z-2") @bgClass"></p>
 
-                                                @if (schedule?.Comment == "cancelled")
-                                                {
-                                                <svg class="position-absolute top-0 start-0 w-100 h-100">
-                                                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
-                                                    <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
-                                                </svg>
-                                                }
-                                            </td>
-                                        }
+                                            @if (schedule?.Comment == "cancelled")
+                                            {
+                                            <svg class="position-absolute top-0 start-0 w-100 h-100">
+                                                <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
+                                                <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
+                                            </svg>
+                                            }
+                                        </td>
+                                    }
                                 </tr>
-                                }
+                            }
                         </tbody>
-                        }
-                    </tbody>
+                    }
 
                     <tfoot class="sticky-bottom z-2">
                         @foreach (var shift in shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
@@ -231,7 +239,7 @@
         @* Shift Patterns *@
         @foreach (var pattern in new[] { "4/2", "5/2" })
         {
-            var shiftPattern = Model.Shifts.Where(s => s.Pattern == pattern).ToList();
+            var shiftPattern = shifts.Where(s => s.Pattern == pattern).ToList();
             if (shiftPattern.Any())
             {
                 <div class="card py-2 px-4 mb-3">
@@ -243,7 +251,7 @@
                         <tbody>
                             @foreach (var shift in shiftPattern)
                             {
-                                string shiftName = shift?.Shift_name;
+                                string shiftName = shift?.Shift_name ?? string.Empty;
 
                                 if (shiftName?.Length > 3)
                                 {
@@ -256,8 +264,8 @@
                                 }
 
                                 <tr>
-                                    <td>@(shift?.Shift_name?.Length > 3 ? $"{shiftName.ToUpper()} ({shift?.Shift_name})" : shift?.Shift_name)</td>
-                                    <td>@($"{shift?.Time_start.Value.ToString(@"hh\:mm")} - {shift?.Time_end.Value.ToString(@"hh\:mm")}")</td>
+                                    <td>@(shift?.Shift_name?.Length > 3 ? $"{shiftName?.ToUpper()} ({shift?.Shift_name})" : shift?.Shift_name)</td>
+                                    <td>@($"{shift?.Time_start?.ToString(@"hh\:mm")} - {shift?.Time_end?.ToString(@"hh\:mm")}")</td>
                                 </tr>
                             }
                         </tbody>

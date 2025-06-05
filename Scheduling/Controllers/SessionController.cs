@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Scheduling.Models;
 
 namespace Scheduling.Controllers
 {
+    [Authorize]
     public class SessionController : Controller
     {
         private readonly ApplicationDbContext _db;
