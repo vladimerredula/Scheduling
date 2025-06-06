@@ -15,7 +15,15 @@
     var canDeny = _template.HasPermission("DenyLeave");
 }
 
-<div class="px-3 px-sm-5">
+
+<!-- Spinner -->
+<div id="loading-spinner" class="position-fixed start-50 top-50 translate-middle d-none" style="z-index:1050;">
+    <button class="btn btn-secondary rounded-circle pt-2 pb-1 px-2" type="button" disabled>
+        <span class="spinner-border" aria-hidden="true"></span>
+    </button>
+</div>
+
+<div class="px-3 pb-3 px-sm-4 pb-sm-3">
     <h2 class="mb-0">@ViewData["Title"]</h2>
     <p class="mb-3"><a asp-action="Calendar">View Calendar</a></p>
 
@@ -69,14 +77,6 @@
             <!-- <a class="btn btn-light border me-1" onclick="printSchedule()" title="Print Schedule"><i class="bi bi-printer"></i></a>
             <a class="btn btn-light border" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></a> -->
         </div>
-    </div>
-
-
-    <!-- Spinner -->
-    <div id="loading-spinner" class="position-absolute top-50 start-50 translate-middle d-none" style="z-index:10;">
-        <button class="btn btn-secondary rounded-circle pt-2 pb-1 px-2 type="button" disabled>
-            <span class="spinner-border" aria-hidden="true"></span>
-        </button>
     </div>
 
     <div id="scheduleTable">
@@ -841,7 +841,6 @@
                 },
                 success: function (response) {
                     $("#scheduleTable").html(response);
-                    hideSpinner();
                     initializeSortable(); // Reinitialize sortable functionality
                     initializeToggleLegends(); // Reinitialize the toggle legends button
                     adjustTableColumns();
@@ -849,6 +848,7 @@
                     initializePopovers();
                     initializeFlatpickr();
                     initializeContextMenus();
+                    hideSpinner();
                 },
                 error: function () {
                     alert("Error loading schedule.");
