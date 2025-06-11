@@ -102,11 +102,25 @@ namespace Scheduling.Services
             return components;
         }
 
+        public List<Page>? GetPagePermission()
+        {
+            var modules = GetUserTemplate();
+            if (modules == null)
+                return new List<Page>();
+
+            var pages = modules
+                .SelectMany(m => m.Pages)
+                .ToList();
+
+            return pages;
+        }
+
         public bool HasPermission(string keyWord)
         {
+            var pages = GetPagePermission();
             var components = GetComponentPermission();
 
-            return components.Any(c => c.Component_abbreviation == keyWord);
+            return components.Any(c => c.Component_abbreviation == keyWord) || pages.Any(p => p.Page_name == keyWord);
         }
     }
 }

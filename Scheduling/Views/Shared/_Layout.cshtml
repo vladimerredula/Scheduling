@@ -71,7 +71,7 @@
                         }
                     </ul>
 
-                    @if (User.IsInRole("admin") || User.IsInRole("manager") || User.IsInRole("topManager"))
+                    @if (_template.HasPermission("Department Leaves"))
                     {
                         <a class="btn btn-sm btn-outline-primary me-4" asp-controller="Leave" asp-action="DepartmentLeaves" type="button" title="Go to Leave requests">
                             Leave Requests <span class="badge bg-secondary" id="requestCount">0</span>

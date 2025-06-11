@@ -7,8 +7,13 @@
 
 <div class="container">
     <h1 class="mb-0">@ViewData["Title"]</h1>
-    <p class="mb-3"><a asp-action="Index">View all schedules</a></p>
-    <div class="row mb-2 justify-content-between">
+
+    @if (_template.HasPermission("All Schedules"))
+    {
+        <p class=""><a asp-action="Index">View all schedules</a></p>
+    }
+
+    <div class="row mt-3 mb-2 justify-content-between">
         <!-- Month Selection -->
         <div class="col-auto mb-2">
             @if (_template.HasPermission("MonthSelect"))
