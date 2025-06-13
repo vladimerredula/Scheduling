@@ -138,7 +138,7 @@
                                 }
                             </td>
                             <td class="text-nowrap justify-content-center">
-                                @if ((isFirstApprover && item?.Approver_1 == null && item?.Approver_2 != null) || (isFinalApprover && item?.Approver_1 != null && item?.Approver_2 == null))
+                                @if ((isFirstApprover && item?.Approver_1 == null) || (isFinalApprover && item?.Approver_1 != null && item?.Approver_2 == null))
                                 {
                                     if (canApprove)
                                     {
