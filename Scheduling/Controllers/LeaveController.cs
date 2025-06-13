@@ -65,7 +65,7 @@ namespace Scheduling.Controllers
                 if (_template.HasPermission("FirstApprover"))
                 {
                     leave.Approver_1 = personnelId;
-                    leave.Date_approved_1 = DateTime.Today;
+                    leave.Date_approved_1 = DateTime.Now;
                 }
 
                 _db.Leaves.Add(leave);
@@ -104,7 +104,7 @@ namespace Scheduling.Controllers
                 {
                     var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
                     leave.Approver_2 = personnelId;
-                    leave.Date_approved_2 = DateTime.Today;
+                    leave.Date_approved_2 = DateTime.Now;
                 }
 
                 _db.Leaves.Add(leave);
@@ -217,7 +217,7 @@ namespace Scheduling.Controllers
                     if (_template.HasPermission("FirstApprover"))
                     {
                         request.Approver_1 = personnelId;
-                        request.Date_approved_1 = DateTime.Today;
+                        request.Date_approved_1 = DateTime.Now;
                     }
 
                     _db.Leaves.Add(request);
@@ -311,6 +311,28 @@ namespace Scheduling.Controllers
             });
         }
 
+        public async Task<IActionResult> WithdrawLeave(int id)
+        {
+            var leave = await _db.Leaves.FindAsync(id);
+            if (leave == null)
+            {
+                TempData["toastMessage"] = "Leave not found-danger";
+                await _log.LogWarningAsync($"Leave ID: {id} was not found");
+                return RedirectToAction(nameof(Index));
+            }
+
+            leave.Status = "Withdrawn";
+            leave.Comment = "Withdrawn by employee";
+
+            _db.Leaves.Update(leave);
+            await _db.SaveChangesAsync();
+            await _log.LogInfoAsync($"Withdrawn leave", leave);
+
+            TempData["toastMessage"] = "Successfully withdrawn leave!-success";
+
+            return RedirectToAction(nameof(Index));
+        }
+
         // Check if the dates overlap
         private bool HasOverlappingLeave(Leave leave)
         {
@@ -387,7 +409,7 @@ namespace Scheduling.Controllers
             }
 
             var approverId = int.Parse(User.FindFirstValue("Personnelid"));
-            var today = DateTime.Today;
+            var today = DateTime.Now;
 
             try
             {
@@ -438,7 +460,7 @@ namespace Scheduling.Controllers
             }
 
             var approverId = int.Parse(User.FindFirstValue("Personnelid"));
-            var today = DateTime.Today;
+            var today = DateTime.Now;
 
             try
             {
@@ -490,7 +512,7 @@ namespace Scheduling.Controllers
             }
 
             var approverId = int.Parse(User.FindFirstValue("Personnelid"));
-            var today = DateTime.Today;
+            var today = DateTime.Now;
 
             try
             {
@@ -542,7 +564,7 @@ namespace Scheduling.Controllers
             }
 
             var approverId = int.Parse(User.FindFirstValue("Personnelid"));
-            var today = DateTime.Today;
+            var today = DateTime.Now;
 
             try
             {

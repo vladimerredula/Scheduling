@@ -21,11 +21,11 @@ namespace Scheduling.Models
         public string? Status { get; set; } // "Pending", "Approved", "Denied", "Cancelled"
 
         [Display(Name = "Date approved (Manager)")]
-        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}")]
         public DateTime? Date_approved_1 { get; set; }
 
         [Display(Name = "Date approved (HR)")]
-        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}")]
         public DateTime? Date_approved_2 { get; set; }
 
         [ForeignKey("User")]
