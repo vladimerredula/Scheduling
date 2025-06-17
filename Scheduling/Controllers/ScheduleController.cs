@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Scheduling.Models;
 using Scheduling.Helpers;
 using Scheduling.Services;
-using System.Security.Claims;
 
 namespace Scheduling.Controllers
 {
@@ -16,17 +15,20 @@ namespace Scheduling.Controllers
         private readonly LogService<ScheduleController> _log; 
         private readonly ScheduleHelper _helper;
         private readonly UserService _user;
+        private readonly ScheduleTokenService _token;
 
         public ScheduleController(
             ApplicationDbContext context, 
             LogService<ScheduleController> logger, 
             ScheduleHelper helper, 
             UserService user,
+            ScheduleTokenService token)
         {
             _db = context;
             _log = logger;
             _helper = helper;
             _user = user;
+            _token = token;
         }
 
         public async Task<IActionResult> Index(int month = 0, int year = 0, int departmentId = 0)
@@ -215,6 +217,7 @@ namespace Scheduling.Controllers
             }
 
             await _db.SaveChangesAsync();
+            await _token.UpdateTokenAsync(await _user.GetDepartmentId(userId), date.Year, date.Month);
 
             return Json(new { success = true });
         }
@@ -269,6 +272,7 @@ namespace Scheduling.Controllers
                 }
             }
 
+            await _token.UpdateTokenAsync(await _user.GetDepartmentId(userId), date.Year, date.Month);
             await _db.SaveChangesAsync();
 
             return Json(new { success = true });
@@ -440,6 +444,7 @@ namespace Scheduling.Controllers
             }
 
             await _db.SaveChangesAsync();
+            await _token.UpdateTokenAsync(departmentId, year, month);
             await _log.LogInfoAsync($"Updated Employee order for {_helper.DisplayMonthYear(month, year)}, Order:{order}");
 
             return Ok(new { success = true });
@@ -450,6 +455,7 @@ namespace Scheduling.Controllers
         {
             await UpdateShiftLeaderStatus(month, year, userId, true);
             await _log.LogInfoAsync($"Assigned {await _user.GetFullname(userId)} as shift leader for {_helper.DisplayMonthYear(month, year)}");
+            await _token.UpdateTokenAsync(await _user.GetDepartmentId(userId), year, month);
 
             return Ok(new { success = true });
         }
@@ -458,6 +464,7 @@ namespace Scheduling.Controllers
         public async Task<IActionResult> RemoveShiftLeader(int month, int year, int userId)
         {
             await UpdateShiftLeaderStatus(month, year, userId, false);
+            await _token.UpdateTokenAsync(await _user.GetDepartmentId(userId), year, month);
             await _log.LogInfoAsync($"Removed {await _user.GetFullname(userId)} from the {_helper.DisplayMonthYear(month, year)} shift leader list");
 
             return Ok(new { success = true });
@@ -486,6 +493,7 @@ namespace Scheduling.Controllers
             }
 
             await _db.SaveChangesAsync();
+            await _token.UpdateTokenAsync(await _user.GetDepartmentId(userId), year, month);
         }
 
         [HttpPost]
@@ -519,6 +527,7 @@ namespace Scheduling.Controllers
             }
 
             await _db.SaveChangesAsync();
+            await _token.UpdateTokenAsync(await _user.GetDepartmentId(userId), date.Year, date.Month);
 
             return Json(new { success = true });
         }
@@ -554,6 +563,7 @@ namespace Scheduling.Controllers
             }
 
             await _db.SaveChangesAsync();
+            await _token.UpdateTokenAsync(await _user.GetDepartmentId(userId), date.Year, date.Month);
 
             return Json(new { success = true });
         }
