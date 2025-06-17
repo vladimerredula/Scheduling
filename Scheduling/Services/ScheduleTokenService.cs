@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Scheduling.Controllers;
 using Scheduling.Models;
 
 namespace Scheduling.Services
@@ -7,12 +6,10 @@ namespace Scheduling.Services
     public class ScheduleTokenService
     {
         private readonly ApplicationDbContext _db;
-        private readonly LogService<ScheduleController> _log;
 
-        public ScheduleTokenService(ApplicationDbContext db, LogService<ScheduleController> logger)
+        public ScheduleTokenService(ApplicationDbContext db)
         {
             _db = db;
-            _log = logger;
         }
 
         public async Task UpdateTokenAsync(int departmentId, int year, int month)
@@ -45,8 +42,6 @@ namespace Scheduling.Services
 
             var department = (await _db.Departments.FindAsync(departmentId))?.Department_name ?? string.Empty;
             var date = new DateTime(year, month, 1);
-
-            await _log.LogInfoAsync($"Updated Schedule Token for {department} {date.ToString("MMMM yyyy")}.");
         }
     }
 }
