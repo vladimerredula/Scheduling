@@ -22,7 +22,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddTransient<ExcelService>();
 
 builder.Services.AddScoped(typeof(LogService<>));
+builder.Services.AddScoped<ScheduleTokenService>();
 
+builder.Services.AddHostedService<ScheduleMonitorService>();
 
 // use if server is behind proxy
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
