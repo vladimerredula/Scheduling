@@ -19,9 +19,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
 
 // Add services for dependency injection
-builder.Services.AddTransient<ExcelService>();
+builder.Services.AddTransient<ExcelService>(); 
 
 builder.Services.AddScoped(typeof(LogService<>));
+builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ScheduleTokenService>();
 
 builder.Services.AddHostedService<ScheduleMonitorService>();
@@ -143,7 +144,6 @@ builder.Logging.AddFile(builder.Configuration.GetSection("Logging:File"), fileLo
     fileLoggerOpts.MaxRollingFiles = 3;
 });
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -156,7 +156,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseForwardedHeaders();
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
