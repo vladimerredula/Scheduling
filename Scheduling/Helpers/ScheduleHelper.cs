@@ -1,9 +1,31 @@
 ﻿using Scheduling.Models;
+using Scheduling.Services;
 
 namespace Scheduling.Helpers
 {
     public class ScheduleHelper
     {
+        private readonly UserService _user;
+
+        public ScheduleHelper(UserService user)
+        {
+            _user = user;
+        }
+
+        // Get all users in the department
+        public async Task<List<User>> GetBaseUsers(int month, int year, int? departmentId = null)
+        {
+            if (departmentId == null || departmentId == 0)
+                departmentId = await _user.GetDepartmentId();
+
+            var users = await _user.GetUsers(
+                status: 1,
+                activeOnly: true,
+                departmentId: departmentId);
+
+            return users;
+        }
+
         // Sort users by schedule order and fallback to sector/order/name
         public List<User> SortUsers(
             List<User> users,
@@ -33,13 +55,13 @@ namespace Scheduling.Helpers
             {
                 var matchOrder = scheduleOrder
                     .FirstOrDefault(o => o.Personnel_ID == baseUser.Personnel_ID);
+
                 if (matchOrder != null && matchOrder.Sector_ID.HasValue)
-                {
                     baseUser.Sector_ID = matchOrder.Sector_ID.Value;
-                }
 
                 var matchShiftleaders = scheduleShiftleaders
                     .FirstOrDefault(o => o.Personnel_ID == baseUser.Personnel_ID);
+
                 if (matchShiftleaders != null && matchShiftleaders.Is_shiftleader.HasValue)
                     baseUser.Privilege_ID = baseUser.Privilege_ID != 3 
                         ? matchShiftleaders.Is_shiftleader.Value 
@@ -123,6 +145,11 @@ namespace Scheduling.Helpers
         public string DisplayMonthYear(int month, int year)
         {
             return new DateTime(year, month, 1).ToString("MMMM yyyy");
+        }
+
+        public string ToDateStr(DateTime date)
+        {
+            return date.ToString("yyyy-MM-dd");
         }
     }
 }

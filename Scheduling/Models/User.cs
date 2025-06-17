@@ -1,4 +1,5 @@
 ﻿using Scheduling.Models.Templates;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -20,6 +21,7 @@ namespace Scheduling.Models
         [Column(TypeName = "VARCHAR")]
         [Display(Name = "Password")]
         [StringLength(20)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public string Password { get; set; }
 
         [Column(TypeName = "VARCHAR")]

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Scheduling.Models;
 using Scheduling.Services;
-using System.Security.Claims;
 
 namespace Scheduling.Controllers
 {
@@ -14,12 +13,14 @@ namespace Scheduling.Controllers
         private readonly ApplicationDbContext _db;
         private readonly LogService<LeaveController> _log;
         private readonly TemplateService _template;
+        private readonly UserService _user;
 
-        public LeaveController(ApplicationDbContext context, LogService<LeaveController> logger, TemplateService template)
+        public LeaveController(ApplicationDbContext context, LogService<LeaveController> logger, TemplateService template, UserService user)
         {
             _db = context;
             _log = logger;
             _template = template;
+            _user = user;
         }
 
         public async Task<IActionResult> Index()
@@ -34,10 +35,7 @@ namespace Scheduling.Controllers
         public async Task<IActionResult> DepartmentLeaves(int? departmentId = 0)
         {
             if (User.IsInRole("manager"))
-            {
-                var user = await ThisUser();
-                departmentId = user.Department_ID;
-            }
+                departmentId = await _user.GetDepartmentId();
 
             await PopulateLeaveViewBagsAsync(departmentId);
             await _log.LogInfoAsync("Visited department leaves");
@@ -58,7 +56,7 @@ namespace Scheduling.Controllers
 
             try
             {
-                var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
+                var personnelId = _user.GetPersonnelId();
                 leave.Personnel_ID = personnelId;
                 leave.Status = "Pending";
 
@@ -102,7 +100,7 @@ namespace Scheduling.Controllers
 
                 if (_template.HasPermission("FinalApprover"))
                 {
-                    var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
+                    var personnelId = _user.GetPersonnelId();
                     leave.Approver_2 = personnelId;
                     leave.Date_approved_2 = DateTime.Now;
                 }
@@ -112,8 +110,7 @@ namespace Scheduling.Controllers
                 await _db.SaveChangesAsync();
                 await _log.LogInfoAsync($"Added leave request", leave);
 
-                var employee = await GetUser(leave.Personnel_ID);
-                TempData["toastMessage"] = $"Successfully added leave for {employee.Full_name}!-success";
+                TempData["toastMessage"] = $"Successfully added leave for {await _user.GetFullname(leave.Personnel_ID)}!-success";
             }
             catch (Exception ex)
             {
@@ -204,14 +201,12 @@ namespace Scheduling.Controllers
 
         public async Task<IActionResult> Apply(Leave request)
         {
-            var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
-
-            request.Personnel_ID = personnelId;
-
             if (!HasOverlappingLeave(request))
             {
                 try
                 {
+                    var personnelId = _user.GetPersonnelId();
+                    request.Personnel_ID = personnelId;
                     request.Status = "Pending";
 
                     if (_template.HasPermission("FirstApprover"))
@@ -408,7 +403,7 @@ namespace Scheduling.Controllers
                 return RedirectToAction(nameof(DepartmentLeaves));
             }
 
-            var approverId = int.Parse(User.FindFirstValue("Personnelid"));
+            var approverId = _user.GetPersonnelId();
             var today = DateTime.Now;
 
             try
@@ -459,7 +454,7 @@ namespace Scheduling.Controllers
                 return RedirectToAction("DepartmentLeaves");
             }
 
-            var approverId = int.Parse(User.FindFirstValue("Personnelid"));
+            var approverId = _user.GetPersonnelId();
             var today = DateTime.Now;
 
             try
@@ -511,7 +506,7 @@ namespace Scheduling.Controllers
                 return RedirectToAction("Index", "Schedule");
             }
 
-            var approverId = int.Parse(User.FindFirstValue("Personnelid"));
+            var approverId = _user.GetPersonnelId();
             var today = DateTime.Now;
 
             try
@@ -563,7 +558,7 @@ namespace Scheduling.Controllers
                 return RedirectToAction("Index", "Schedule");
             }
 
-            var approverId = int.Parse(User.FindFirstValue("Personnelid"));
+            var approverId = _user.GetPersonnelId();
             var today = DateTime.Now;
 
             try
@@ -603,23 +598,6 @@ namespace Scheduling.Controllers
             });
         }
 
-        public int GetPersonnelID()
-        {
-            var personnelId = int.Parse(User.FindFirstValue("Personnelid"));
-
-            return personnelId;
-        }
-
-        public async Task<User> ThisUser()
-        {
-            return _db.Users.Find(GetPersonnelID());
-        }
-
-        public async Task<User> GetUser(int id)
-        {
-            return await _db.Users.FindAsync(id);
-        }
-
         private async Task PopulateLeaveViewBagsAsync(int? departmentId = null)
         {
             if (departmentId == 0)
@@ -651,7 +629,7 @@ namespace Scheduling.Controllers
             }
             else if (departmentId != null && departmentId != 0)
             {
-                var userId = GetPersonnelID();
+                var userId = _user.GetPersonnelId();
 
                 if (userId == 35) // TEMPORARY FIX FOR KONSTANTIN
                 {
@@ -682,7 +660,7 @@ namespace Scheduling.Controllers
             }
             else
             {
-                var personnelId = GetPersonnelID();
+                var personnelId = _user.GetPersonnelId();
 
                 ViewBag.Leaves = await _db.Leaves
                     .Include(l => l.User)
