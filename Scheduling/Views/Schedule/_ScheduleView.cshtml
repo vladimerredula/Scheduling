@@ -159,19 +159,19 @@
                                                 <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_out != null ? schedule?.Time_out?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
                                             } else
                                             {
-                                                string shiftName = shift?.Shift_name ?? string.Empty;
+                                                // string shiftName = shift?.Shift_name ?? string.Empty;
 
-                                                if (shiftName?.Length > 3)
-                                                {
-                                                    string noVowels = new string(shift?.Shift_name?.Where(c => !"aeiouAEIOU".Contains(c)).ToArray());
+                                                // if (shiftName?.Length > 3)
+                                                // {
+                                                //     string noVowels = new string(shift?.Shift_name?.Where(c => !"aeiouAEIOU".Contains(c)).ToArray());
 
-                                                    if (!string.IsNullOrWhiteSpace(noVowels))
-                                                    {
-                                                        shiftName = noVowels.Length == 1 ? noVowels : $"{noVowels.First()}{noVowels.Last()}";
-                                                    }
-                                                }
+                                                //     if (!string.IsNullOrWhiteSpace(noVowels))
+                                                //     {
+                                                //         shiftName = noVowels.Length == 1 ? noVowels : $"{noVowels.First()}{noVowels.Last()}";
+                                                //     }
+                                                // }
 
-                                                <p class="p-0 m-0 fs-4 text-center position-absolute start-0 w-100 h-100 @(isCurrentShiftLeader ? "currentShiftLeader" : "") @(leave != null && leave.Day_type != "FullDay" ? "z-2" : "z-1")">@(isCompanyHoliday || (leave != null && leave.Day_type == "FullDay") ? "" : shiftName?.ToUpper())</p>
+                                                <p class="p-0 m-0 fs-4 text-center position-absolute start-0 w-100 h-100 @(isCurrentShiftLeader ? "currentShiftLeader" : "") @(leave != null && leave.Day_type != "FullDay" ? "z-2" : "z-1")">@(isCompanyHoliday || (leave != null && leave.Day_type == "FullDay") ? "" : shift?.Acronym ?? shift?.Shift_name)</p>
                                             }
 
                                             <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @(leave != null && leave.Day_type != "FullDay" ? "z-1" : "z-2") @bgClass"></p>
@@ -251,20 +251,21 @@
                         <tbody>
                             @foreach (var shift in shiftPattern)
                             {
-                                string shiftName = shift?.Shift_name ?? string.Empty;
+                                // string shiftName = shift?.Shift_name ?? string.Empty;
 
-                                if (shiftName?.Length > 3)
-                                {
-                                    string noVowels = new string(shift?.Shift_name?.Where(c => !"aeiouAEIOU".Contains(c)).ToArray());
+                                // if (shiftName?.Length > 3)
+                                // {
+                                //     string noVowels = new string(shift?.Shift_name?.Where(c => !"aeiouAEIOU".Contains(c)).ToArray());
 
-                                    if (!string.IsNullOrWhiteSpace(noVowels))
-                                    {
-                                        shiftName = noVowels.Length == 1 ? noVowels : $"{noVowels.First()}{noVowels.Last()}";
-                                    }
-                                }
+                                //     if (!string.IsNullOrWhiteSpace(noVowels))
+                                //     {
+                                //         shiftName = noVowels.Length == 1 ? noVowels : $"{noVowels.First()}{noVowels.Last()}";
+                                //     }
+                                // }
 
                                 <tr>
-                                    <td>@(shift?.Shift_name?.Length > 3 ? $"{shiftName?.ToUpper()} ({shift?.Shift_name})" : shift?.Shift_name)</td>
+                                    @* <td>@(shift?.Shift_name?.Length > 3 ? $"{shiftName?.ToUpper()} ({shift?.Shift_name})" : shift?.Shift_name)</td> *@
+                                    <td>@shift.Shift_name @(!string.IsNullOrEmpty(shift?.Acronym) ? $"({shift?.Acronym})" : "")</td>
                                     <td>@($"{shift?.Time_start?.ToString(@"hh\:mm")} - {shift?.Time_end?.ToString(@"hh\:mm")}")</td>
                                 </tr>
                             }

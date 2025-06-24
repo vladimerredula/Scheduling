@@ -299,11 +299,11 @@
                                                     {
                                                         if (shift.Shift_ID == shiftId)
                                                         {
-                                                            <option class="text-body" value="@shift.Shift_ID" selected>@shift.Shift_name</option>
+                                                            <option class="text-body" value="@shift.Shift_ID" selected>@(shift.Acronym ?? shift.Shift_name)</option>
                                                         }
                                                         else
                                                         {
-                                                            <option class="text-body" value="@shift.Shift_ID">@shift.Shift_name</option>
+                                                            <option class="text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
                                                         }
                                                     }
 
@@ -371,7 +371,7 @@
                                     };
 
                                     <td class="border-bottom border-end border-secondary text-center @bgColor"
-                                    id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
+                                        id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
                                         @count
                                     </td>
                                 }
@@ -417,7 +417,7 @@
                                     @foreach (var shift in shiftPattern)
                                     {
                                         <tr>
-                                            <td>@shift.Shift_name</td>
+                                            <td>@shift.Shift_name @(!string.IsNullOrEmpty(shift.Acronym) ? $"({shift.Acronym})" : "")</td>
                                             <td>@($"{shift?.Time_start?.ToString(@"hh\:mm")} - {shift?.Time_end?.ToString(@"hh\:mm")}")</td>
                                         </tr>
                                     }

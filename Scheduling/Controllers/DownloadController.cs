@@ -96,7 +96,7 @@ namespace Scheduling.Controllers
                             .Select(sc => new
                             {
                                 Personnel_ID = sc.Personnel_ID,
-                                Shift = sc.Shift.Shift_name,
+                                Shift = sc.Shift.Acronym ?? sc.Shift.Shift_name,
                                 Time_in = sc.Time_in,
                                 Time_out = sc.Time_out,
                                 Comment = sc.Comment,
@@ -104,7 +104,11 @@ namespace Scheduling.Controllers
                             })
                             .ToListAsync<dynamic>();
 
-            var shifts = await _db.Shifts.Where(s => s.Department_ID == departmentId).ToListAsync();
+            var shifts = await _db.Shifts.
+                Where(s => 
+                    s.Department_ID == departmentId && 
+                    s.Status == 1)
+                .ToListAsync();
 
             var leaves = await _db.Leaves
                             .Include(l => l.Leave_type)

@@ -15,6 +15,9 @@ namespace Scheduling.Models
         [StringLength(25)]
         public string? Shift_name { get; set; }
 
+        [StringLength(10)]
+        public string? Acronym { get; set; }
+
         [Required]
         [Display(Name = "Start time")]
         public TimeSpan? Time_start { get; set; }
@@ -24,5 +27,6 @@ namespace Scheduling.Models
         public TimeSpan? Time_end { get; set; }
         public string? Pattern { get; set; }
         public int? Department_ID { get; set; }
+        public int Status { get; set; }
     }
 }

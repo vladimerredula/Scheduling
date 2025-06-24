@@ -159,7 +159,7 @@
                                                     <p class="mt-2 @(isCurrentDay ? "fs-2" : "fs-3")">@schedule?.Time_in?.ToString(@"hh\:mm") - @schedule?.Time_out?.ToString(@"hh\:mm")</p>
                                                 } else
                                                 {
-                                                    <p class="mb-0 position-absolute top-50 start-50 translate-middle @(isCurrentDay ? "fs-2" : "fs-3") @(hasLeave && (leave?.Day_type != "FullDay") ? "z-2" : "z-1")">@schedule?.Shift?.Shift_name</p>
+                                                    <p class="mb-0 position-absolute top-50 start-50 translate-middle @(isCurrentDay ? "fs-2" : "fs-3") @(hasLeave && (leave?.Day_type != "FullDay") ? "z-2" : "z-1")">@(schedule?.Shift?.Acronym ?? schedule?.Shift?.Shift_name)</p>
                                                 }
                                             }
                                             <p class="position-absolute start-0 top-0 w-100 h-100 text-start p-2 mb-0 @borderClass @(hasLeave ? bgClass : "")
@@ -186,7 +186,7 @@
             </div>
         </div>
     </div>
-    <div class="col-12 col-xxl-2" id="legendsAndShifts" style="display:none;">
+    <div class="col-12 col-xxl-3" id="legendsAndShifts" style="display:none;">
         @* Leave Legends *@
         <div class="card p-3 mb-3">
             <small class="text-body-secondary mb-2">Leave applications</small>
@@ -216,7 +216,7 @@
                             @foreach (var shift in shiftPattern)
                             {
                                 <tr>
-                                    <td>@shift.Shift_name</td>
+                                    <td>@shift.Shift_name @(!string.IsNullOrEmpty(shift.Acronym) ? $"({shift.Acronym})" : "")</td>
                                     <td>@($"{shift?.Time_start?.ToString(@"hh\:mm")} - {shift?.Time_end?.ToString(@"hh\:mm")}")</td>
                                 </tr>
                             }

@@ -343,7 +343,7 @@ namespace Scheduling.Controllers
 
         public async Task<List<Shift>> GetShifts(int? departmentId = null)
         {
-            var shifts = await _db.Shifts.ToListAsync();
+            var shifts = await _db.Shifts.Where(s => s.Status == 1).ToListAsync();
 
             if (departmentId.HasValue)
                 shifts = shifts

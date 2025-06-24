@@ -24,13 +24,17 @@ namespace Scheduling.Controllers
                 var user = await ThisUser();
 
                 ViewBag.Shifts = _db.Shifts
-                    .Where(l => l.Department_ID == user.Department_ID)
+                    .Where(l => 
+                        l.Department_ID == user.Department_ID && 
+                        l.Status == 1)
                     .ToList();
             }
             else if (User.IsInRole("topManager") || User.IsInRole("admin"))
             {
                 ViewBag.Shifts = _db.Shifts
-                    .Where(l => l.Department_ID == departmentId)
+                    .Where(l => 
+                        l.Department_ID == departmentId &&
+                        l.Status == 1)
                     .ToList();
 
                 ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
@@ -43,19 +47,18 @@ namespace Scheduling.Controllers
         // POST: Shift/Add
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Add([Bind("Shift_name,Time_start,Time_end,Pattern")] Shift shift)
+        public async Task<IActionResult> Add([Bind("Shift_name,Acronym,Time_start,Time_end,Department_ID,Pattern,Status")] Shift shift)
         {
             if (ModelState.IsValid)
             {
                 var user = await ThisUser();
-                shift.Department_ID = user.Department_ID;
 
                 await _db.Shifts.AddAsync(shift);
                 await _db.SaveChangesAsync();
                 await _log.LogInfoAsync($"Added new Shift", shift);
 
                 TempData["toastMessage"] = "Successfully added shift!-success";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { departmentId = shift.Department_ID});
             }
 
             ViewBag.Shifts = _db.Shifts.ToList();
@@ -66,13 +69,13 @@ namespace Scheduling.Controllers
         // POST: Shift/Edit/id
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Shift_ID,Shift_name,Time_start,Time_end,Pattern,Department_ID")] Shift shift)
+        public async Task<IActionResult> Edit(int id, [Bind("Shift_ID,Shift_name,Acronym,Time_start,Time_end,Pattern,Department_ID,Status")] Shift shift)
         {
             if (id != shift.Shift_ID)
             {
                 TempData["toastMessage"] = "Shift IDs didn't match.-danger";
                 await _log.LogWarningAsync($"Shift IDs didn't match: {id} and {shift.Shift_ID}");
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { departmentId = shift.Department_ID });
             }
 
             if (ModelState.IsValid)
@@ -90,7 +93,7 @@ namespace Scheduling.Controllers
                     TempData["toastMessage"] = "Unable to update shift.-danger";
                 }
 
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { departmentId = shift.Department_ID });
             }
 
             ViewBag.Shifts = _db.Shifts.ToList();
@@ -109,23 +112,24 @@ namespace Scheduling.Controllers
             {
                 TempData["toastMessage"] = "Shift not found.-danger";
                 await _log.LogWarningAsync($"Shift ID: {id} was not found");
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { departmentId = shift.Department_ID });
             }
 
             try
             {
-                _db.Shifts.Remove(shift);
+                _db.Shifts.Update(shift);
+                shift.Status = 0;
                 await _db.SaveChangesAsync();
-                await _log.LogInfoAsync($"Deleted shift", shift);
-                TempData["toastMessage"] = "Successfully deleted shift!-success";
+                await _log.LogInfoAsync($"Removed shift", shift);
+                TempData["toastMessage"] = "Successfully removed shift!-success";
             }
             catch (Exception ex)
             {
-                await _log.LogErrorAsync($"Unable to delete shift with ID: {id}", ex);
-                TempData["toastMessage"] = "Unable to delete shift.-danger";
+                await _log.LogErrorAsync($"Unable to remove shift with ID: {id}", ex);
+                TempData["toastMessage"] = "Unable to remove shift.-danger";
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { departmentId = shift.Department_ID });
         }
 
         [HttpPost]
