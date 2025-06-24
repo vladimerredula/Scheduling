@@ -312,7 +312,7 @@ namespace Scheduling.Controllers
             ViewBag.Holidays = await GetHoldays(month);
 
 
-            await _log.LogInfoAsync($"Loaded schedule for {department} {_helper.DisplayMonthYear(month, year)}");
+            await _log.LogInfoAsync($"Loaded {_helper.DisplayMonthYear(month, year)} schedule of {department}.");
 
             return PartialView("_ScheduleTable", (users, schedules, leaves, month, year));
         }
