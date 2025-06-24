@@ -14,13 +14,15 @@ namespace Scheduling.Controllers
         private readonly LogService<LeaveController> _log;
         private readonly TemplateService _template;
         private readonly UserService _user;
+        private readonly ScheduleTokenService _token;
 
-        public LeaveController(ApplicationDbContext context, LogService<LeaveController> logger, TemplateService template, UserService user)
+        public LeaveController(ApplicationDbContext context, LogService<LeaveController> logger, TemplateService template, UserService user, ScheduleTokenService token)
         {
             _db = context;
             _log = logger;
             _template = template;
             _user = user;
+            _token = token;
         }
 
         public async Task<IActionResult> Index()
@@ -163,15 +165,24 @@ namespace Scheduling.Controllers
 
         public async Task<IActionResult> Update(int? departmentId, Leave leave)
         {
+            if (leave == null)
+            {
+                TempData["toastMessage"] = "Leave not found-danger";
+                await _log.LogWarningAsync("Leave object is null");
+                return RedirectToAction(nameof(DepartmentLeaves), new
+                {
+                    departmentId = departmentId
+                });
+            }
+
             if (HasOverlappingLeave(leave))
             {
                 ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
                 await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
-                await PopulateLeaveViewBagsAsync();
 
                 return RedirectToAction(nameof(DepartmentLeaves), new
                 {
-                    departmentId = departmentId != null ? departmentId : leave?.User?.Department_ID
+                    departmentId = departmentId
                 });
             }
 
@@ -180,9 +191,15 @@ namespace Scheduling.Controllers
                 _db.Leaves.Update(leave);
 
                 leave.Notify = 1;
-
                 await _db.SaveChangesAsync();
                 await _log.LogInfoAsync($"Updated leave request", leave);
+
+                var deptId = await _user.GetDepartmentId(leave.Personnel_ID);
+                await _token.UpdateTokenAsync(deptId, leave.Date_start.Year, leave.Date_start.Month);
+
+                // If the leave spans multiple months, update the token for both months
+                if (leave.Date_start.Month != leave.Date_end.Month)
+                    await _token.UpdateTokenAsync(deptId, leave.Date_end.Year, leave.Date_end.Month);
 
                 TempData["toastMessage"] = "Successfully updated leave request!-success";
             }
@@ -192,10 +209,9 @@ namespace Scheduling.Controllers
                 TempData["toastMessage"] = "Unable to update leave.-danger";
             }
 
-
             return RedirectToAction(nameof(DepartmentLeaves), new
             {
-                departmentId = departmentId != null ? departmentId : leave?.User?.Department_ID
+                departmentId = departmentId
             });
         }
 
@@ -277,6 +293,7 @@ namespace Scheduling.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // withdraw leave request for department leaves
         public async Task<IActionResult> Withdraw(int id, int deptId, string Comment)
         {
             var leave = await _db.Leaves.FindAsync(id);
@@ -286,7 +303,7 @@ namespace Scheduling.Controllers
                 await _log.LogWarningAsync($"Leave ID: {id} was not found");
                 return RedirectToAction(nameof(DepartmentLeaves), new
                 {
-                    departmentId = deptId != null ? deptId : leave?.User?.Department_ID
+                    departmentId = deptId
                 });
             }
 
@@ -297,15 +314,24 @@ namespace Scheduling.Controllers
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
             await _log.LogInfoAsync($"Cancelled leave request", leave);
+            await _token.UpdateTokenAsync(deptId, leave.Date_start.Year, leave.Date_start.Month);
+
+            var departmentId = await _user.GetDepartmentId(leave.Personnel_ID);
+            await _token.UpdateTokenAsync(departmentId, leave.Date_start.Year, leave.Date_start.Month);
+
+            // If the leave spans multiple months, update the token for both months
+            if (leave.Date_start.Month != leave.Date_end.Month)
+                await _token.UpdateTokenAsync(departmentId, leave.Date_end.Year, leave.Date_end.Month);
 
             TempData["toastMessage"] = "Successfully cancelled leave!-success";
 
             return RedirectToAction(nameof(DepartmentLeaves), new
             {
-                departmentId = deptId != null ? deptId : leave?.User?.Department_ID
+                departmentId = deptId
             });
         }
 
+        // withdraw leave request for personal leaves
         public async Task<IActionResult> WithdrawLeave(int id)
         {
             var leave = await _db.Leaves.FindAsync(id);
@@ -321,6 +347,13 @@ namespace Scheduling.Controllers
 
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
+
+            var deptId = await _user.GetDepartmentId(leave.Personnel_ID);
+            await _token.UpdateTokenAsync(deptId, leave.Date_start.Year, leave.Date_start.Month);
+
+            if (leave.Date_start.Month != leave.Date_end.Month)
+                await _token.UpdateTokenAsync(deptId, leave.Date_end.Year, leave.Date_end.Month);
+
             await _log.LogInfoAsync($"Withdrawn leave", leave);
 
             TempData["toastMessage"] = "Successfully withdrawn leave!-success";
@@ -425,6 +458,15 @@ namespace Scheduling.Controllers
 
                 _db.Leaves.Update(leave);
                 await _db.SaveChangesAsync();
+
+                if (leave.Approver_2 != null)
+                {
+                    var deptId = await _user.GetDepartmentId(leave.Personnel_ID);
+                    await _token.UpdateTokenAsync(deptId, leave.Date_start.Year, leave.Date_start.Month);
+                    if (leave.Date_start.Month != leave.Date_end.Month)
+                        await _token.UpdateTokenAsync(deptId, leave.Date_end.Year, leave.Date_end.Month);
+                }
+
                 await _log.LogInfoAsync($"Approved leave request", leave);
 
                 TempData["toastMessage"] = "Successfully approved leave request!-success";
@@ -435,9 +477,9 @@ namespace Scheduling.Controllers
                 TempData["toastMessage"] = "Unable to approve leave.-danger";
             }
 
-            return RedirectToAction(nameof(DepartmentLeaves), new 
-            { 
-                departmentId = departmentId != null ? departmentId : leave?.User?.Department_ID 
+            return RedirectToAction(nameof(DepartmentLeaves), new
+            {
+                departmentId = departmentId
             });
         }
 
@@ -507,6 +549,7 @@ namespace Scheduling.Controllers
             }
 
             var approverId = _user.GetPersonnelId();
+            var deptId = await _user.GetDepartmentId(leave.Personnel_ID);
             var today = DateTime.Now;
 
             try
@@ -528,6 +571,14 @@ namespace Scheduling.Controllers
 
                 _db.Leaves.Update(leave);
                 await _db.SaveChangesAsync();
+
+                if (leave.Approver_2 != null)
+                {
+                    await _token.UpdateTokenAsync(deptId, leave.Date_start.Year, leave.Date_start.Month);
+                    if (leave.Date_start.Month != leave.Date_end.Month)
+                        await _token.UpdateTokenAsync(deptId, leave.Date_end.Year, leave.Date_end.Month);
+                }
+
                 await _log.LogInfoAsync($"Approved leave request", leave);
 
                 TempData["toastMessage"] = "Successfully approved leave request!-success";
@@ -541,7 +592,7 @@ namespace Scheduling.Controllers
             return RedirectToAction("Index", "Schedule", new { 
                 month = leave.Date_start.Month, 
                 year = leave.Date_start.Year, 
-                departmentId = leave?.User?.Department_ID 
+                departmentId = deptId
             });
         }
 

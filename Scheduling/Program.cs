@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
 using Scheduling.Helpers;
+using Scheduling.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,8 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ScheduleTokenService>();
 
 builder.Services.AddHostedService<ScheduleMonitorService>();
+
+builder.Services.Configure<SchBackupSettings>(builder.Configuration.GetSection("SchBackupSettings"));
 
 // use if server is behind proxy
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
