@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Scheduling.ViewModels;
+using System.DirectoryServices.Protocols;
+using System.Net;
 using Scheduling.Services;
 
 namespace Scheduling.Controllers
@@ -28,7 +30,7 @@ namespace Scheduling.Controllers
                 if (claimUser.IsInRole("member") || claimUser.IsInRole("shiftLeader"))
                     return RedirectToAction("Calendar", "Schedule");
                 else
-                return RedirectToAction("Index", "Schedule");
+                    return RedirectToAction("Index", "Schedule");
             }
 
             return View("Login");
@@ -37,6 +39,43 @@ namespace Scheduling.Controllers
         public IActionResult Login()
         {
             return View();
+        }
+
+        public bool AuthenticateWithLdap(string username, string password)
+        {
+            string ldapServer = "192.168.161.238"; // e.g. ad.company.local or 192.168.1.10
+            string ldapDomain = "FARADAYGROUP"; // AD domain prefix, used in login
+            string baseDn = "DC=faradaygroup,DC=local";
+            int ldapPort = 389; // or 636 for LDAPS (SSL)
+
+            string userDn = username;
+
+            try
+            {
+                var identifier = new LdapDirectoryIdentifier(ldapServer, ldapPort);
+                using var connection = new LdapConnection(identifier);
+                connection.AuthType = AuthType.Negotiate;
+
+                var credentials = new NetworkCredential(userDn, password);
+                connection.Bind(credentials); // Authenticate user
+
+                // Search for user object in AD
+                var filter = $"(sAMAccountName={username})";
+                var request = new SearchRequest(baseDn, filter, SearchScope.Subtree);
+
+                var response = (SearchResponse)connection.SendRequest(request);
+                if (response.Entries.Count == 0)
+                    Console.WriteLine("No entries found!");
+
+                var entry = response.Entries[0];
+
+                return true;
+            }
+            catch (LdapException ex)
+            {
+                Console.WriteLine($"LDAP error: {ex.Message}");
+                return false;
+            }
         }
 
         [HttpPost]
