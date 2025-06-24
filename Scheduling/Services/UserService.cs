@@ -88,6 +88,8 @@ namespace Scheduling.Services
                 departmentId = await GetDepartmentId();
 
             return await GetUsers(
+                status: 1,
+                activeOnly: true,
                 month: month, 
                 year: year,
                 departmentId: departmentId) ?? new List<User>();

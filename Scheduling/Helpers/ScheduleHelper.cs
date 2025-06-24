@@ -21,6 +21,8 @@ namespace Scheduling.Helpers
             var users = await _user.GetUsers(
                 status: 1,
                 activeOnly: true,
+                month: month,
+                year: year,
                 departmentId: departmentId);
 
             return users;
