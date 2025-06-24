@@ -314,6 +314,7 @@ namespace Scheduling.Controllers
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
             await _log.LogInfoAsync($"Cancelled leave request", leave);
+            await _token.UpdateTokenAsync(deptId, leave.Date_start.Year, leave.Date_start.Month);
 
             var departmentId = await _user.GetDepartmentId(leave.Personnel_ID);
             await _token.UpdateTokenAsync(departmentId, leave.Date_start.Year, leave.Date_start.Month);
