@@ -6,10 +6,12 @@ namespace Scheduling.Services
     public class ScheduleTokenService
     {
         private readonly ApplicationDbContext _db;
+        private readonly ILogger<ScheduleMonitorService> _logger;
 
-        public ScheduleTokenService(ApplicationDbContext db)
+        public ScheduleTokenService(ApplicationDbContext db, ILogger<ScheduleMonitorService> logger)
         {
             _db = db;
+            _logger = logger;
         }
 
         public async Task UpdateTokenAsync(int departmentId, int year, int month)
@@ -42,6 +44,8 @@ namespace Scheduling.Services
 
             var department = (await _db.Departments.FindAsync(departmentId))?.Department_name ?? string.Empty;
             var date = new DateTime(year, month, 1);
+
+            _logger.LogInformation($"{(existingToken != null ? "Updated" : "Created")} schedule token for {department} {date.ToString("MMMM yyyy")} schedule");
         }
     }
 }

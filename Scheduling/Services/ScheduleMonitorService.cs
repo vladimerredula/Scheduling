@@ -1,4 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Scheduling.Models;
+using System.Net.Http.Headers;
 
 namespace Scheduling.Services
 {
@@ -7,12 +10,18 @@ namespace Scheduling.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ScheduleMonitorService> _logger;
         private readonly ExcelService _excel;
+        private readonly SchBackupSettings _settings;
 
-        public ScheduleMonitorService(IServiceProvider serviceProvider, ILogger<ScheduleMonitorService> logger, ExcelService excel)
+        public ScheduleMonitorService(
+            IServiceProvider serviceProvider, 
+            ILogger<ScheduleMonitorService> logger, 
+            ExcelService excel, 
+            IOptions<SchBackupSettings> options)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
             _excel = excel;
+            _settings = options.Value;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -35,10 +44,17 @@ namespace Scheduling.Services
                     {
                         try
                         {
-                            // Export Excel logic
-                            await ExportSchedule(token.Month, token.Year, token.Department_ID, db);
+                            // Export Excel
+                            var file = await ExportSchedule(token.Month, token.Year, token.Department_ID, db);
 
-                            _logger.LogInformation($"Exported updated version of the {token.Month}/{token.Year} {token.Department_ID} schedule");
+                            var firstDayOfMonth = new DateTime(token.Year, token.Month, 1);
+                            var department = await db.Departments.FindAsync(token.Department_ID);
+
+                            var fileName = $"{firstDayOfMonth.ToString("yyyy.MM")} {department?.Department_name}";
+                            var folderPath = $"{firstDayOfMonth.ToString("yyyy/MM. MMMM")}";
+
+                            await SaveToLocal(file, fileName, folderPath);
+                            await UploadToNas(file, fileName, folderPath);
 
                             // Remove the token after successful export
                             db.Edit_tokens.Remove(token);
@@ -60,7 +76,7 @@ namespace Scheduling.Services
             }
         }
 
-        public async Task ExportSchedule(int month, int year, int departmentId, ApplicationDbContext db)
+        public async Task<byte[]> ExportSchedule(int month, int year, int departmentId, ApplicationDbContext db)
         {
             var firstDayOfMonth = new DateTime(year, month, 1);
             var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
@@ -156,25 +172,65 @@ namespace Scheduling.Services
 
             var department = await db.Departments.FindAsync(departmentId);
 
-            var excelFile = _excel.Schedule(users.ToList<dynamic>(), schedules, shifts, leaves, holidays, department.Department_name, month, year);
+            return _excel.Schedule(users.ToList<dynamic>(), schedules, shifts, leaves, holidays, department.Department_name, month, year);
+        }
 
-            string folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "exports", $"{firstDayOfMonth.ToString("yyyy/MM. MMMM")}");
-            Directory.CreateDirectory(folderPath); // Ensure the directory exists
-
-            string baseFileName = $"{firstDayOfMonth.ToString("yyyy.MM")} {department.Department_name}";
-            string extension = ".xlsx";
-            string fileName = baseFileName + extension;
-            string fullPath = Path.Combine(folderPath, fileName);
-
-            int count = 1;
-            while (System.IO.File.Exists(fullPath))
+        public async Task<string> SaveToLocal(byte[] file, string baseFileName, string baseFilePath)
+        {
+            try
             {
-                fileName = $"{baseFileName}_{count}{extension}";
-                fullPath = Path.Combine(folderPath, fileName);
-                count++;
+                string folderPath = Path.Combine(_settings.LocalPath, baseFilePath);
+                Directory.CreateDirectory(folderPath); // Ensure the directory exists
+
+                string extension = ".xlsx";
+                string fileName = baseFileName + extension;
+                string fullPath = Path.Combine(folderPath, fileName);
+
+                int count = 1;
+                while (File.Exists(fullPath))
+                {
+                    fileName = $"{baseFileName}_{count}{extension}";
+                    fullPath = Path.Combine(folderPath, fileName);
+                    count++;
+                }
+
+                await File.WriteAllBytesAsync(fullPath, file);
+                _logger.LogInformation($"File saved locally to {fullPath}");
+
+                return fileName;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error saving file: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+        public async Task UploadToNas(byte[] fileData, string fileName, string folderPath)
+        {
+            using var httpClient = new HttpClient();
+            using var multipart = new MultipartFormDataContent();
+
+            var fileContent = new ByteArrayContent(fileData);
+            fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
+
+            var relativePath = Path.Combine(_settings.RemotePath ?? "", folderPath ?? "").Replace("\\", "/");
+
+            multipart.Add(fileContent, "file", fileName + ".xlsx");
+            multipart.Add(new StringContent(relativePath), "relativePath");
+            multipart.Add(new StringContent("false"), "overwrite");
+
+            var response = await httpClient.PostAsync(_settings.RequestUrl, multipart);
+
+            var result = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("NAS API error: {StatusCode} - {Body}", response.StatusCode, result);
+                throw new HttpRequestException($"NAS upload failed: {response.StatusCode}");
             }
 
-            System.IO.File.WriteAllBytes(fullPath, excelFile);
+            _logger.LogInformation("Uploaded file to NAS: " + result);
         }
     }
 }
