@@ -28,6 +28,8 @@ namespace Scheduling.Controllers
                         l.Department_ID == user.Department_ID && 
                         l.Status == 1)
                     .ToList();
+
+                ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", user.Department_ID);
             }
             else if (User.IsInRole("topManager") || User.IsInRole("admin"))
             {

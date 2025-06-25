@@ -25,18 +25,16 @@
         </p>
     }
 
-    @if (deptSelect)
-    {
-        <div class="row mb-3">
-            <div class="col-auto">
-                <form asp-action="Index" id="changeDepartment">
-                    <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
-                        <option value="" disabled></option>
-                    </select>
-                </form>
-            </div>
+    <div class="row mb-3 @(!deptSelect ? "visually-hidden" : "")">
+        <div class="col-auto">
+            <form asp-action="Index" id="changeDepartment">
+                <select name="departmentId" id="departmentId" class="form-select" asp-items="ViewBag.Departments">
+                    <option value="" disabled></option>
+                </select>
+            </form>
         </div>
-    }
+    </div>
+
     <div class="card p-3 border-0 shadow-sm">
         <table class="datatable table table-hover">
             <thead>
