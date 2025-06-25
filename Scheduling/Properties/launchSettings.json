@@ -27,6 +27,16 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
+    "Container (Dockerfile)": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "environmentVariables": {
+        "ASPNETCORE_HTTP_PORTS": "80"
+      },
+      "publishAllPorts": true,
+      "useSSL": false
+    },
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,

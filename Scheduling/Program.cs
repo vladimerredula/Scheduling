@@ -147,6 +147,8 @@ builder.Logging.AddFile(builder.Configuration.GetSection("Logging:File"), fileLo
     fileLoggerOpts.MaxRollingFiles = 3;
 });
 
+builder.WebHost.UseUrls("http://0.0.0.0:80");
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
