@@ -125,7 +125,7 @@ namespace Scheduling.Controllers
 
             var excelFile = _excel.Schedule(users.ToList<dynamic>(), schedules, shifts, leaves, holidays, department.Department_name, month, year);
 
-            await _log.LogInfoAsync($"Downloaded {firstDayOfMonth.ToString("yyyy.MM")} {department.Department_name} Schedule");
+            _log.LogInfo($"Downloaded {firstDayOfMonth.ToString("yyyy.MM")} {department.Department_name} Schedule");
 
             return File(excelFile, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{firstDayOfMonth.ToString("yyyy.MM")} {department.Department_name}.xlsx");
         }

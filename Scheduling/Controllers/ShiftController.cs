@@ -41,7 +41,7 @@ namespace Scheduling.Controllers
 
                 ViewBag.Departments = new SelectList(_db.Departments.ToList(), "Department_ID", "Department_name", departmentId);
             }
-            await _log.LogInfoAsync($"Visited shifts");
+            _log.LogInfo($"Visited shifts");
 
             return View();
         }
@@ -57,7 +57,7 @@ namespace Scheduling.Controllers
 
                 await _db.Shifts.AddAsync(shift);
                 await _db.SaveChangesAsync();
-                await _log.LogInfoAsync($"Added new Shift", shift);
+                _log.LogInfo($"Added new Shift", shift);
 
                 TempData["toastMessage"] = "Successfully added shift!-success";
                 return RedirectToAction(nameof(Index), new { departmentId = shift.Department_ID});
@@ -76,7 +76,7 @@ namespace Scheduling.Controllers
             if (id != shift.Shift_ID)
             {
                 TempData["toastMessage"] = "Shift IDs didn't match.-danger";
-                await _log.LogWarningAsync($"Shift IDs didn't match: {id} and {shift.Shift_ID}");
+                _log.LogWarning($"Shift IDs didn't match: {id} and {shift.Shift_ID}");
                 return RedirectToAction(nameof(Index), new { departmentId = shift.Department_ID });
             }
 
@@ -86,12 +86,12 @@ namespace Scheduling.Controllers
                 {
                     _db.Shifts.Update(shift);
                     await _db.SaveChangesAsync();
-                    await _log.LogInfoAsync($"Updated shift", shift);
+                    _log.LogInfo($"Updated shift", shift);
                     TempData["toastMessage"] = "Successfully updated shift!-success";
                 }
                 catch (Exception ex)
                 {
-                    await _log.LogErrorAsync($"Unable to update shift with ID: {id}", ex);
+                    _log.LogError($"Unable to update shift with ID: {id}", ex);
                     TempData["toastMessage"] = "Unable to update shift.-danger";
                 }
 
@@ -113,7 +113,7 @@ namespace Scheduling.Controllers
             if (shift == null)
             {
                 TempData["toastMessage"] = "Shift not found.-danger";
-                await _log.LogWarningAsync($"Shift ID: {id} was not found");
+                _log.LogWarning($"Shift ID: {id} was not found");
                 return RedirectToAction(nameof(Index), new { departmentId = shift.Department_ID });
             }
 
@@ -122,12 +122,12 @@ namespace Scheduling.Controllers
                 _db.Shifts.Update(shift);
                 shift.Status = 0;
                 await _db.SaveChangesAsync();
-                await _log.LogInfoAsync($"Removed shift", shift);
+                _log.LogInfo($"Removed shift", shift);
                 TempData["toastMessage"] = "Successfully removed shift!-success";
             }
             catch (Exception ex)
             {
-                await _log.LogErrorAsync($"Unable to remove shift with ID: {id}", ex);
+                _log.LogError($"Unable to remove shift with ID: {id}", ex);
                 TempData["toastMessage"] = "Unable to remove shift.-danger";
             }
 
@@ -139,14 +139,14 @@ namespace Scheduling.Controllers
         {
             if (id == null || _db.Shifts == null)
             {
-                await _log.LogWarningAsync($"Shift table is empty");
+                _log.LogWarning($"Shift table is empty");
                 return NoContent();
             }
 
             var shift = await _db.Shifts.FindAsync(id);
             if (shift == null)
             {
-                await _log.LogWarningAsync($"Shift ID: {id} was not found");
+                _log.LogWarning($"Shift ID: {id} was not found");
                 return NotFound(new { message = "Shift not found!" });
             }
 

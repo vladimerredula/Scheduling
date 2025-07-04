@@ -109,8 +109,7 @@ namespace Scheduling.Controllers
 
                 // Force session creation by setting a value
                 HttpContext.Session.SetString("SessionInitialized", HttpContext.Session.Id);
-
-                await _log.LogInfoAsync("Logged in", usernameOverride: userdetails.Username);
+            _log.LogInfo("Logged in", usernameOverride: user.Username);
 
                 return RedirectToAction("Index", "Access");
             }
@@ -131,8 +130,7 @@ namespace Scheduling.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             HttpContext.Session.Clear();
-
-            await _log.LogInfoAsync("Logged out");
+            _log.LogInfo("Logged out");
 
             return RedirectToAction("Index", "Access");
         }

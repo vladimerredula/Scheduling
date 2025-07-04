@@ -28,7 +28,7 @@ namespace Scheduling.Controllers
         public async Task<IActionResult> Index()
         {
             await PopulateLeaveViewBagsAsync();
-            await _log.LogInfoAsync("Visited leaves");
+            _log.LogInfo("Visited leaves");
 
             return View();
         }
@@ -40,7 +40,7 @@ namespace Scheduling.Controllers
                 departmentId = await _user.GetDepartmentId();
 
             await PopulateLeaveViewBagsAsync(departmentId);
-            await _log.LogInfoAsync("Visited department leaves");
+            _log.LogInfo("Visited department leaves");
 
             return View();
         }
@@ -52,7 +52,7 @@ namespace Scheduling.Controllers
                 ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
 
                 await PopulateLeaveViewBagsAsync();
-                await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
+                _log.LogWarning("Existing leave overlaps for the dates selected");
                 return View(nameof(Index), leave);
             }
 
@@ -71,13 +71,13 @@ namespace Scheduling.Controllers
                 _db.Leaves.Add(leave);
 
                 await _db.SaveChangesAsync();
-                await _log.LogInfoAsync($"Added leave request", leave);
+                _log.LogInfo($"Added leave request", leave);
 
                 TempData["toastMessage"] = "Successfully added leave request!-success";
             }
             catch (Exception ex)
             {
-                await _log.LogErrorAsync("Unable to add leave request", ex);
+                _log.LogError("Unable to add leave request", ex);
                 TempData["toastMessage"] = "Unable to request leave.-danger";
             }
 
@@ -91,7 +91,7 @@ namespace Scheduling.Controllers
                 ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
 
                 await PopulateLeaveViewBagsAsync();
-                await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
+                _log.LogWarning("Existing leave overlaps for the dates selected");
                 return View(nameof(DepartmentLeaves), leave);
             }
 
@@ -110,13 +110,13 @@ namespace Scheduling.Controllers
                 _db.Leaves.Add(leave);
 
                 await _db.SaveChangesAsync();
-                await _log.LogInfoAsync($"Added leave request", leave);
+                _log.LogInfo($"Added leave request", leave);
 
                 TempData["toastMessage"] = $"Successfully added leave for {await _user.GetFullname(leave.Personnel_ID)}!-success";
             }
             catch (Exception ex)
             {
-                await _log.LogErrorAsync("Unable to add leave request", ex);
+                _log.LogError("Unable to add leave request", ex);
                 TempData["toastMessage"] = "Unable to request leave.-danger";
             }
 
@@ -128,7 +128,7 @@ namespace Scheduling.Controllers
             if (id != leave.Leave_ID)
             {
                 TempData["toastMessage"] = "Leave IDs didn't match.-danger";
-                await _log.LogWarningAsync($"Leave IDs didn't match: {id} and {leave.Leave_ID}");
+                _log.LogWarning($"Leave IDs didn't match: {id} and {leave.Leave_ID}");
                 return RedirectToAction(nameof(Index));
             }
 
@@ -141,7 +141,7 @@ namespace Scheduling.Controllers
             if (HasOverlappingLeave(leave))
             {
                 ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
-                await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
+                _log.LogWarning("Existing leave overlaps for the dates selected");
                 await PopulateLeaveViewBagsAsync();
                 return View(nameof(Index), leave);
             }
@@ -150,13 +150,13 @@ namespace Scheduling.Controllers
             {
                 _db.Leaves.Update(leave);
                 await _db.SaveChangesAsync();
-                await _log.LogInfoAsync($"Updated leave request", leave);
+                _log.LogInfo($"Updated leave request", leave);
 
                 TempData["toastMessage"] = "Successfully updated leave request!-success";
             }
             catch (Exception ex)
             {
-                await _log.LogErrorAsync($"Unable to update leave with ID: {id}", ex);
+                _log.LogError($"Unable to update leave with ID: {id}", ex);
                 TempData["toastMessage"] = "Unable to update leave.-danger";
             }
 
@@ -168,7 +168,7 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
-                await _log.LogWarningAsync("Leave object is null");
+                _log.LogWarning("Leave object is null");
                 return RedirectToAction(nameof(DepartmentLeaves), new
                 {
                     departmentId = departmentId
@@ -178,7 +178,7 @@ namespace Scheduling.Controllers
             if (HasOverlappingLeave(leave))
             {
                 ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
-                await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
+                _log.LogWarning("Existing leave overlaps for the dates selected");
 
                 return RedirectToAction(nameof(DepartmentLeaves), new
                 {
@@ -192,7 +192,7 @@ namespace Scheduling.Controllers
 
                 leave.Notify = 1;
                 await _db.SaveChangesAsync();
-                await _log.LogInfoAsync($"Updated leave request", leave);
+                _log.LogInfo($"Updated leave request", leave);
 
                 var deptId = await _user.GetDepartmentId(leave.Personnel_ID);
                 await _token.UpdateTokenAsync(deptId, leave.Date_start.Year, leave.Date_start.Month);
@@ -205,7 +205,7 @@ namespace Scheduling.Controllers
             }
             catch (Exception ex)
             {
-                await _log.LogErrorAsync($"Unable to update leave with ID: {leave.Leave_ID}", ex);
+                _log.LogError($"Unable to update leave with ID: {leave.Leave_ID}", ex);
                 TempData["toastMessage"] = "Unable to update leave.-danger";
             }
 
@@ -233,20 +233,20 @@ namespace Scheduling.Controllers
 
                     _db.Leaves.Add(request);
                     await _db.SaveChangesAsync();
-                    await _log.LogInfoAsync($"Added leave request", request);
+                    _log.LogInfo($"Added leave request", request);
 
                     TempData["toastMessage"] = "Successfully added leave request!-success";
                 }
                 catch (Exception ex)
                 {
-                    await _log.LogErrorAsync($"Unable to add leave request", ex);
+                    _log.LogError($"Unable to add leave request", ex);
                     TempData["toastMessage"] = "Unable to add leave.-danger";
                 }
             } 
             else
             {
                 TempData["toastMessage"] = "Unable to apply leave. Existing leave overlaps with the dates selected.-danger";
-                await _log.LogWarningAsync("Existing leave overlaps for the dates selected");
+                _log.LogWarning("Existing leave overlaps for the dates selected");
             }
 
             // Try to redirect back to the previous page (Calendar only)
@@ -279,14 +279,14 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
-                await _log.LogWarningAsync($"Leave ID: {Id} was not found");
+                _log.LogWarning($"Leave ID: {Id} was not found");
                 return RedirectToAction(nameof(Index));
             }
 
             leave.Status = "Cancelled";
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
-            await _log.LogInfoAsync($"Cancelled leave request", leave);
+            _log.LogInfo($"Cancelled leave request", leave);
 
             TempData["toastMessage"] = "Successfully cancelled leave request!-success";
 
@@ -300,7 +300,7 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
-                await _log.LogWarningAsync($"Leave ID: {id} was not found");
+                _log.LogWarning($"Leave ID: {id} was not found");
                 return RedirectToAction(nameof(DepartmentLeaves), new
                 {
                     departmentId = deptId
@@ -313,7 +313,7 @@ namespace Scheduling.Controllers
 
             _db.Leaves.Update(leave);
             await _db.SaveChangesAsync();
-            await _log.LogInfoAsync($"Cancelled leave request", leave);
+            _log.LogInfo($"Cancelled leave request", leave);
             await _token.UpdateTokenAsync(deptId, leave.Date_start.Year, leave.Date_start.Month);
 
             var departmentId = await _user.GetDepartmentId(leave.Personnel_ID);
@@ -338,7 +338,7 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
-                await _log.LogWarningAsync($"Leave ID: {id} was not found");
+                _log.LogWarning($"Leave ID: {id} was not found");
                 return RedirectToAction(nameof(Index));
             }
 
@@ -354,7 +354,7 @@ namespace Scheduling.Controllers
             if (leave.Date_start.Month != leave.Date_end.Month)
                 await _token.UpdateTokenAsync(deptId, leave.Date_end.Year, leave.Date_end.Month);
 
-            await _log.LogInfoAsync($"Withdrawn leave", leave);
+            _log.LogInfo($"Withdrawn leave", leave);
 
             TempData["toastMessage"] = "Successfully withdrawn leave!-success";
 
@@ -432,7 +432,7 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
-                await _log.LogWarningAsync($"Leave ID: {Id} was not found");
+                _log.LogWarning($"Leave ID: {Id} was not found");
                 return RedirectToAction(nameof(DepartmentLeaves));
             }
 
@@ -467,7 +467,7 @@ namespace Scheduling.Controllers
                         await _token.UpdateTokenAsync(deptId, leave.Date_end.Year, leave.Date_end.Month);
                 }
 
-                await _log.LogInfoAsync($"Approved leave request", leave);
+                _log.LogInfo($"Approved leave request", leave);
 
                 TempData["toastMessage"] = "Successfully approved leave request!-success";
             }
@@ -492,7 +492,7 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
-                await _log.LogWarningAsync($"Leave ID: {Id} was not found");
+                _log.LogWarning($"Leave ID: {Id} was not found");
                 return RedirectToAction("DepartmentLeaves");
             }
 
@@ -519,13 +519,13 @@ namespace Scheduling.Controllers
 
                 _db.Leaves.Update(leave);
                 await _db.SaveChangesAsync();
-                await _log.LogInfoAsync($"Denied leave request", leave);
+                _log.LogInfo($"Denied leave request", leave);
 
                 TempData["toastMessage"] = "Successfully denied leave request!-success";
             }
             catch (Exception ex)
             {
-                await _log.LogErrorAsync($"Unable to deny leave request", ex);
+                _log.LogError($"Unable to deny leave request", ex);
                 TempData["toastMessage"] = "Unable to deny leave.-danger";
             }
 
@@ -544,7 +544,7 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
-                await _log.LogWarningAsync($"Leave ID: {Id} was not found");
+                _log.LogWarning($"Leave ID: {Id} was not found");
                 return RedirectToAction("Index", "Schedule");
             }
 
@@ -579,13 +579,13 @@ namespace Scheduling.Controllers
                         await _token.UpdateTokenAsync(deptId, leave.Date_end.Year, leave.Date_end.Month);
                 }
 
-                await _log.LogInfoAsync($"Approved leave request", leave);
+                _log.LogInfo($"Approved leave request", leave);
 
                 TempData["toastMessage"] = "Successfully approved leave request!-success";
             }
             catch (Exception ex)
             {
-                await _log.LogErrorAsync($"Unable to approve leave request", ex);
+                _log.LogError($"Unable to approve leave request", ex);
                 TempData["toastMessage"] = "Unable to approve leave.-danger";
             }
 
@@ -605,7 +605,7 @@ namespace Scheduling.Controllers
             if (leave == null)
             {
                 TempData["toastMessage"] = "Leave not found-danger";
-                await _log.LogWarningAsync($"Leave ID: {Id} was not found");
+                _log.LogWarning($"Leave ID: {Id} was not found");
                 return RedirectToAction("Index", "Schedule");
             }
 
@@ -632,13 +632,13 @@ namespace Scheduling.Controllers
 
                 _db.Leaves.Update(leave);
                 await _db.SaveChangesAsync();
-                await _log.LogInfoAsync($"Denied leave request", leave);
+                _log.LogInfo($"Denied leave request", leave);
 
                 TempData["toastMessage"] = "Successfully denied leave request!-success";
             }
             catch (Exception ex)
             {
-                await _log.LogErrorAsync($"Unable to deny leave request", ex);
+                _log.LogError($"Unable to deny leave request", ex);
                 TempData["toastMessage"] = "Unable to deny leave.-danger";
             }
 

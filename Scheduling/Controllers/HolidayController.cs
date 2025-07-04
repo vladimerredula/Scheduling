@@ -20,7 +20,7 @@ namespace Scheduling.Controllers
         public IActionResult Index()
         {
             ViewBag.Holidays = _db.Holidays.ToList();
-            _log.LogInfoAsync("Visited holiday index");
+            _log.LogInfo("Visited holiday index");
 
             return View();
         }
@@ -34,7 +34,7 @@ namespace Scheduling.Controllers
             {
                 _db.Holidays.AddAsync(holiday);
                 await _db.SaveChangesAsync();
-                await _log.LogInfoAsync("Added holiday", holiday);
+                _log.LogInfo("Added holiday", holiday);
                 TempData["toastMessage"] = "Successfully added Holiday!-success";
                 return RedirectToAction(nameof(Index));
             }
@@ -52,7 +52,7 @@ namespace Scheduling.Controllers
             if (id != holiday.Holiday_ID)
             {
                 TempData["toastMessage"] = "Holiday IDs didn't match.-danger";
-                await _log.LogWarningAsync($"Holiday IDs didn't match: {id} and {holiday.Holiday_ID}");
+                _log.LogWarning($"Holiday IDs didn't match: {id} and {holiday.Holiday_ID}");
                 return RedirectToAction(nameof(Index));
             }
 
@@ -62,12 +62,12 @@ namespace Scheduling.Controllers
                 {
                     _db.Holidays.Update(holiday);
                     await _db.SaveChangesAsync();
-                    await _log.LogInfoAsync("Updated holiday", holiday);
+                    _log.LogInfo("Updated holiday", holiday);
                     TempData["toastMessage"] = "Successfully updated Holiday!-success";
                 }
                 catch (Exception ex)
                 {
-                    await _log.LogErrorAsync($"Unable to update Holiday with ID: {id}", ex);
+                    _log.LogError($"Unable to update Holiday with ID: {id}", ex);
                     TempData["toastMessage"] = "Unable to update Holiday.-danger";
                 }
 
@@ -89,7 +89,7 @@ namespace Scheduling.Controllers
             if (holiday == null)
             {
                 TempData["toastMessage"] = "Holiday not found-danger";
-                await _log.LogWarningAsync($"Holiday ID: {id} was not found");
+                _log.LogWarning($"Holiday ID: {id} was not found");
                 return RedirectToAction(nameof(Index));
             }
 
@@ -97,12 +97,12 @@ namespace Scheduling.Controllers
             {
                 _db.Holidays.Remove(holiday);
                 await _db.SaveChangesAsync();
-                await _log.LogInfoAsync("Deleted holiday", holiday);
+                _log.LogInfo("Deleted holiday", holiday);
                 TempData["toastMessage"] = "Successfully deleted Holiday!-success";
             }
             catch (Exception ex)
             {
-                await _log.LogErrorAsync($"Unable to delete Holiday with ID: {id}", ex);
+                _log.LogError($"Unable to delete Holiday with ID: {id}", ex);
                 TempData["toastMessage"] = "Unable to delete Holiday.-danger";
             }
 
@@ -114,14 +114,14 @@ namespace Scheduling.Controllers
         {
             if (id == null || _db.Holidays == null)
             {
-                await _log.LogWarningAsync($"Holiday table is empty");
+                _log.LogWarning($"Holiday table is empty");
                 return NoContent();
             }
 
             var holiday = await _db.Holidays.FindAsync(id);
             if (holiday == null)
             {
-                await _log.LogWarningAsync($"Holiday ID: {id} was not found");
+                _log.LogWarning($"Holiday ID: {id} was not found");
                 return NotFound(new { message = "Holiday not found!" });
             }
 

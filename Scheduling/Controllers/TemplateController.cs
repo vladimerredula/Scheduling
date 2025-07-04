@@ -23,7 +23,7 @@ namespace Scheduling.Controllers
                 .ThenInclude(p => p.Components)
                 .ToListAsync();
 
-            await _log.LogInfoAsync("Visited schedules");
+            _log.LogInfo("Visited schedules");
             return View();
         }
 
@@ -153,7 +153,7 @@ namespace Scheduling.Controllers
             await _db.SaveChangesAsync();
 
             TempData["toastMessage"] = "Successfully added template!-success";
-            await _log.LogInfoAsync("Added template", template);
+            _log.LogInfo("Added template", template);
             return RedirectToAction(nameof(Index));
         }
 
@@ -229,7 +229,7 @@ namespace Scheduling.Controllers
             await _db.SaveChangesAsync();
 
             TempData["toastMessage"] = "Successfully updated template!-success";
-            await _log.LogInfoAsync("Updated template", template);
+            _log.LogInfo("Updated template", template);
 
             return RedirectToAction(nameof(Index));
         }
@@ -251,7 +251,7 @@ namespace Scheduling.Controllers
             await _db.SaveChangesAsync();
 
             TempData["toastMessage"] = "Successfully deleted template!-success";
-            await _log.LogInfoAsync("Deleted template", template);
+            _log.LogInfo("Deleted template", template);
 
             return RedirectToAction(nameof(Index));
         }

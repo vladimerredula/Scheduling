@@ -15,16 +15,16 @@ namespace Scheduling.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        private async Task<string> GetUsernameAsync()
+        private string GetUsername()
         {
             var user = _httpContextAccessor.HttpContext?.User;
             var userName = user?.FindFirst(ClaimTypes.Name)?.Value;
             return userName ?? "Unknown";
         }
 
-        public async Task LogInfoAsync(string message, object? obj = null, string? usernameOverride = null)
+        public void LogInfo(string message, object? obj = null, string? usernameOverride = null)
         {
-            var username = usernameOverride ?? await GetUsernameAsync();
+            var username = usernameOverride ?? GetUsername();
 
             var log = new StringBuilder();
 
@@ -36,15 +36,15 @@ namespace Scheduling.Services
             _logger.LogInformation(log.ToString());
         }
 
-        public async Task LogWarningAsync(string message)
+        public void LogWarning(string message)
         {
-            var username = await GetUsernameAsync();
+            var username = GetUsername();
             _logger.LogWarning($"User:{username}, Message:{message}");
         }
 
-        public async Task LogErrorAsync(string message, Exception? ex = null)
+        public void LogError(string message, Exception? ex = null)
         {
-            var username = await GetUsernameAsync();
+            var username = GetUsername();
             if (ex != null)
                 _logger.LogError(ex, $"User:{username}, Message:{message}");
             else
