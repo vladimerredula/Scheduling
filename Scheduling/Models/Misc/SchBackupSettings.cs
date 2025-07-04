@@ -1,4 +1,4 @@
-﻿namespace Scheduling.Models
+﻿namespace Scheduling.Models.Misc
 {
     public class SchBackupSettings
     {

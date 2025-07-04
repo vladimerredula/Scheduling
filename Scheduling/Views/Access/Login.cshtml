@@ -28,6 +28,7 @@
                         @* <div asp-validation-summary="All" class="text-danger"></div> *@
 
                         <form asp-controller="Access" asp-action="Login" method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                             <div class="form-floating mb-3">
                                 <input type="text" asp-for="Username" autocomplete="off" class="form-control form-control-lg" placeholder="Username">
                                 <label asp-for="Username"></label>

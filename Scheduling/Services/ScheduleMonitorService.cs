@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Scheduling.Models;
+using Scheduling.Models.Misc;
 using System.Net.Http.Headers;
 
 namespace Scheduling.Services

@@ -1,181 +1,170 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
-using Scheduling;
-using Scheduling.Services;
-using NReco.Logging.File;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
-using System.Net;
+using Microsoft.EntityFrameworkCore;
+using NReco.Logging.File;
+using Scheduling;
 using Scheduling.Helpers;
-using Scheduling.Models;
+using Scheduling.Models.Misc;
+using Scheduling.Services;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Configure Services
 builder.Services.AddControllersWithViews();
 
-// Add DbContext with MySQL
+// Database (MySQL)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
-    ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+    ));
 
-// Add services for dependency injection
+// Dependency Injection
 builder.Services.AddTransient<ExcelService>(); 
-
 builder.Services.AddScoped(typeof(LogService<>));
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ScheduleTokenService>();
-
+builder.Services.AddScoped<ScheduleHelper>();
+builder.Services.AddScoped<TemplateService>();
 builder.Services.AddHostedService<ScheduleMonitorService>();
+builder.Services.AddHttpContextAccessor();
 
+// Load settings
 builder.Services.Configure<SchBackupSettings>(builder.Configuration.GetSection("SchBackupSettings"));
 
-// use if server is behind proxy
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownProxies.Add(IPAddress.Parse("192.168.161.112")); // or your Nginx IP
-});
-
-// Add authentication services
-builder.Services.AddAuthentication(
-    CookieAuthenticationDefaults.AuthenticationScheme)
+// Authentication + Cookie Config
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Access/Login"; // Redirect here if not authenticated
-        options.LogoutPath = "/Access/Logout"; // Redirect here to logout
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+        options.Cookie.Name = "sch.Auth";
+        options.LoginPath = "/Access/Login";
+        options.LogoutPath = "/Access/Logout";
         options.AccessDeniedPath = "/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
         options.SlidingExpiration = true;
     });
 
-// Add session services
+// Session
 builder.Services.AddSession(options =>
 {
-    options.Cookie.Name = ".Scheduling.Session";
-    options.Cookie.HttpOnly = true; // Ensure session cookie is not accessible to client-side scripts
-    options.Cookie.IsEssential = true; // Indicate that the session cookie is essential for the application
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Send session cookie only over HTTPS. Set None if not
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // Session timeout set to 30 minutes
+    options.Cookie.Name = "sch.Session";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
 });
 
+// Data Protection
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "DataProtection-Keys")))
-    .SetApplicationName("SchedulingApp");
+    .SetApplicationName("SchedulingWebApp");
 
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<TemplateService>();
-
-// Helpers
-builder.Services.AddScoped<ScheduleHelper>();
-
-builder.Logging.AddFile(builder.Configuration.GetSection("Logging:File"), fileLoggerOpts =>
+// Forwarded Headers (for reverse proxy)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    string currentLogFileName = null;
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownProxies.Add(IPAddress.Parse("192.168.161.115")); // Nginx IP
+});
+
+// File Logging (General + Error)
+builder.Logging.AddFile(builder.Configuration.GetSection("Logging:File"), options =>
+{
+    string currentLogFileName = string.Empty;
     DateTime currentDate = DateTime.MinValue;
 
-    fileLoggerOpts.FormatLogFileName = fName =>
+    options.FormatLogFileName = folder =>
     {
-        DateTime now = DateTime.UtcNow;
-
-        if (currentDate.Date != now.Date || currentLogFileName == null)
+        var now = DateTime.UtcNow;
+        if (currentDate.Date != now.Date || string.IsNullOrEmpty(currentLogFileName))
         {
             currentDate = now;
-            string logPath = $"{now:yyyy}/{now:MM}/{now:dd}/{now:yyyy}-{now:MM}-{now:dd}.log";
-            currentLogFileName = Path.Combine(fName, logPath);
-            Directory.CreateDirectory(Path.GetDirectoryName(currentLogFileName));
+            string logPath = $"{now:yyyy}/{now:MM}/{now:dd}/{now:yyyy-MM-dd}.log";
+            currentLogFileName = Path.Combine(folder, logPath);
+            var directoryPath = Path.GetDirectoryName(currentLogFileName);
+            if (!string.IsNullOrEmpty(directoryPath))
+                Directory.CreateDirectory(directoryPath);
         }
-
         return currentLogFileName;
     };
 
-    fileLoggerOpts.FormatLogEntry = msg =>
+    options.FormatLogEntry = msg =>
     {
         var sb = new System.Text.StringBuilder();
-
-        sb.Append(DateTime.Now.ToString("o")); // ISO timestamp
-        sb.Append($" Level:{msg.LogLevel}, ");
-        sb.Append($"{msg.LogName}, ");
-
+        sb.Append(DateTime.Now.ToString("o"));
+        sb.Append($" Level:{msg.LogLevel}, {msg.LogName}, ");
         if (msg.Exception != null)
         {
-            var stackTrace = new System.Diagnostics.StackTrace(msg.Exception, true);
-            var frame = stackTrace.GetFrame(0);
+            var trace = new System.Diagnostics.StackTrace(msg.Exception, true);
+            var frame = trace.GetFrame(0);
             if (frame != null)
-            {
                 sb.Append($"Line:{frame.GetFileLineNumber()}, ");
-            }
-
             sb.Append($"Exception:{msg.Exception.Message}");
         }
         else
         {
             sb.Append(msg.Message);
         }
-
         return sb.ToString();
     };
 
-    fileLoggerOpts.FileSizeLimitBytes = 1 * 1024 * 1024; // 1 MB
-    fileLoggerOpts.MaxRollingFiles = 3;
+    options.FileSizeLimitBytes = 1 * 1024 * 1024;
+    options.MaxRollingFiles = 3;
 });
 
-builder.Logging.AddFile(builder.Configuration.GetSection("Logging:File"), fileLoggerOpts =>
+builder.Logging.AddFile(builder.Configuration.GetSection("Logging:File"), options =>
 {
-    string errorLogFileName = null;
+    string errorLogFileName = string.Empty;
     DateTime currentDate = DateTime.MinValue;
 
-    fileLoggerOpts.FormatLogFileName = fName =>
+    options.FormatLogFileName = folder =>
     {
-        DateTime now = DateTime.UtcNow;
-
-        if (currentDate.Date != now.Date || errorLogFileName == null)
+        var now = DateTime.UtcNow;
+        if (currentDate.Date != now.Date || string.IsNullOrEmpty(errorLogFileName))
         {
             currentDate = now;
-            string logPath = $"errors/{now:yyyy}/{now:MM}/{now:dd}/{now:yyyy}-{now:MM}-{now:dd}-errors.log";
-            errorLogFileName = Path.Combine(fName, logPath);
-            Directory.CreateDirectory(Path.GetDirectoryName(errorLogFileName));
+            string logPath = $"errors/{now:yyyy}/{now:MM}/{now:dd}/{now:yyyy-MM-dd}-errors.log";
+            errorLogFileName = Path.Combine(folder, logPath);
+            var directoryPath = Path.GetDirectoryName(errorLogFileName);
+            if (!string.IsNullOrEmpty(directoryPath))
+                Directory.CreateDirectory(directoryPath);
         }
-
         return errorLogFileName;
     };
 
-    fileLoggerOpts.FilterLogEntry = msg =>
+    options.FilterLogEntry = msg =>
         msg.LogLevel == LogLevel.Error || msg.LogLevel == LogLevel.Critical;
 
-    fileLoggerOpts.FileSizeLimitBytes = 1 * 1024 * 1024; // 1 MB
-    fileLoggerOpts.MaxRollingFiles = 3;
+    options.FileSizeLimitBytes = 1 * 1024 * 1024;
+    options.MaxRollingFiles = 3;
 });
 
+// Listen on port 80
 builder.WebHost.UseUrls("http://0.0.0.0:80");
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Middleware
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseForwardedHeaders();
-
-//app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.UseSession();
-
 app.UseMiddleware<SessionTrackingMiddleware>();
 
+// Routes
 app.MapControllerRoute(
     name: "default",
-    //pattern: "{controller=Home}/{action=Index}/{id?}");
     pattern: "{controller=Access}/{action=Index}/{id?}");
 
 app.Run();

@@ -21,23 +21,17 @@ namespace Scheduling.Controllers
 
         public IActionResult Index()
         {
-            ClaimsPrincipal claimUser = HttpContext.User;
-
-            if (claimUser.Identity.IsAuthenticated)
+            if (User?.Identity?.IsAuthenticated == true)
             {
-                if (claimUser.IsInRole("member") || claimUser.IsInRole("shiftLeader"))
-                    return RedirectToAction("Calendar", "Schedule");
-                else
-                return RedirectToAction("Index", "Schedule");
+                return User.IsInRole("member") || User.IsInRole("shiftLeader")
+                    ? RedirectToAction("Calendar", "Schedule")
+                    : RedirectToAction("Index", "Schedule");
             }
 
             return View("Login");
         }
 
-        public IActionResult Login()
-        {
-            return View();
-        }
+        public IActionResult Login() => View();
 
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
@@ -121,6 +115,7 @@ namespace Scheduling.Controllers
         {
             var sessionId = HttpContext.Session.Id;
             var session = await _db.Sessions.FindAsync(sessionId);
+
             if (session != null)
             {
                 _db.Sessions.Remove(session);
@@ -128,7 +123,6 @@ namespace Scheduling.Controllers
             }
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
             HttpContext.Session.Clear();
             _log.LogInfo("Logged out");
 
