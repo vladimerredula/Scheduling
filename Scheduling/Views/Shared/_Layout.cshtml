@@ -33,8 +33,6 @@
         var routeData = ViewContext.RouteData.Values;
         var controller = routeData["controller"]?.ToString();
         var action = routeData["action"]?.ToString();
-        var firstName = User.FindFirstValue(ClaimTypes.GivenName);
-        var lastName = User.FindFirstValue(ClaimTypes.Surname);
     }
 
     <header>
@@ -118,7 +116,7 @@
                             </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="userDropdownMenu">
-                                    @firstName @lastName
+                                    @User.FindFirstValue(ClaimTypes.GivenName)
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdownMenu">
                                     <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#changePassModal"><i class="bi bi-person-fill-gear"></i> Change password</a></li>

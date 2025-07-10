@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Scheduling.ViewModels;
 using Scheduling.Services;
+using Scheduling.Helpers;
+using Scheduling.Models;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Scheduling.Controllers
 {
@@ -12,11 +15,13 @@ namespace Scheduling.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly LogService<AccessController> _log;
+        private readonly EncryptionHelper _aesHelper;
 
-        public AccessController(ApplicationDbContext dbContext, LogService<AccessController> logger)
+        public AccessController(ApplicationDbContext dbContext, LogService<AccessController> logger, EncryptionHelper encryption)
         {
             _db = dbContext;
             _log = logger;
+            _aesHelper = encryption;
         }
 
         public IActionResult Index()
@@ -36,10 +41,45 @@ namespace Scheduling.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) 
+                return View(model);
+
+            var user = new User();
+            var claims = new List<Claim>();
+
+            var response = await TryExternalLogin(model);
+
+            if (response.IsSuccessStatusCode)
             {
-                var user = await _db.Users
-                    .SingleOrDefaultAsync(m => m.Username == model.Username);
+                var jwtClaims = await ReadJwtClaims(response);
+
+                if (jwtClaims == null)
+                {
+                    ModelState.AddModelError("", "Login failed. Token not received.");
+                    return View(model);
+                }
+
+                var personnelIdClaim = jwtClaims.FirstOrDefault(c => c.Type == "Personnelid")?.Value;
+                if (!int.TryParse(personnelIdClaim, out var personnelId))
+                {
+                    ModelState.AddModelError("", "Personnel ID from token not found.");
+                    return View(model);
+                }
+
+                user = await _db.Users.SingleOrDefaultAsync(u => u.Personnel_ID == personnelId);
+                if (user == null)
+                {
+                    ModelState.AddModelError("", "User not found.");
+                    return View(model);
+                }
+
+                claims.AddRange(jwtClaims);
+            }
+            else
+            {
+                // Retrieve user in DB if not found in AD
+
+                user = await _db.Users.SingleOrDefaultAsync(u => u.Username == model.Username);
 
                 if (user == null)
                 {
@@ -47,68 +87,31 @@ namespace Scheduling.Controllers
                     return View(model);
                 }
 
-                var userdetails = await _db.Users
-                    .SingleOrDefaultAsync(m => m.Username == model.Username && m.Password == model.Password);
-
-                if (userdetails == null)
+                if (user.Password != model.Password)
                 {
-                    ModelState.AddModelError("Password", "Invalid password. Please try again.");
+                    ModelState.AddModelError("Password", "Invalid password.");
                     return View(model);
                 }
 
-                var role = "";
-                switch (userdetails.Privilege_ID)
-                {
-                    case 0:
-                        role = "admin";
-                        break;
-                    case 1:
-                        role = "member";
-                        break;
-                    case 2:
-                        role = "shiftLeader";
-                        break;
-                    case 3:
-                        role = "manager";
-                        break;
-                    case 4:
-                        role = "topManager";
-                        break;
-                    default:
-                        role = userdetails.Privilege_ID.ToString();
-                        break;
-                }
-
-                List<Claim> claims = new List<Claim>()
-                {
-                    // Here we store user login information of the user that we can retrieve later
-                    new Claim(ClaimTypes.Role, role),
-                    new Claim(ClaimTypes.Name, userdetails.Username),
-                    new Claim(ClaimTypes.GivenName, userdetails.First_name),
-                    new Claim(ClaimTypes.Surname, userdetails.Last_name),
-                    new Claim("Personnelid", userdetails.Personnel_ID.ToString())
-                };
-
-                ClaimsIdentity claimsIdentity = new ClaimsIdentity(claims,
-                    CookieAuthenticationDefaults.AuthenticationScheme);
-
-                AuthenticationProperties properties = new AuthenticationProperties()
-                {
-                    AllowRefresh = true,
-                    IsPersistent = model.KeepLoggedIn
-                };
-
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity), properties);
-
-                // Force session creation by setting a value
-                HttpContext.Session.SetString("SessionInitialized", HttpContext.Session.Id);
-            _log.LogInfo("Logged in", usernameOverride: user.Username);
-
-                return RedirectToAction("Index", "Access");
+                claims.AddRange(GetLocalClaims(user));
             }
 
-            return View(model);
+            claims.Add(new Claim(ClaimTypes.Role, GetRoleName(user.Privilege_ID)));
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProps = new AuthenticationProperties
+            {
+                AllowRefresh = true,
+                IsPersistent = model.KeepLoggedIn
+            };
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity), authProps);
+
+            // Ensure session is initialized
+            HttpContext.Session.SetString("SessionInitialized", HttpContext.Session.Id);
+            _log.LogInfo("Logged in", usernameOverride: user.Username);
+
+            return RedirectToAction("Index", "Access");
         }
 
         public async Task<IActionResult> Logout()
@@ -128,5 +131,53 @@ namespace Scheduling.Controllers
 
             return RedirectToAction("Index", "Access");
         }
+
+        public class AuthResponse
+        {
+            public string Token { get; set; }
+        }
+
+        // ========== Helper Methods ==========
+
+        private async Task<HttpResponseMessage> TryExternalLogin(LoginViewModel model)
+        {
+            var client = new HttpClient();
+            var payload = new
+            {
+                username = _aesHelper.Encrypt(model.Username),
+                password = _aesHelper.Encrypt(model.Password)
+            };
+
+            return await client.PostAsJsonAsync("http://auth.faradaygroup.local/api/Auth/login", payload);
+        }
+
+        private async Task<List<Claim>?> ReadJwtClaims(HttpResponseMessage response)
+        {
+            var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+            if (string.IsNullOrWhiteSpace(auth?.Token)) 
+                return null;
+
+            var handler = new JwtSecurityTokenHandler();
+            var token = handler.ReadJwtToken(auth.Token);
+
+            return token.Claims.ToList();
+        }
+
+        private List<Claim> GetLocalClaims(User user) => new()
+        {
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.GivenName, user.Full_name),
+            new Claim("Personnelid", user.Personnel_ID.ToString())
+        };
+
+        private string GetRoleName(int privilegeId) => privilegeId switch
+        {
+            0 => "admin",
+            1 => "member",
+            2 => "shiftLeader",
+            3 => "manager",
+            4 => "topManager",
+            _ => privilegeId.ToString()
+        };
     }
 }

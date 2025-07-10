@@ -36,7 +36,7 @@ namespace Scheduling.Models
 
         [Display(Name = "Privilege")]
         [ForeignKey("Privileges")]
-        public int? Privilege_ID { get; set; }
+        public int Privilege_ID { get; set; }
 
         [Display(Name = "Department")]
         [ForeignKey("Departments")]

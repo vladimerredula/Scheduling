@@ -22,17 +22,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     ));
 
 // Dependency Injection
-builder.Services.AddTransient<ExcelService>(); 
+builder.Services.AddTransient<ExcelService>();
 builder.Services.AddScoped(typeof(LogService<>));
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ScheduleTokenService>();
 builder.Services.AddScoped<ScheduleHelper>();
 builder.Services.AddScoped<TemplateService>();
 builder.Services.AddHostedService<ScheduleMonitorService>();
+builder.Services.AddSingleton<EncryptionHelper>();
 builder.Services.AddHttpContextAccessor();
 
 // Load settings
 builder.Services.Configure<SchBackupSettings>(builder.Configuration.GetSection("SchBackupSettings"));
+builder.Services.Configure<EncryptionSettings>(builder.Configuration.GetSection("Encryption"));
 
 // Authentication + Cookie Config
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
