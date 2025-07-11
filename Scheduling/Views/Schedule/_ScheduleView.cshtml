@@ -142,7 +142,7 @@
                                         string leavePopover = string.Empty;
                                         string bgClass = "visually-hidden";
 
-                                        if (hasLeave)
+                                        if (hasLeave && !isCompanyHoliday)
                                         {
                                             leaveTypeName = leaveTypes?.FirstOrDefault(l => l.Leave_type_ID == leave?.Leave_type_ID)?.Leave_type_name ?? string.Empty;
                                             leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='hover' data-bs-html='true' data-bs-content='<strong>{(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}</strong>' tabindex='0'";
@@ -150,38 +150,30 @@
                                         }
 
                                         <td id="cell-@user.Personnel_ID-@dateStr" class="px-0 @cellClass @(isStillTrainee ? "text-success fw-semibold" : "") position-relative border-bottom border-end border-secondary" @Html.Raw(leavePopover)>
-                                            @if (isPartTime)
+                                            @if (!isCompanyHoliday)
                                             {
-                                                <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_in != null ? schedule?.Time_in?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
-                                                <div class="text-secondary">
-                                                    <hr class="m-0">
-                                                </div>
-                                                <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_out != null ? schedule?.Time_out?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
-                                            } else
-                                            {
-                                                // string shiftName = shift?.Shift_name ?? string.Empty;
+                                                @if (isPartTime)
+                                                {
+                                                    <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_in != null ? schedule?.Time_in?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
+                                                    <div class="text-secondary">
+                                                        <hr class="m-0">
+                                                    </div>
+                                                    <p class="p-0 m-0 fs-5 text-center">@(schedule?.Time_out != null ? schedule?.Time_out?.ToString(@"hh\:mm") : Html.Raw("&nbsp;"))</p>
+                                                }
+                                                else
+                                                {
+                                                    <p class="p-0 m-0 fs-4 text-center position-absolute start-0 w-100 h-100 @(isCurrentShiftLeader ? "currentShiftLeader" : "") @(leave != null && leave.Day_type != "FullDay" ? "z-2" : "z-1")">@(leave != null && leave.Day_type == "FullDay" ? "" : shift?.Acronym ?? shift?.Shift_name)</p>
+                                                }
 
-                                                // if (shiftName?.Length > 3)
-                                                // {
-                                                //     string noVowels = new string(shift?.Shift_name?.Where(c => !"aeiouAEIOU".Contains(c)).ToArray());
+                                                <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @(leave != null && leave.Day_type != "FullDay" ? "z-1" : "z-2") @bgClass"></p>
 
-                                                //     if (!string.IsNullOrWhiteSpace(noVowels))
-                                                //     {
-                                                //         shiftName = noVowels.Length == 1 ? noVowels : $"{noVowels.First()}{noVowels.Last()}";
-                                                //     }
-                                                // }
-
-                                                <p class="p-0 m-0 fs-4 text-center position-absolute start-0 w-100 h-100 @(isCurrentShiftLeader ? "currentShiftLeader" : "") @(leave != null && leave.Day_type != "FullDay" ? "z-2" : "z-1")">@(isCompanyHoliday || (leave != null && leave.Day_type == "FullDay") ? "" : shift?.Acronym ?? shift?.Shift_name)</p>
-                                            }
-
-                                            <p id="p-@user.Personnel_ID-@dateStr" class="position-absolute m-0 start-0 top-0 w-100 h-100 text-center @(leave != null && leave.Day_type != "FullDay" ? "z-1" : "z-2") @bgClass"></p>
-
-                                            @if (schedule?.Comment == "cancelled")
-                                            {
-                                            <svg class="position-absolute top-0 start-0 w-100 h-100">
-                                                <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
-                                                <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
-                                            </svg>
+                                                @if (schedule?.Comment == "cancelled")
+                                                {
+                                                    <svg class="position-absolute top-0 start-0 w-100 h-100">
+                                                        <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
+                                                        <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
+                                                    </svg>
+                                                }
                                             }
                                         </td>
                                     }

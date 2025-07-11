@@ -205,48 +205,51 @@
                                         string action = string.Empty;
 
                                         // Leave coloring and borders
-                                        if (leave?.Status == "Approved" && shiftId != 0)
+                                        if (!isCompanyHoliday)
                                         {
-                                            leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='hover' data-bs-html='true' data-bs-content='<strong>{(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}</strong>' tabindex='0'";
-                                            bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient leave-{leave?.Leave_type_ID} {leave?.Day_type}";
-                                        }
-
-                                        if (hasLeave && canViewRequests)
-                                        {
-                                            if (leave?.Approver_1 == null && leave?.Approver_2 == null)
+                                            if (leave?.Status == "Approved" && shiftId != 0)
                                             {
-                                                leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
-                                                bgClass = "bg-warning bg-opacity-25 leave-pending";
-                                                borderColor = "border-warning";
-                                            }
-                                            else if (leave?.Approver_2 == null)
-                                            {
-                                                string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i> Approved by " + (leave?.Approver1?.Full_name ?? "");
-                                                string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
-                                                leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-html=\"true\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
-                                                bgClass = "bg-success bg-opacity-25 leave-approved";
-                                                borderColor = "border-success";
+                                                leavePopover = $"data-bs-toggle='popover' data-bs-placement='top' data-bs-trigger='hover' data-bs-html='true' data-bs-content='<strong>{(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}</strong>' tabindex='0'";
+                                                bgClass = $"bg-{leave?.Leave_type?.BsColor} bg-gradient leave-{leave?.Leave_type_ID} {leave?.Day_type}";
                                             }
 
-                                            if (!string.IsNullOrEmpty(borderColor))
+                                            if (hasLeave && canViewRequests)
                                             {
-                                                if (date == leave?.Date_start && date == leave?.Date_end)
-                                                    borderClass = $"border border-2 rounded";
-                                                else if (date == leave?.Date_start)
-                                                    borderClass = $"border border-2 border-end-0 rounded-start";
-                                                else if (date == leave?.Date_end)
-                                                    borderClass = $"border border-2 border-start-0 rounded-end";
-                                                else if (date > leave?.Date_start && date < leave?.Date_end)
-                                                    borderClass = $"border border-2 border-start-0 border-end-0";
+                                                if (leave?.Approver_1 == null && leave?.Approver_2 == null)
+                                                {
+                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}\" data-bs-content=\"No approvals yet\" tabindex=\"0\"";
+                                                    bgClass = "bg-warning bg-opacity-25 leave-pending";
+                                                    borderColor = "border-warning";
+                                                }
+                                                else if (leave?.Approver_2 == null)
+                                                {
+                                                    string contentHtml = "<i class='bi bi-check-circle me-1 text-success'></i> Approved by " + (leave?.Approver1?.Full_name ?? "");
+                                                    string encodedContent = System.Net.WebUtility.HtmlEncode(contentHtml); // optional if you use data-bs-html="true"
+                                                    leavePopover = $"data-bs-toggle=\"popover\" data-bs-placement=\"top\" data-bs-trigger=\"hover\" data-bs-html=\"true\" data-bs-title=\"Request for {(leave?.Day_type != "FullDay" ? "Half day " : "")}{leaveTypeName}\" data-bs-content=\"{contentHtml}\" tabindex=\"0\"";
+                                                    bgClass = "bg-success bg-opacity-25 leave-approved";
+                                                    borderColor = "border-success";
+                                                }
 
-                                                borderClass += $" {borderColor}";
+                                                if (!string.IsNullOrEmpty(borderColor))
+                                                {
+                                                    if (date == leave?.Date_start && date == leave?.Date_end)
+                                                        borderClass = $"border border-2 rounded";
+                                                    else if (date == leave?.Date_start)
+                                                        borderClass = $"border border-2 border-end-0 rounded-start";
+                                                    else if (date == leave?.Date_end)
+                                                        borderClass = $"border border-2 border-start-0 rounded-end";
+                                                    else if (date > leave?.Date_start && date < leave?.Date_end)
+                                                        borderClass = $"border border-2 border-start-0 border-end-0";
+
+                                                    borderClass += $" {borderColor}";
+                                                }
+
+                                                // Leave actions
+                                                if (isFirstApprover && leave?.Approver_1 == null && leave?.Approver_2 == null)
+                                                    action = $"onclick=getLeave({leave?.Leave_ID})";
+                                                else if (isFinalApprover && leave?.Approver_1 != null && leave?.Approver_2 == null)
+                                                    action = $"onclick=getLeave({leave?.Leave_ID})";
                                             }
-
-                                            // Leave actions
-                                            if (isFirstApprover && leave?.Approver_1 == null && leave?.Approver_2 == null)
-                                                action = $"onclick=getLeave({leave?.Leave_ID})";
-                                            else if (isFinalApprover && leave?.Approver_1 != null && leave?.Approver_2 == null)
-                                                action = $"onclick=getLeave({leave?.Leave_ID})";
                                         }
 
                                         // Disable selector for holidays
@@ -256,87 +259,87 @@
                                             class="p-1 @cellClass position-relative border-bottom border-end border-secondary"
                                             @Html.Raw(leavePopover)>
 
-                                            @if (isPartTime)
+                                            @if (!isCompanyHoliday)
                                             {
-                                                <input
-                                                    id="in|@user.Personnel_ID|@dateString"
-                                                    value="@schedule?.Time_in"
-                                                    class="form-control form-control-sm z-1 px-0 bg-transparent text-center timePicker" type="text"
-                                                    style="border: none;@(isCompanyHoliday ? "color: transparent;" : "")"
-                                                    @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
-                                                    @(disabledSelect)
-                                                />
+                                                if (isPartTime)
+                                                {
+                                                    <input id="in|@user.Personnel_ID|@dateString"
+                                                        value="@schedule?.Time_in"
+                                                        class="form-control form-control-sm z-1 px-0 bg-transparent text-center timePicker" type="text"
+                                                        style="border: none;"
+                                                        @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
+                                                        @(disabledSelect) />
 
-                                                <div class="text-secondary">
-                                                    <hr class="m-0">
-                                                </div>
+                                                    <div class="text-secondary">
+                                                        <hr class="m-0">
+                                                    </div>
 
-                                                <input
-                                                    id="out|@user.Personnel_ID|@dateString"
-                                                    value="@schedule?.Time_out"
-                                                    class="form-control form-control-sm z-1 px-0 bg-transparent text-center timePicker" type="text"
-                                                    style="border: none;@(isCompanyHoliday ? "color: transparent;" : "")"
-                                                    @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
-                                                    @(disabledSelect)
-                                                />
-                                            } else 
-                                            {
-                                                <select data-date="@dateString"
-                                                    class="form-control py-1 px-0 position-relative text-center bg-transparent text-truncate
-                                                        @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "") 
+                                                    <input id="out|@user.Personnel_ID|@dateString"
+                                                        value="@schedule?.Time_out"
+                                                        class="form-control form-control-sm z-1 px-0 bg-transparent text-center timePicker" type="text"
+                                                        style="border: none;"
+                                                        @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
+                                                        @(disabledSelect) />
+                                                }
+                                                else
+                                                {
+                                                    <select data-date="@dateString"
+                                                        class="form-control py-1 px-0 position-relative text-center bg-transparent text-truncate
+                                                        @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "")
                                                         @(isShiftLeader ? "isShiftLeader" : "")
                                                         @(isStillTrainee ? "text-success fw-semibold" : "")
                                                         @(isCurrentShiftLeader ? "currentShiftLeader" : "")
                                                         @(canAssignShift ? "setShiftLeader" : "")
                                                         @(hasLeave && (leave?.Day_type != "FullDay") ? "z-2" : "z-1")"
-                                                    onchange="assignShift(@user.Personnel_ID, '@dateString', this)" 
-                                                    id="select|@user.Personnel_ID|@dateString"
-                                                    style="border: none;@(isCompanyHoliday ? "color: transparent;" : "")" 
-                                                    @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "") 
-                                                    @(disabledSelect)>
-                                                    <option value="0"></option>
-                                                    @foreach (var shift in shifts)
-                                                    {
-                                                        if (shift.Shift_ID == shiftId)
+                                                        onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
+                                                        id="select|@user.Personnel_ID|@dateString"
+                                                        style="border: none;"
+                                                        @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
+                                                        @(disabledSelect)>
+                                                        <option value="0"></option>
+                                                        @foreach (var shift in shifts)
                                                         {
-                                                            <option class="text-body" value="@shift.Shift_ID" selected>@(shift.Acronym ?? shift.Shift_name)</option>
+                                                            if (shift.Shift_ID == shiftId)
+                                                            {
+                                                                <option class="text-body" value="@shift.Shift_ID" selected>@(shift.Acronym ?? shift.Shift_name)</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option class="text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
+                                                            }
                                                         }
-                                                        else
-                                                        {
-                                                            <option class="text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
-                                                        }
-                                                    }
 
-                                                    @if (schedule?.Shift_ID != null)
-                                                    {
-                                                        @if (schedule?.Comment == "cancelled")
+                                                        @if (schedule?.Shift_ID != null)
                                                         {
-                                                            <option class="text-body" value="998">*Uncancel shift</option>
+                                                            @if (schedule?.Comment == "cancelled")
+                                                            {
+                                                                <option class="text-body" value="998">*Uncancel shift</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option class="text-body" value="999">*Cancel shift</option>
+                                                            }
                                                         }
-                                                        else
-                                                        {
-                                                            <option class="text-body" value="999">*Cancel shift</option>
-                                                        }
-                                                    }
-                                                </select>
-                                            }
+                                                    </select>
+                                                }
 
-                                            @if ((hasLeave && leave?.Status == "Pending") || (hasLeave && shiftId != 0))
-                                            {
-                                                <p id="p-@user.Personnel_ID-@dateString"
-                                                    class="position-absolute start-0 top-0 w-100 h-100 text-center @borderClass @(hasLeave ? bgClass : "")
-                                                    @(hasLeave && (leave?.Day_type != "FullDay") && leave?.Status == "Approved" ? "z-1" : "z-2")"
-                                                    @Html.Raw(action)
-                                                    style="@(action != string.Empty ? "cursor: pointer;" : "")">
-                                                </p>
-                                            }
+                                                if (hasLeave && (leave?.Status == "Pending" || shiftId != 0))
+                                                {
+                                                    <p id="p-@user.Personnel_ID-@dateString"
+                                                        class="position-absolute start-0 top-0 w-100 h-100 text-center @borderClass @bgClass
+                                                        @(leave?.Day_type != "FullDay" && leave?.Status == "Approved" ? "z-1" : "z-2")"
+                                                        @Html.Raw(action)
+                                                        style="@(action != string.Empty ? "cursor: pointer;" : "")">
+                                                    </p>
+                                                }
 
-                                            @if (schedule?.Comment == "cancelled")
-                                            {
-                                                <svg class="position-absolute top-0 start-0 w-100 h-100">
-                                                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
-                                                    <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
-                                                </svg>
+                                                if (schedule?.Comment == "cancelled")
+                                                {
+                                                    <svg class="position-absolute top-0 start-0 w-100 h-100">
+                                                        <line x1="0" y1="0" x2="100%" y2="100%" stroke="red" stroke-width="1" />
+                                                        <line x1="100%" y1="0" x2="0" y2="100%" stroke="red" stroke-width="1" />
+                                                    </svg>
+                                                }
                                             }
                                         </td>
                                     }
