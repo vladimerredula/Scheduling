@@ -55,7 +55,7 @@ namespace Scheduling.Models
         public DateTime? Last_password_changed { get; set; }
 
         [ForeignKey("Template")]
-        public int? Template_ID { get; set; }
+        public int? Sch_template_ID { get; set; }
         public virtual Template? Template { get; set; }
 
         [Display(Name = "Name")]

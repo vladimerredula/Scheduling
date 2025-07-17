@@ -42,7 +42,8 @@ namespace Scheduling.Services
                             Personnel_ID = personnelId,
                             Ip_address = ip,
                             User_agent = userAgent,
-                            Last_activity = DateTime.Now
+                            Last_activity = DateTime.Now,
+                            App_name = "SCH"
                         });
                     }
 

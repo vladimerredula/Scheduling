@@ -12,6 +12,7 @@ namespace Scheduling.Models
         public string Ip_address { get; set; }
         public DateTime Last_activity { get; set; }
         public string User_agent { get; set; }
+        public string App_name { get; set; }
 
 
         [ForeignKey("Personnel_ID")]
