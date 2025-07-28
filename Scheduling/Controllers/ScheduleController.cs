@@ -314,7 +314,7 @@ namespace Scheduling.Controllers
 
             _log.LogInfo($"Loaded {_helper.DisplayMonthYear(month, year)} schedule of {department}.");
 
-            return PartialView("_ScheduleTable", (users, schedules, leaves, month, year));
+            return PartialView("_ScheduleTable", (users, schedules, leaves, departmentId, month, year));
         }
 
         [HttpPost]
@@ -653,7 +653,7 @@ namespace Scheduling.Controllers
             ViewBag.Sectors = await GetSectors(departmentId);
             ViewBag.Holidays = await GetHoldays(month);
 
-            return PartialView("_ScheduleView", (users, schedules, leaves, month, year));
+            return PartialView("_ScheduleView", (users, schedules, leaves, departmentId, month, year));
         }
     }
 }

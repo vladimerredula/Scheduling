@@ -1,4 +1,4 @@
-﻿@model (List<User> Users, List<Schedule> Schedules, List<Leave> Leaves, int month, int year)
+﻿@model (List<User> Users, List<Schedule> Schedules, List<Leave> Leaves, int departmentId, int month, int year)
 
 @{
     var currentYear = Model.year;
@@ -12,6 +12,8 @@
     var leaves = Model.Leaves;
     var users = Model.Users;
     var userIds = users.Select(u => u.Personnel_ID).ToHashSet();
+    var departmentId = Model.departmentId;
+    var isProdDept = new[] { 1, 2, 3 }.Contains(departmentId);
 
     var shiftLeaders = ViewBag.ShiftLeaders as List<(DateTime, int, string)> ?? new List<(DateTime, int, string)>();
     var shifts = ViewBag.Shifts as List<Shift> ?? new List<Shift>();
@@ -181,38 +183,41 @@
                             }
                         </tbody>
                     }
-
-                    <tfoot class="sticky-bottom z-2">
-                        @foreach (var shift in shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
-                        {
-                            <tr>
-                                <td class="border-end border-secondary fw-semibold text-end fs-5">Shift @shift.Shift_name</td>
-                                @for (int day = 1; day <= daysInMonth; day++)
-                                {
-                                    var date = new DateTime(currentYear, selectedMonth, day);
-                                    var count = schedules.Count(s =>
-                                        s.Shift_ID == shift.Shift_ID &&
-                                        s.Comment != "cancelled" &&
-                                        s.Date == date &&
-                                        userIds.Contains(s.Personnel_ID) &&
-                                        !companyHolidayDates.Contains(date) && 
-                                        !leaves.Any(l => l.Personnel_ID == s.Personnel_ID && l.Status == "Approved" && l.Date_start.Date <= date.Date && l.Date_end.Date >= date.Date));
-
-                                    var bgColor = count switch
+                    
+                    @if (isProdDept) // only show for production departments
+                    {
+                        <tfoot class="sticky-bottom z-2">
+                            @foreach (var shift in shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
+                            {
+                                <tr>
+                                    <td class="border-end border-secondary fw-semibold text-end fs-5">Shift @shift.Shift_name</td>
+                                    @for (int day = 1; day <= daysInMonth; day++)
                                     {
-                                        0 => "bg-danger-subtle text-danger-emphasis",
-                                        1 => "bg-warning-subtle text-warning-emphasis",
-                                        2 => "bg-success-subtle text-success-emphasis",
-                                        _ => "bg-success text-white"
-                                    };
+                                        var date = new DateTime(currentYear, selectedMonth, day);
+                                        var count = schedules.Count(s =>
+                                            s.Shift_ID == shift.Shift_ID &&
+                                            s.Comment != "cancelled" &&
+                                            s.Date == date &&
+                                            userIds.Contains(s.Personnel_ID) &&
+                                            !companyHolidayDates.Contains(date) && 
+                                            !leaves.Any(l => l.Personnel_ID == s.Personnel_ID && l.Status == "Approved" && l.Date_start.Date <= date.Date && l.Date_end.Date >= date.Date));
 
-                                    <td class="border-bottom border-end border-secondary text-center fs-5 @bgColor" id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
-                                        @count
-                                    </td>
-                                }
-                            </tr>
-                        }
-                    </tfoot>
+                                        var bgColor = count switch
+                                        {
+                                            0 => "bg-danger-subtle text-danger-emphasis",
+                                            1 => "bg-warning-subtle text-warning-emphasis",
+                                            2 => "bg-success-subtle text-success-emphasis",
+                                            _ => "bg-success text-white"
+                                        };
+
+                                        <td class="border-bottom border-end border-secondary text-center fs-5 @bgColor" id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
+                                            @count
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tfoot>
+                    }
                 </table>
             </div>
         </div>

@@ -1,4 +1,4 @@
-﻿@model (List<User> Users, List<Schedule> Schedules, List<Leave> Leaves, int month, int year)
+﻿@model (List<User> Users, List<Schedule> Schedules, List<Leave> Leaves, int departmentId, int month, int year)
 
 @{
     var currentYear = Model.year;
@@ -12,6 +12,8 @@
     var users = Model.Users;
     var schedules = Model.Schedules;
     var leaves = Model.Leaves;
+    var departmentId = Model.departmentId;
+    var isProdDept = new[] { 1, 2, 3 }.Contains(departmentId);
 
     var leaveTypes = ViewBag.LeaveTypes as List<Leave_type> ?? new List<Leave_type>();
     var sectors = ViewBag.Sectors as List<Sector> ?? new List<Sector>();
@@ -48,7 +50,7 @@
                     <span class="fs-3 fw-semibold">@firstDay.ToString("MMMM yyyy")</span>
                 </div>
                 <div class="col-auto">
-                    @if (canAssignShift)
+                    @if (canAssignShift && isProdDept)
                     {
                         <a class="btn btn-light border me-2" id="viewSl" title="View Shift leaders for this month">Shift leaders</a>
                     }
@@ -75,25 +77,29 @@
                                 var holiday = holidays.FirstOrDefault(h => h.Date == date);
                                 var hasSchedule = schedules.Any(s => s.Date == date);
 
-                                var todaysSl = shiftLeaders.Where(s => s.Item1.Date == date.Date).Select(s => s.Item3).ToList();
+                                var missingSlPopover = "";
                                 var missingSl = false;
 
-                                var missingSlPopover = "";
-                                if (todaysSl.Count < 3 && canAssignShift && holiday?.Type != "Company" && hasSchedule)
+                                if (isProdDept)
                                 {
-                                    var missingShifts = expectedShifts.Except(todaysSl).ToList();
+                                    var todaysSl = shiftLeaders.Where(s => s.Item1.Date == date.Date).Select(s => s.Item3).ToList();
 
-                                    var sb = new System.Text.StringBuilder();
-                                    foreach (var missingShift in missingShifts)
+                                    if (todaysSl.Count < 3 && canAssignShift && holiday?.Type != "Company" && hasSchedule)
                                     {
-                                        sb.Append($"<span id='{@date.ToString("yyyy-MM-dd")}|{missingShift}'>No <strong>{missingShift} shift</strong> shiftleader</br>");
+                                        var missingShifts = expectedShifts.Except(todaysSl).ToList();
+
+                                        var sb = new System.Text.StringBuilder();
+                                        foreach (var missingShift in missingShifts)
+                                        {
+                                            sb.Append($"<span id='{@date.ToString("yyyy-MM-dd")}|{missingShift}'>No <strong>{missingShift} shift</strong> shiftleader</br>");
+                                        }
+
+                                        // Escape double quotes to safely embed HTML inside data attribute
+                                        var htmlContent = sb.ToString().Replace("\"", "&quot;").Replace("'", "&#39;");
+
+                                        missingSlPopover = $"data-bs-toggle=\"tooltip\" data-bs-placement=\"top\" data-bs-custom-class=\"custom-tooltip\" data-bs-html=\"true\"  data-bs-title=\"{htmlContent}\"";
+                                        missingSl = true;
                                     }
-
-                                    // Escape double quotes to safely embed HTML inside data attribute
-                                    var htmlContent = sb.ToString().Replace("\"", "&quot;").Replace("'", "&#39;");
-
-                                    missingSlPopover = $"data-bs-toggle=\"tooltip\" data-bs-placement=\"top\" data-bs-custom-class=\"custom-tooltip\" data-bs-html=\"true\"  data-bs-title=\"{htmlContent}\"";
-                                    missingSl = true;
                                 }
 
                                 var holidayClass = date.Date == DateTime.Today
@@ -116,7 +122,7 @@
                         </tr>
                     </thead>
 
-                    @foreach (var sector in Model.Users.GroupBy(u => u.Sector_ID))
+                    @foreach (var sector in users.GroupBy(u => u.Sector_ID))
                     {
                         <tbody class="sector" data-sector-id="@sector.Key">
                             <tr class="sectorName">
@@ -256,46 +262,46 @@
                                         string disabledSelect = (!canAssignShift || isCompanyHoliday) ? "disabled" : "";
 
                                         <td id="cell-@user.Personnel_ID-@dateString"
-                                            class="p-1 @cellClass position-relative border-bottom border-end border-secondary"
-                                            @Html.Raw(leavePopover)>
+                                        class="p-1 @cellClass position-relative border-bottom border-end border-secondary"
+                                        @Html.Raw(leavePopover)>
 
                                             @if (!isCompanyHoliday)
                                             {
                                                 if (isPartTime)
                                                 {
                                                     <input id="in|@user.Personnel_ID|@dateString"
-                                                        value="@schedule?.Time_in"
-                                                        class="form-control form-control-sm z-1 px-0 bg-transparent text-center timePicker" type="text"
-                                                        style="border: none;"
-                                                        @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
-                                                        @(disabledSelect) />
+                                                    value="@schedule?.Time_in"
+                                                    class="form-control form-control-sm z-1 px-0 bg-transparent text-center timePicker" type="text"
+                                                    style="border: none;"
+                                                    @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
+                                                    @(disabledSelect) />
 
                                                     <div class="text-secondary">
                                                         <hr class="m-0">
                                                     </div>
 
                                                     <input id="out|@user.Personnel_ID|@dateString"
-                                                        value="@schedule?.Time_out"
-                                                        class="form-control form-control-sm z-1 px-0 bg-transparent text-center timePicker" type="text"
-                                                        style="border: none;"
-                                                        @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
-                                                        @(disabledSelect) />
+                                                    value="@schedule?.Time_out"
+                                                    class="form-control form-control-sm z-1 px-0 bg-transparent text-center timePicker" type="text"
+                                                    style="border: none;"
+                                                    @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
+                                                    @(disabledSelect) />
                                                 }
                                                 else
                                                 {
                                                     <select data-date="@dateString"
-                                                        class="form-control py-1 px-0 position-relative text-center bg-transparent text-truncate
+                                                    class="form-control py-1 px-0 position-relative text-center bg-transparent text-truncate
                                                         @(hasLeave && leave?.Status == "Approved" ? "onLeave" : "")
                                                         @(isShiftLeader ? "isShiftLeader" : "")
                                                         @(isStillTrainee ? "text-success fw-semibold" : "")
                                                         @(isCurrentShiftLeader ? "currentShiftLeader" : "")
-                                                        @(canAssignShift ? "setShiftLeader" : "")
+                                                        @(canAssignShift && isProdDept ? "setShiftLeader" : "")
                                                         @(hasLeave && (leave?.Day_type != "FullDay") ? "z-2" : "z-1")"
-                                                        onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
-                                                        id="select|@user.Personnel_ID|@dateString"
-                                                        style="border: none;"
-                                                        @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
-                                                        @(disabledSelect)>
+                                                    onchange="assignShift(@user.Personnel_ID, '@dateString', this)"
+                                                    id="select|@user.Personnel_ID|@dateString"
+                                                    style="border: none;"
+                                                    @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
+                                                    @(disabledSelect)>
                                                         <option value="0"></option>
                                                         @foreach (var shift in shifts)
                                                         {
@@ -326,10 +332,10 @@
                                                 if (hasLeave && (leave?.Status == "Pending" || shiftId != 0))
                                                 {
                                                     <p id="p-@user.Personnel_ID-@dateString"
-                                                        class="position-absolute start-0 top-0 w-100 h-100 text-center @borderClass @bgClass
+                                                    class="position-absolute start-0 top-0 w-100 h-100 text-center @borderClass @bgClass
                                                         @(leave?.Day_type != "FullDay" && leave?.Status == "Approved" ? "z-1" : "z-2")"
-                                                        @Html.Raw(action)
-                                                        style="@(action != string.Empty ? "cursor: pointer;" : "")">
+                                                    @Html.Raw(action)
+                                                    style="@(action != string.Empty ? "cursor: pointer;" : "")">
                                                     </p>
                                                 }
 
@@ -348,39 +354,42 @@
                         </tbody>
                     }
 
-                    <!-- Footer Totals -->
-                    <tfoot class="sticky-md-bottom z-2">
-                        @foreach (var shift in shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
-                        {
-                            <tr>
-                                <td class="border-end border-secondary fw-semibold text-end">Shift @shift.Shift_name</td>
-                                @for (int day = 1; day <= daysInMonth; day++)
-                                {
-                                    var date = new DateTime(currentYear, selectedMonth, day);
-                                    var count = Model.Schedules.Count(s =>
-                                    s.Shift_ID == shift.Shift_ID &&
-                                    s.Comment != "cancelled" &&
-                                    s.Date == date &&
-                                    users.Any(u => u.Personnel_ID == s.Personnel_ID) &&
-                                    !holidays.Any(h => h.Type == "Company" && h.Date == date) && 
-                                    !leaves.Any(l => l.Personnel_ID == s.Personnel_ID && l.Status == "Approved" && l.Date_start.Date <= date.Date && l.Date_end.Date >= date.Date));
-
-                                    var bgColor = count switch
+                    @if (isProdDept) // only show for production departments
+                    {
+                        <!-- Footer Totals -->
+                        <tfoot class="sticky-md-bottom z-2">
+                            @foreach (var shift in shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
+                            {
+                                <tr>
+                                    <td class="border-end border-secondary fw-semibold text-end">Shift @shift.Shift_name</td>
+                                    @for (int day = 1; day <= daysInMonth; day++)
                                     {
-                                        0 => "bg-danger-subtle text-danger-emphasis",
-                                        1 => "bg-warning-subtle text-warning-emphasis",
-                                        2 => "bg-success-subtle text-success-emphasis",
-                                        _ => "bg-success text-white"
-                                    };
+                                        var date = new DateTime(currentYear, selectedMonth, day);
+                                        var count = Model.Schedules.Count(s =>
+                                        s.Shift_ID == shift.Shift_ID &&
+                                        s.Comment != "cancelled" &&
+                                        s.Date == date &&
+                                        users.Any(u => u.Personnel_ID == s.Personnel_ID) &&
+                                        !holidays.Any(h => h.Type == "Company" && h.Date == date) &&
+                                        !leaves.Any(l => l.Personnel_ID == s.Personnel_ID && l.Status == "Approved" && l.Date_start.Date <= date.Date && l.Date_end.Date >= date.Date));
 
-                                    <td class="border-bottom border-end border-secondary text-center @bgColor"
+                                        var bgColor = count switch
+                                        {
+                                            0 => "bg-danger-subtle text-danger-emphasis",
+                                            1 => "bg-warning-subtle text-warning-emphasis",
+                                            2 => "bg-success-subtle text-success-emphasis",
+                                            _ => "bg-success text-white"
+                                        };
+
+                                        <td class="border-bottom border-end border-secondary text-center @bgColor"
                                         id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
-                                        @count
-                                    </td>
-                                }
-                            </tr>
-                        }
-                    </tfoot>
+                                            @count
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tfoot>
+                    }
                 </table>
             </div>
         </div>
@@ -424,6 +433,20 @@
                                             <td>@($"{shift?.Time_start?.ToString(@"hh\:mm")} - {shift?.Time_end?.ToString(@"hh\:mm")}")</td>
                                         </tr>
                                     }
+                                    @if (departmentId == 5)
+                                    {
+                                        <tr>
+                                            <td>T</td>
+                                            <td>Telework</td>
+                                        </tr>
+                                    }
+                                    @if (departmentId == 6)
+                                    {
+                                        <tr>
+                                            <td>Jre</td>
+                                            <td>Remote Work</td>
+                                        </tr>
+                                    }
                                 </tbody>
                             </table>
                         </div>
@@ -451,7 +474,7 @@
                         <label class="form-label">Members</label>
                         <select class="form-select" id="selectSl">
                             <option value="" disabled selected>Choose...</option>
-                            @foreach (var user in Model.Users.Where(u => u.Privilege_ID == 1).OrderBy(u => u.Full_name))
+                            @foreach (var user in users.Where(u => u.Privilege_ID == 1).OrderBy(u => u.Full_name))
                             {
                                 <option value="@user.Personnel_ID">@user.Full_name</option>
                             }

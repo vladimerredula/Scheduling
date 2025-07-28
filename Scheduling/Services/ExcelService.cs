@@ -185,7 +185,7 @@ namespace Scheduling.Services
                                 timeInCell.Style.Font.SetFontSize(11);
                                 timeOutCell.Style.Font.SetFontSize(11);
 
-                                ws.Range($"{Col(col1 + day)}{row}:{Col(col1 + day)}{row1 + 1}").Style.Border.SetInsideBorder(XLBorderStyleValues.Dotted);
+                                ws.Range($"{Col(col1 + day)}{row}:{Col(col1 + day)}{row + 1}").Style.Border.SetInsideBorder(XLBorderStyleValues.Dotted);
 
                                 if (isHoliday || isWeekend)
                                 {
@@ -258,56 +258,59 @@ namespace Scheduling.Services
                 }
 
                 // Shift counter
-                ws.Range($"{Col(col)}{row}:{Col(col)}{row + 2}").Merge();
-                ws.Range($"{Col(col)}{row}:{Col(col)}{row + 2}").Value = "Shift count";
-                ws.Range($"{Col(col)}{row}:{Col(col)}{row + 2}").Style
-                    .Font.SetBold(true)
-                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
-                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
-
-                var genShifts = new[] { "A", "B", "C" };
-                foreach (var shiftName in genShifts)
+                if (new List<string> { "HTS Production Department", "IBAD Department", "Chemical Department" }.Contains(department))
                 {
-                    var col1 = col + 1;
-
-                    var shiftNameCell = ws.Cell(row, col1);
-                    shiftNameCell.Value = shiftName;
-                    shiftNameCell.Style
+                    ws.Range($"{Col(col)}{row}:{Col(col)}{row + 2}").Merge();
+                    ws.Range($"{Col(col)}{row}:{Col(col)}{row + 2}").Value = "Shift count";
+                    ws.Range($"{Col(col)}{row}:{Col(col)}{row + 2}").Style
                         .Font.SetBold(true)
-                        .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Right)
-                        .Alignment.SetVertical(XLAlignmentVerticalValues.Center);
-
-                    for (int day = 1; day <= daysInMonth; day++)
-                    {
-                        ws.Cell(row, col1 + day).FormulaA1 = $"=COUNTIF({Col(col1 + day)}$6:{Col(col1 + day)}${6 + empCount},\"{shiftName}\")";
-                    }
-
-                    col1++;
-
-                    var shiftCountRange = ws.Range($"{Col(col1)}{row}:{Col(col1 + daysInMonth - 1)}{row}");
-                    shiftCountRange.Style
                         .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
                         .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
-                    shiftCountRange.AddConditionalFormat().WhenEquals(0)
-                        .Fill.SetBackgroundColor(XLColor.FromHtml("f8d7da"))
-                        .Font.SetFontColor(XLColor.DarkRed);
-                    shiftCountRange.AddConditionalFormat().WhenEquals(1)
-                        .Fill.SetBackgroundColor(XLColor.FromHtml("fff3cd"))
-                        .Font.SetFontColor(XLColor.FromHtml("6C5F00"));
-                    shiftCountRange.AddConditionalFormat().WhenEquals(2)
-                        .Fill.SetBackgroundColor(XLColor.FromHtml("d1e7dd"))
-                        .Font.SetFontColor(XLColor.DarkOliveGreen);
-                    shiftCountRange.AddConditionalFormat().WhenGreaterThan(2)
-                        .Fill.SetBackgroundColor(XLColor.FromHtml("198754"))
-                        .Font.SetFontColor(XLColor.White);
 
-                    row++;
+                    var genShifts = new[] { "A", "B", "C" };
+                    foreach (var shiftName in genShifts)
+                    {
+                        var col1 = col + 1;
+
+                        var shiftNameCell = ws.Cell(row, col1);
+                        shiftNameCell.Value = shiftName;
+                        shiftNameCell.Style
+                            .Font.SetBold(true)
+                            .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Right)
+                            .Alignment.SetVertical(XLAlignmentVerticalValues.Center);
+
+                        for (int day = 1; day <= daysInMonth; day++)
+                        {
+                            ws.Cell(row, col1 + day).FormulaA1 = $"=COUNTIF({Col(col1 + day)}$6:{Col(col1 + day)}${6 + empCount},\"{shiftName}\")";
+                        }
+
+                        col1++;
+
+                        var shiftCountRange = ws.Range($"{Col(col1)}{row}:{Col(col1 + daysInMonth - 1)}{row}");
+                        shiftCountRange.Style
+                            .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                            .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+                        shiftCountRange.AddConditionalFormat().WhenEquals(0)
+                            .Fill.SetBackgroundColor(XLColor.FromHtml("f8d7da"))
+                            .Font.SetFontColor(XLColor.DarkRed);
+                        shiftCountRange.AddConditionalFormat().WhenEquals(1)
+                            .Fill.SetBackgroundColor(XLColor.FromHtml("fff3cd"))
+                            .Font.SetFontColor(XLColor.FromHtml("6C5F00"));
+                        shiftCountRange.AddConditionalFormat().WhenEquals(2)
+                            .Fill.SetBackgroundColor(XLColor.FromHtml("d1e7dd"))
+                            .Font.SetFontColor(XLColor.DarkOliveGreen);
+                        shiftCountRange.AddConditionalFormat().WhenGreaterThan(2)
+                            .Fill.SetBackgroundColor(XLColor.FromHtml("198754"))
+                            .Font.SetFontColor(XLColor.White);
+
+                        row++;
+                    }
+
+                    // Shift counter borders
+                    ws.Range($"{Col(col)}{row - 3}:{Col(col + daysInMonth + 1)}{row - 1}").Style
+                        .Border.SetInsideBorder(XLBorderStyleValues.Thin)
+                        .Border.SetOutsideBorder(XLBorderStyleValues.Medium);
                 }
-
-                // Shift counter borders
-                ws.Range($"{Col(col)}{row - 3}:{Col(col + daysInMonth + 1)}{row - 1}").Style
-                    .Border.SetInsideBorder(XLBorderStyleValues.Thin)
-                    .Border.SetOutsideBorder(XLBorderStyleValues.Medium);
 
                 row = 6;
 

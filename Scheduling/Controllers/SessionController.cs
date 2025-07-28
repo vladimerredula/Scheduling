@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Scheduling.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "admin")]
     public class SessionController : Controller
     {
         private readonly ApplicationDbContext _db;
