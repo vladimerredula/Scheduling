@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Scheduling.Models.Templates;
 
@@ -34,15 +33,18 @@ namespace Scheduling.Services
                 .AsSplitQuery()
                 .SelectMany(u => u.Template.Modules.Select(m => new Module
                 {
+                    Module_ID = m.Module.Module_ID,
                     Module_name = m.Module.Module_name,
                     Controller_name = m.Module.Controller_name,
                     Pages = m.Pages.Select(p => new Page
                     {
+                        Page_ID = p.Page.Page_ID,
                         Page_name = p.Page.Page_name,
                         Controller_name = p.Page.Controller_name,
                         Action_name = p.Page.Action_name,
                         Components = p.Components.Select(c => new Component
                         {
+                            Page_ID = p.Page.Page_ID,
                             Component_name = c.Component.Component_name,
                             Component_abbreviation = c.Component.Component_abbreviation
                         }).ToList()
@@ -121,6 +123,18 @@ namespace Scheduling.Services
             var components = GetComponentPermission();
 
             return components.Any(c => c.Component_abbreviation == keyWord) || pages.Any(p => p.Page_name == keyWord);
+        }
+
+        public bool HasPermission(string pageName, string keyWord)
+        {
+            var page = _db.Pages.FirstOrDefault(p => p.Page_name == pageName);
+            var modules = GetUserTemplate(); 
+            var components = modules.Where(m => m.Module_ID == page.Module_ID)
+            .SelectMany(m => m.Pages)
+            .SelectMany(p => p.Components)
+            .ToList();
+
+            return components.Any(c => c.Page_ID == page.Page_ID && c.Component_abbreviation == keyWord);
         }
     }
 }

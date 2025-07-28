@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Scheduling.Models.Templates;
 using Scheduling.Services;
 
 namespace Scheduling.Controllers
 {
+    [Authorize(Roles = "admin")]
     public class TemplateController : Controller
     {
         private readonly ApplicationDbContext _db;
@@ -21,6 +23,7 @@ namespace Scheduling.Controllers
             ViewBag.Modules = await _db.Modules
                 .Include(m => m.Pages)
                 .ThenInclude(p => p.Components)
+                .Where(t => t.App_name == "SCH")
                 .ToListAsync();
 
             _log.LogInfo("Visited schedules");
