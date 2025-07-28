@@ -11,18 +11,16 @@ namespace Scheduling.Models
         [Display(Name = "Personnel ID")]
         public int Personnel_ID { get; set; }
 
-        [Required]
         [Column(TypeName = "VARCHAR")]
         [Display(Name = "Username")]
         [StringLength(20)]
-        public string Username { get; set; }
+        public string? Username { get; set; }
 
-        [Required]
         [Column(TypeName = "VARCHAR")]
         [Display(Name = "Password")]
         [StringLength(20)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
         [Column(TypeName = "VARCHAR")]
         [Display(Name = "First name")]
