@@ -84,7 +84,7 @@
 
                             @if (canDeleteShift)
                             {
-                                <a href="javascript:void(0)" class="btn btn-sm btn-danger" onclick="deleteShift(@item.Shift_ID)">Delete</a>
+                                <a href="javascript:void(0)" class="btn btn-sm btn-outline-danger" onclick="deleteShift(@item.Shift_ID)">Delete</a>
                             }
                         </td>
                     </tr>
@@ -162,7 +162,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header border-0">
-                <h5 class="modal-title" id="deleteModalLabel">Delete Shift</h5>
+                <h5 class="modal-title" id="deleteModalLabel">Delete this shift?</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">

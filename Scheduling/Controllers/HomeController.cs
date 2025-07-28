@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Scheduling.Models;
+using Scheduling.Services;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -9,10 +10,12 @@ namespace Scheduling.Controllers
     public class HomeController : Controller
     {
         private readonly ApplicationDbContext _db;
+        private readonly TemplateService _template;
 
-        public HomeController(ApplicationDbContext db)
+        public HomeController(ApplicationDbContext db, TemplateService template)
         {
             _db = db;
+            _template = template;
         }
 
         public IActionResult Index()
@@ -46,7 +49,11 @@ namespace Scheduling.Controllers
                 .Include(l => l.User)
                 .Where(l => l.Status == "Pending").ToListAsync();
 
-            if (User.IsInRole("manager"))
+            if (_template.HasPermission("Department Leaves", "DeptSelect") || User.IsInRole("topManager"))
+            {
+                requests = requests.Where(l => l.Approver_1 != null && l.Approver_2 == null).ToList();
+            }
+            else if (User.IsInRole("manager"))
             {
                 var user = await ThisUser();
 
@@ -57,9 +64,6 @@ namespace Scheduling.Controllers
                 {
                     requests = requests.Where(l => l.Approver_1 == null && l?.User?.Department_ID == user.Department_ID).ToList();
                 }
-            } else if (User.IsInRole("topManager"))
-            {
-                requests = requests.Where(l => l.Approver_1 != null && l.Approver_2 == null).ToList();
             }
 
             return Json(requests.Count());

@@ -36,7 +36,7 @@ namespace Scheduling.Controllers
         [Authorize(Roles = "admin,manager,topManager")]
         public async Task<IActionResult> DepartmentLeaves(int? departmentId = 0)
         {
-            if (User.IsInRole("manager"))
+            if (!_template.HasPermission("DeptSelect"))
                 departmentId = await _user.GetDepartmentId();
 
             await PopulateLeaveViewBagsAsync(departmentId);
@@ -66,6 +66,12 @@ namespace Scheduling.Controllers
                 {
                     leave.Approver_1 = personnelId;
                     leave.Date_approved_1 = DateTime.Now;
+                } else if (_template.HasPermission("FinalApprover"))
+                {
+                    leave.Approver_1 = personnelId;
+                    leave.Date_approved_1 = DateTime.Now;
+                    leave.Approver_2 = personnelId;
+                    leave.Date_approved_2 = DateTime.Now;
                 }
 
                 _db.Leaves.Add(leave);
@@ -229,6 +235,13 @@ namespace Scheduling.Controllers
                     {
                         request.Approver_1 = personnelId;
                         request.Date_approved_1 = DateTime.Now;
+                    }
+                    else if (_template.HasPermission("FinalApprover"))
+                    {
+                        request.Approver_1 = personnelId;
+                        request.Date_approved_1 = DateTime.Now;
+                        request.Approver_2 = personnelId;
+                        request.Date_approved_2 = DateTime.Now;
                     }
 
                     _db.Leaves.Add(request);
