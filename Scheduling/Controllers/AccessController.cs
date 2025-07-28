@@ -73,6 +73,7 @@ namespace Scheduling.Controllers
                     return View(model);
                 }
 
+                claims.Add(new Claim("ChangePassword", "false"));
                 claims.AddRange(jwtClaims);
             }
             else
@@ -93,6 +94,7 @@ namespace Scheduling.Controllers
                     return View(model);
                 }
 
+                claims.Add(new Claim("ChangePassword", "true"));
                 claims.AddRange(GetLocalClaims(user));
             }
 
