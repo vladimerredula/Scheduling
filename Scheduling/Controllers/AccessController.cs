@@ -111,7 +111,7 @@ namespace Scheduling.Controllers
 
             // Ensure session is initialized
             HttpContext.Session.SetString("SessionInitialized", HttpContext.Session.Id);
-            _log.LogInfo("Logged in", usernameOverride: user.Username);
+            _log.LogInfo("Logged in", usernameOverride: model.Username);
 
             return RedirectToAction("Index", "Access");
         }
