@@ -49,7 +49,7 @@ namespace Scheduling.Controllers
                 .Include(l => l.User)
                 .Where(l => l.Status == "Pending").ToListAsync();
 
-            if (_template.HasPermission("Department Leaves", "DeptSelect") || User.IsInRole("topManager"))
+            if (_template.HasPermission("Department Leaves", "DeptSelect") && !(User.IsInRole("admin") || User.IsInRole("topManager")))
             {
                 requests = requests.Where(l => l.Approver_1 != null && l.Approver_2 == null).ToList();
             }
