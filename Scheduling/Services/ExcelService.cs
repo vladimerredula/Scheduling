@@ -230,7 +230,19 @@ namespace Scheduling.Services
                                     if (!string.IsNullOrEmpty(shift))
                                     {
                                         shiftCell.Style.Fill.BackgroundColor = XLColor.FromHtml(GetLeaveBgColor(leave.Leave_type_ID));
-                                        shift = string.Empty;
+
+                                        if (leave.Day_type == "HalfDay1")
+                                        {
+                                            shiftCell.Style.Fill.SetPatternType(XLFillPatternValues.DarkVertical);
+                                            shiftCell.Style.Fill.SetPatternColor(XLColor.White);
+                                        } else if (leave.Day_type == "HalfDay2")
+                                        {
+                                            shiftCell.Style.Fill.SetPatternType(XLFillPatternValues.DarkHorizontal);
+                                            shiftCell.Style.Fill.SetPatternColor(XLColor.White);
+                                        } else
+                                        {
+                                            shift = string.Empty;
+                                        }
                                     }
                                 }
 
@@ -325,8 +337,6 @@ namespace Scheduling.Services
                     .Alignment.SetVertical(XLAlignmentVerticalValues.Center);
 
                 // Auto-fit columns
-                ws.Rows().Height = 21;
-                ws.Row(5).Height = 13.5;
                 ws.Columns().AdjustToContents();
                 for (int day = 1; day <= daysInMonth + 1; day++)
                 {
@@ -334,7 +344,7 @@ namespace Scheduling.Services
                 }
 
                 // Legends
-                row = 6;
+                row = 4;
                 col = daysInMonth + 5;
                 ws.Column(col).Width = 5.5;
                 ws.Column(col + 1).Width = 20;
@@ -363,13 +373,40 @@ namespace Scheduling.Services
 
                 row += 2;
 
+                ws.Cell(row, col).Style.Fill.SetBackgroundColor(XLColor.FromHtml(GetLeaveBgColor(13)));
+                ws.Cell(row, col + 1).SetValue(" Compensatory Leave")
+                    .Style
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
+
+                row += 2;
+
+                ws.Cell(row, col).Style.Fill.SetBackgroundColor(XLColor.FromHtml(GetLeaveBgColor(14)));
+                ws.Cell(row, col + 1).SetValue(" Special Leave")
+                    .Style
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
+
+                row += 2;
+
+                ws.Cell(row, col).Style.Fill.SetBackgroundColor(XLColor.FromHtml(GetLeaveBgColor(15)));
+                ws.Cell(row, col + 1).SetValue(" Special Unpaid Leave")
+                    .Style
+                    .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
+                    .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
+
+                row += 2;
+
                 ws.Cell(row, col).Style.Fill.SetBackgroundColor(XLColor.FromHtml("6c757d"));
                 ws.Cell(row, col + 1).SetValue(" Company Holiday")
                     .Style
                     .Alignment.SetVertical(XLAlignmentVerticalValues.Center)
                     .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
 
-                row += 3;
+                ws.Rows().Height = 21;
+                ws.Row(5).Height = 13.5;
+
+                row += 2;
 
                 foreach (var pattern in new[] { "4/2", "5/2" })
                 {
@@ -451,6 +488,12 @@ namespace Scheduling.Services
                     return "0DCAF0";
                 case 12:
                     return "cff4fc";
+                case 13:
+                    return "198754";
+                case 14:
+                    return "0d6efd";
+                case 15:
+                    return "cfe2ff";
                 default:
                     return string.Empty;
             }
