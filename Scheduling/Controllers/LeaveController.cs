@@ -72,6 +72,7 @@ namespace Scheduling.Controllers
                     leave.Date_approved_1 = DateTime.Now;
                     leave.Approver_2 = personnelId;
                     leave.Date_approved_2 = DateTime.Now;
+                    leave.Status = "Approved";
                 }
 
                 _db.Leaves.Add(leave);
@@ -242,6 +243,7 @@ namespace Scheduling.Controllers
                         request.Date_approved_1 = DateTime.Now;
                         request.Approver_2 = personnelId;
                         request.Date_approved_2 = DateTime.Now;
+                        request.Status = "Approved";
                     }
 
                     _db.Leaves.Add(request);
