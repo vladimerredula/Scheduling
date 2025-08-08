@@ -7,6 +7,7 @@ using Scheduling;
 using Scheduling.Helpers;
 using Scheduling.Models.Misc;
 using Scheduling.Services;
+using StackExchange.Redis;
 using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,6 +37,15 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<SchBackupSettings>(builder.Configuration.GetSection("SchBackupSettings"));
 builder.Services.Configure<EncryptionSettings>(builder.Configuration.GetSection("Encryption"));
 
+// Redis connection (shared for cache + DataProtection)
+var redis = ConnectionMultiplexer.Connect("redis:6379");
+
+// Caching (Redis)
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "redis:6379"; // Use container name in Docker network
+});
+
 // Authentication + Cookie Config
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -55,12 +65,12 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.None;
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.IdleTimeout = TimeSpan.FromHours(1);
 });
 
 // Data Protection
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "DataProtection-Keys")))
+    .PersistKeysToStackExchangeRedis(redis, "DataProtection-Keys")
     .SetApplicationName("SchedulingWebApp");
 
 // Forwarded Headers (for reverse proxy)
