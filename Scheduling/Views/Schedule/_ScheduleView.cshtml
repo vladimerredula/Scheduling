@@ -11,7 +11,7 @@
     var schedules = Model.Schedules;
     var leaves = Model.Leaves;
     var users = Model.Users;
-    var userIds = users.Select(u => u.Personnel_ID).ToHashSet();
+    var userIds = users.Where(u => u.Employment_type == "FullTime").Select(u => u.Personnel_ID).ToHashSet();
     var departmentId = Model.departmentId;
     var isProdDept = new[] { 1, 2, 3 }.Contains(departmentId);
 
@@ -187,15 +187,16 @@
                     @if (isProdDept) // only show for production departments
                     {
                         <tfoot class="sticky-bottom z-2">
-                            @foreach (var shift in shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
+                            @foreach (var shift in shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)).GroupBy(s => s.Shift_name))
                             {
                                 <tr>
-                                    <td class="border-end border-secondary fw-semibold text-end fs-5">Shift @shift.Shift_name</td>
+                                    <td class="border-end border-secondary fw-semibold text-end fs-5">Shift @shift.Key</td>
                                     @for (int day = 1; day <= daysInMonth; day++)
                                     {
                                         var date = new DateTime(currentYear, selectedMonth, day);
                                         var count = schedules.Count(s =>
-                                            s.Shift_ID == shift.Shift_ID &&
+                                            s.Shift_ID != null &&
+                                            s.Shift.Shift_name == shift.Key &&
                                             s.Comment != "cancelled" &&
                                             s.Date == date &&
                                             userIds.Contains(s.Personnel_ID) &&
@@ -210,7 +211,7 @@
                                             _ => "bg-success text-white"
                                         };
 
-                                        <td class="border-bottom border-end border-secondary text-center fs-5 @bgColor" id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
+                                        <td class="border-bottom border-end border-secondary text-center fs-5 @bgColor" id="shift-@shift.Key-@date.ToString("yyyy-MM-dd")">
                                             @count
                                         </td>
                                     }

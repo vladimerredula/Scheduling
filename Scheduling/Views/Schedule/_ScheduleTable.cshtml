@@ -23,6 +23,7 @@
 
     var shiftLeaders = ViewBag.ShiftLeaders as List<(DateTime, int, string)> ?? new List<(DateTime, int, string)>();
     var expectedShifts = new[] { "A", "B", "C" };
+    var patterns = new[] { "4/2", "5/2" };
 
     // Permissions
     bool canViewAllLeaveRequest = _template.HasPermission("ViewLeaveRequest");
@@ -303,15 +304,22 @@
                                                     @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
                                                     @(disabledSelect)>
                                                         <option value="0"></option>
-                                                        @foreach (var shift in shifts)
+                                                        @foreach (var pattern in patterns)
                                                         {
-                                                            if (shift.Shift_ID == shiftId)
+                                                            if (shifts.Any(s => s.Pattern == pattern))
                                                             {
-                                                                <option class="text-body" value="@shift.Shift_ID" selected>@(shift.Acronym ?? shift.Shift_name)</option>
-                                                            }
-                                                            else
-                                                            {
-                                                                <option class="text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
+                                                                <option class="text-body text-start fw-bold" value="" disabled style="font-size:12px">&nbsp;@pattern&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
+                                                                @foreach (var shift in shifts.Where(s => s.Pattern == pattern).OrderBy(s => s.Shift_name))
+                                                                {
+                                                                    if (shift.Shift_ID == shiftId)
+                                                                    {
+                                                                        <option class="text-body" value="@shift.Shift_ID" selected>@(shift.Acronym ?? shift.Shift_name)</option>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <option class="text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
+                                                                    }
+                                                                }
                                                             }
                                                         }
 
@@ -358,18 +366,19 @@
                     {
                         <!-- Footer Totals -->
                         <tfoot class="sticky-md-bottom z-2">
-                            @foreach (var shift in shifts.Where(s => new[] { "A", "B", "C" }.Contains(s.Shift_name)))
+                            @foreach (var shift in shifts.Where(s => expectedShifts.Contains(s.Shift_name)).GroupBy(s => s.Shift_name))
                             {
                                 <tr>
-                                    <td class="border-end border-secondary fw-semibold text-end">Shift @shift.Shift_name</td>
+                                    <td class="border-end border-secondary fw-semibold text-end">Shift @shift.Key</td>
                                     @for (int day = 1; day <= daysInMonth; day++)
                                     {
                                         var date = new DateTime(currentYear, selectedMonth, day);
                                         var count = Model.Schedules.Count(s =>
-                                        s.Shift_ID == shift.Shift_ID &&
+                                        s.Shift_ID != null &&
+                                        s.Shift.Shift_name == shift.Key &&
                                         s.Comment != "cancelled" &&
                                         s.Date == date &&
-                                        users.Any(u => u.Personnel_ID == s.Personnel_ID) &&
+                                        users.Any(u => u.Personnel_ID == s.Personnel_ID && u.Employment_type == "FullTime") &&
                                         !holidays.Any(h => h.Type == "Company" && h.Date == date) &&
                                         !leaves.Any(l => l.Personnel_ID == s.Personnel_ID && l.Status == "Approved" && l.Date_start.Date <= date.Date && l.Date_end.Date >= date.Date));
 
@@ -382,7 +391,7 @@
                                         };
 
                                         <td class="border-bottom border-end border-secondary text-center @bgColor"
-                                        id="shift-@shift.Shift_name-@date.ToString("yyyy-MM-dd")">
+                                            id="shift-@shift.Key-@date.ToString("yyyy-MM-dd")">
                                             @count
                                         </td>
                                     }
@@ -413,9 +422,9 @@
             </div>
 
             @* Shift Patterns *@
-            @foreach (var pattern in new[] { "4/2", "5/2" })
+            @foreach (var pattern in patterns)
             {
-                var shiftPattern = shifts.Where(s => s.Pattern == pattern).ToList();
+                var shiftPattern = shifts.Where(s => s.Pattern == pattern).OrderBy(s => s.Shift_name).ToList();
                 if (shiftPattern.Any())
                 {
                     <div class="col col-xxl-12">
