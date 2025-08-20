@@ -10,6 +10,7 @@ using Scheduling.Models.Misc;
 using Scheduling.Services;
 using StackExchange.Redis;
 using System.Net;
+using UAParser;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,14 +73,20 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                           ?? ctx.HttpContext.Connection.RemoteIpAddress?.ToString();
                     if (ip == "::1") ip = "127.0.0.1";
 
-                    var userAgent = ctx.Request.Headers["User-Agent"].ToString();
+                    var userAgent = ctx.Request.Headers["User-Agent"].ToString(); var parser = Parser.GetDefault();
+                    var clientInfo = parser.Parse(userAgent);
+                    var browser = clientInfo.UA.Family;
+                    var browserVersion = clientInfo.UA.ToString();
+                    var os = clientInfo.OS.ToString();
+                    var device = clientInfo.Device.ToString();
+                    var userAgentString = $"{browser} ({browserVersion}) on {os} ({device})";
 
                     db.Sessions.Add(new Session
                     {
                         Session_ID = Guid.NewGuid().ToString(),
                         Personnel_ID = personnelId,
                         Ip_address = ip,
-                        User_agent = userAgent,
+                        User_agent = userAgentString,
                         App_name = "SCH",
                         Signed_in_at = DateTime.Now,
                         Last_activity = DateTime.Now
