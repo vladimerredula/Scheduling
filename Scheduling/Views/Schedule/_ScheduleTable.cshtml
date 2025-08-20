@@ -308,8 +308,11 @@
                                                         {
                                                             if (shifts.Any(s => s.Pattern == pattern))
                                                             {
-                                                                <option class="text-body text-start fw-bold" value="" disabled style="font-size:12px">&nbsp;@pattern&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
-                                                                @foreach (var shift in shifts.Where(s => s.Pattern == pattern).OrderBy(s => s.Shift_name))
+                                                                if (shifts.Where(s => s.Pattern != null).GroupBy(s => s.Pattern).Count() > 1)
+                                                                {
+                                                                    <option class="text-body text-start fw-bold" value="" disabled style="font-size:12px">&nbsp;@pattern&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
+                                                                }
+                                                                foreach (var shift in shifts.Where(s => s.Pattern == pattern).OrderBy(s => s.Shift_name))
                                                                 {
                                                                     if (shift.Shift_ID == shiftId)
                                                                     {
@@ -319,6 +322,21 @@
                                                                     {
                                                                         <option class="text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
                                                                     }
+                                                                }
+                                                            }
+                                                        }
+
+                                                        @if (shifts.Any(s => !patterns.Contains(s.Pattern)))
+                                                        {
+                                                            foreach (var shift in shifts.Where(s => !patterns.Contains(s.Pattern)).OrderBy(s => s.Shift_name))
+                                                            {
+                                                                if (shift.Shift_ID == shiftId)
+                                                                {
+                                                                    <option class="text-body" value="@shift.Shift_ID" selected>@(shift.Acronym ?? shift.Shift_name)</option>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <option class="text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
                                                                 }
                                                             }
                                                         }
