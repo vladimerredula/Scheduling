@@ -29,7 +29,9 @@ namespace Scheduling.Services
                     Department_ID = departmentId,
                     Year = year,
                     Month = month,
-                    Expiry = DateTime.Now.AddMinutes(30)
+                    Expiry = DateTime.Now.AddMinutes(30),
+                    Local_saved = false,
+                    Nas_saved = false
                 };
 
                 _db.Edit_tokens.Add(newToken);

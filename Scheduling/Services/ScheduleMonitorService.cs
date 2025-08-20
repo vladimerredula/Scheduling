@@ -53,11 +53,16 @@ namespace Scheduling.Services
                             var fileName = $"{firstDayOfMonth.ToString("yyyy.MM")} {department?.Department_name}";
                             var folderPath = $"{firstDayOfMonth.ToString("yyyy/MM. MMMM")}";
 
-                            await SaveToLocal(file, fileName, folderPath);
-                            await UploadToNas(file, fileName, folderPath);
+                            if (!token.Local_saved)
+                                token.Local_saved = await SaveToLocal(file, fileName, folderPath);
 
-                            // Remove the token after successful export
-                            db.Edit_tokens.Remove(token);
+                            if (!token.Nas_saved)
+                                token.Nas_saved = await UploadToNas(file, fileName, folderPath);
+
+                            if (token.Local_saved && token.Nas_saved)
+                                db.Edit_tokens.Remove(token); // Remove the token after successful export
+                            else
+                                await db.SaveChangesAsync();
                         }
                         catch (Exception ex)
                         {
@@ -175,7 +180,7 @@ namespace Scheduling.Services
             return _excel.Schedule(users.ToList<dynamic>(), schedules, shifts, leaves, holidays, department.Department_name, month, year);
         }
 
-        public async Task<string> SaveToLocal(byte[] file, string baseFileName, string baseFilePath)
+        public async Task<bool> SaveToLocal(byte[] file, string baseFileName, string baseFilePath)
         {
             try
             {
@@ -197,16 +202,16 @@ namespace Scheduling.Services
                 await File.WriteAllBytesAsync(fullPath, file);
                 _logger.LogInformation($"File saved locally to {fullPath}");
 
-                return fileName;
+                return true;
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error saving file: {ex.Message}");
-                return string.Empty;
+                return false;
             }
         }
 
-        public async Task UploadToNas(byte[] fileData, string fileName, string folderPath)
+        public async Task<bool> UploadToNas(byte[] fileData, string fileName, string folderPath)
         {
             using var httpClient = new HttpClient();
             using var multipart = new MultipartFormDataContent();
@@ -227,10 +232,11 @@ namespace Scheduling.Services
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogError("NAS API error: {StatusCode} - {Body}", response.StatusCode, result);
-                throw new HttpRequestException($"NAS upload failed: {response.StatusCode}");
+                return false;
             }
 
             _logger.LogInformation("Uploaded file to NAS: " + result);
+            return true;
         }
     }
 }
