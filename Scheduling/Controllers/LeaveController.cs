@@ -184,7 +184,7 @@ namespace Scheduling.Controllers
 
             if (HasOverlappingLeave(leave))
             {
-                ModelState.AddModelError(string.Empty, "Existing leave overlaps for the dates selected.");
+                TempData["toastMessage"] = "Existing leave overlaps for the dates selected.";
                 _log.LogWarning("Existing leave overlaps for the dates selected");
 
                 return RedirectToAction(nameof(DepartmentLeaves), new
