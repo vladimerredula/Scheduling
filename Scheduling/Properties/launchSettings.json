@@ -29,10 +29,12 @@
     },
     "Container (Dockerfile)": {
       "commandName": "Docker",
+      "network": "localnetwork",
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
       "environmentVariables": {
-        "ASPNETCORE_HTTP_PORTS": "80"
+        "ASPNETCORE_HTTP_PORTS": "80",
+        "TZ": "Asia/Tokyo"
       },
       "publishAllPorts": true,
       "useSSL": false
