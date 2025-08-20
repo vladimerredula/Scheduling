@@ -109,8 +109,6 @@ namespace Scheduling.Controllers
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity), authProps);
 
-            // Ensure session is initialized
-            HttpContext.Session.SetString("SessionInitialized", HttpContext.Session.Id);
             _log.LogInfo("Logged in", usernameOverride: model.Username);
 
             return RedirectToAction("Index", "Access");
@@ -118,17 +116,7 @@ namespace Scheduling.Controllers
 
         public async Task<IActionResult> Logout()
         {
-            var sessionId = HttpContext.Session.Id;
-            var session = await _db.Sessions.FindAsync(sessionId);
-
-            if (session != null)
-            {
-                _db.Sessions.Remove(session);
-                await _db.SaveChangesAsync();
-            }
-
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            HttpContext.Session.Clear();
             _log.LogInfo("Logged out");
 
             return RedirectToAction("Index", "Access");

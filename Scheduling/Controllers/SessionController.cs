@@ -14,19 +14,14 @@ namespace Scheduling.Controllers
             _db = db;
         }
 
-        public async Task<IActionResult> Index()
-        {
-            return View();
-        }
+        public IActionResult Index() => View();
 
         [HttpGet]
         public async Task<IActionResult> GetActiveUsers()
         {
-            var threshold = DateTime.UtcNow.AddMinutes(-30);
-
             var activeUsers = await _db.Sessions
                 .Include(s => s.User)
-                .Where(s => s.Last_activity >= threshold && s.App_name == "SCH")
+                .Where(s => s.App_name == "SCH" && s.Signed_out_at == null)
                 .OrderByDescending(s => s.Last_activity)
                 .Select(s => new
                 {
@@ -34,25 +29,12 @@ namespace Scheduling.Controllers
                     Ip_address = s.Ip_address,
                     Full_name = s.User.Full_name,
                     Last_activity = s.Last_activity.ToString("yyyy-MM-dd HH:mm"),
-                    User_agent = s.User_agent
+                    User_agent = s.User_agent,
+                    Signed_in_at = s.Signed_in_at.ToString("yyyy-MM-dd HH:mm")
                 })
                 .ToListAsync();
 
             return Json(activeUsers);
-        }
-
-        [HttpGet("/test-session")]
-        public IActionResult TestSession()
-        {
-            if (string.IsNullOrEmpty(HttpContext.Session.GetString("SessionTest")))
-            {
-                HttpContext.Session.SetString("SessionTest", "initialized");
-                return Content($"New Session ID: {HttpContext.Session.Id}");
-            }
-            else
-            {
-                return Content($"Same Session ID: {HttpContext.Session.Id}");
-            }
         }
     }
 }

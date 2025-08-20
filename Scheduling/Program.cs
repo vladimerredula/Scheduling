@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using NReco.Logging.File;
 using Scheduling;
 using Scheduling.Helpers;
+using Scheduling.Models;
 using Scheduling.Models.Misc;
 using Scheduling.Services;
 using StackExchange.Redis;
@@ -56,6 +57,76 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromDays(30);
         options.SlidingExpiration = true;
+
+
+        options.Events = new CookieAuthenticationEvents
+        {
+            OnSignedIn = async ctx =>
+            {
+                var db = ctx.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                var userId = ctx.Principal.FindFirst("Personnelid")?.Value;
+
+                if (int.TryParse(userId, out var personnelId))
+                {
+                    var ip = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                          ?? ctx.HttpContext.Connection.RemoteIpAddress?.ToString();
+                    if (ip == "::1") ip = "127.0.0.1";
+
+                    var userAgent = ctx.Request.Headers["User-Agent"].ToString();
+
+                    db.Sessions.Add(new Session
+                    {
+                        Session_ID = Guid.NewGuid().ToString(),
+                        Personnel_ID = personnelId,
+                        Ip_address = ip,
+                        User_agent = userAgent,
+                        App_name = "SCH",
+                        Signed_in_at = DateTime.Now,
+                        Last_activity = DateTime.Now
+    });
+                    await db.SaveChangesAsync();
+                }
+            },
+            OnValidatePrincipal = async ctx =>
+            {
+                var db = ctx.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                var userId = ctx.Principal.FindFirst("Personnelid")?.Value;
+
+                if (int.TryParse(userId, out var personnelId))
+                {
+                    var session = await db.Sessions
+                        .Where(s => s.Personnel_ID == personnelId && s.Signed_out_at == null)
+                        .OrderByDescending(s => s.Signed_in_at)
+                        .FirstOrDefaultAsync();
+
+                    if (session != null)
+                    {
+                        session.Last_activity = DateTime.Now;
+                        await db.SaveChangesAsync();
+                    }
+                }
+            },
+            OnSigningOut = async ctx =>
+            {
+                var db = ctx.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                var userId = ctx.HttpContext.User.FindFirst("Personnelid")?.Value;
+
+                if (int.TryParse(userId, out var personnelId))
+                {
+                    var session = await db.Sessions
+                        .Where(s => s.Personnel_ID == personnelId && s.Signed_out_at == null)
+                        .OrderByDescending(s => s.Signed_in_at)
+                        .FirstOrDefaultAsync();
+
+                    if (session != null)
+                    {
+                        session.Signed_out_at = DateTime.Now;
+                        session.Last_activity = DateTime.Now;
+                        await db.SaveChangesAsync();
+                    }
+                }
+            }
+        };
     });
 
 // Session
@@ -65,7 +136,7 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.None;
-    options.IdleTimeout = TimeSpan.FromHours(1);
+    options.IdleTimeout = TimeSpan.FromSeconds(10);
 });
 
 // Data Protection
@@ -174,7 +245,6 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
-app.UseMiddleware<SessionTrackingMiddleware>();
 
 // Routes
 app.MapControllerRoute(
