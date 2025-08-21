@@ -11,6 +11,8 @@
     var leaveBtn = _template.HasPermission("LeaveBtn");
     var downloadBtn = _template.HasPermission("DownloadBtn");
     var legendBtn = _template.HasPermission("LegendBtn");
+    bool isFirstApprover = _template.HasPermission("FirstApprover");
+    bool isFinalApprover = _template.HasPermission("FinalApprover");
     var canApprove = _template.HasPermission("ApproveLeave");
     var canDeny = _template.HasPermission("DenyLeave");
 }
@@ -156,110 +158,175 @@
 </div>
 
 <!-- Approve/deny leave Modal -->
-<div class="modal fade" id="approveModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title">Leave application</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <dl class="row">
-                    <dt class="col-sm-3 text-end">
-                        Name
-                    </dt>
-                    <dd class="col-sm-9" id="name">
-                    </dd>
-                    <dt class="col-sm-3 text-end">
-                        Leave type
-                    </dt>
-                    <dd class="col-sm-9" id="leaveType">
-                    </dd>
-                    <dt class="col-sm-3 text-end">
-                        Day type
-                    </dt>
-                    <dd class="col-sm-9" id="dayType">
-                    </dd>
-                    <dt class="col-sm-3 text-end">
-                        Date
-                    </dt>
-                    <dd class="col-sm-9" id="date">
-                    </dd>
-                    <dt class="col-sm-3 text-end">
-                        Message
-                    </dt>
-                    <dd class="col-sm-9" id="message">
-                    </dd>
-                </dl>
-            </div>
-            <div class="modal-footer border-0">
-                @if (canDeny)
-                {
-                    <a class="btn btn-outline-danger" id="denyBtn" data-id="">Deny</a>
-                }
-                @if (canApprove)
-                {
-                    <a class="btn btn-outline-success" id="approveBtn">Approve</a>
-                }
+@if (isFinalApprover)
+{
+    <div class="modal fade" id="approveModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Leave application</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form asp-controller="Leave" id="approveForm">
+                    <input type="hidden" name="id" id="leaveId" />
+                    <div class="modal-body">
+                        <dl class="row">
+                            <dt class="col-sm-3 text-end">
+                                Name
+                            </dt>
+                            <dd class="col-sm-9" id="name">
+                            </dd>
+                            <dt class="col-sm-3 text-end">
+                                Leave type
+                            </dt>
+                            <dd class="col-sm-9" id="leaveType">
+                            </dd>
+                            <dt class="col-sm-3 text-end">
+                                Day type
+                            </dt>
+                            <dd class="col-sm-9" id="dayType">
+                            </dd>
+                            <dt class="col-sm-3 text-end">
+                                Date
+                            </dt>
+                            <dd class="col-sm-9" id="date">
+                            </dd>
+                            <dt class="col-sm-3 text-end">
+                                Message
+                            </dt>
+                            <dd class="col-sm-9" id="message">
+                            </dd>
+                        </dl>
+                        <div class="row">
+                            <div class="col">
+                                <label for="Comment" class="form-label">Comment</label><span class="text-danger visually-hidden" title="Required" id="commentRequired">*</span>
+                                <textarea name="Comment" id="Comment" class="form-control" data-val="true" data-val-required="Reason is required when denying leave request"></textarea>
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Comment" data-valmsg-replace="true"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        @if (canDeny)
+                        {
+                            <a class="btn btn-outline-danger" id="denyBtn" data-id="">Deny</a>
+                        }
+                        @if (canApprove)
+                        {
+                            <a class="btn btn-outline-success" id="approveBtn">Approve</a>
+                        }
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Deny modal -->
-<div class="modal fade" id="denyModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title" id="denyModalLabel">Deny this leave?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form asp-controller="Leave" asp-action="Deny1" id="denyForm">
+} 
+else
+{
+    <div class="modal fade" id="approveModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Leave application</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
                 <div class="modal-body">
                     <dl class="row">
                         <dt class="col-sm-3 text-end">
                             Name
                         </dt>
-                        <dd class="col-sm-9" id="denyName">
+                        <dd class="col-sm-9" id="name">
                         </dd>
                         <dt class="col-sm-3 text-end">
                             Leave type
                         </dt>
-                        <dd class="col-sm-9" id="denyLeaveType">
+                        <dd class="col-sm-9" id="leaveType">
                         </dd>
                         <dt class="col-sm-3 text-end">
                             Day type
                         </dt>
-                        <dd class="col-sm-9" id="denyDayType">
+                        <dd class="col-sm-9" id="dayType">
                         </dd>
                         <dt class="col-sm-3 text-end">
                             Date
                         </dt>
-                        <dd class="col-sm-9" id="denyDate">
+                        <dd class="col-sm-9" id="date">
                         </dd>
                         <dt class="col-sm-3 text-end">
                             Message
                         </dt>
-                        <dd class="col-sm-9" id="denyMessage">
+                        <dd class="col-sm-9" id="message">
                         </dd>
                     </dl>
-                    <div class="row">
-                        <div class="col">
-                            <label for="Comment" class="form-label">Reason</label><span class="text-danger" title="Required">*</span>
-                            <textarea name="Comment" id="Comment" class="form-control" data-val="true" data-val-required="The Reason field is required." required></textarea>
-                            <span class="text-danger field-validation-valid" data-valmsg-for="Comment" data-valmsg-replace="true"></span>
-                        </div>
-                    </div>
                 </div>
                 <div class="modal-footer border-0">
-                    <input type="hidden" name="id" id="denyID" />
-                    <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">No</a>
-                    <input type="submit" value="Yes, proceed" class="btn btn-danger" />
+                    @if (canDeny)
+                    {
+                        <a class="btn btn-outline-danger" id="denyBtn1" data-id="">Deny</a>
+                    }
+                    @if (canApprove)
+                    {
+                        <a class="btn btn-outline-success" id="approveBtn1">Approve</a>
+                    }
                 </div>
-            </form>
+            </div>
         </div>
     </div>
-</div>
+
+    <!-- Deny modal -->
+    <div class="modal fade" id="denyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="denyModalLabel">Deny this leave?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form asp-controller="Leave" asp-action="Deny1" id="denyForm">
+                    <div class="modal-body">
+                        <dl class="row">
+                            <dt class="col-sm-3 text-end">
+                                Name
+                            </dt>
+                            <dd class="col-sm-9" id="denyName">
+                            </dd>
+                            <dt class="col-sm-3 text-end">
+                                Leave type
+                            </dt>
+                            <dd class="col-sm-9" id="denyLeaveType">
+                            </dd>
+                            <dt class="col-sm-3 text-end">
+                                Day type
+                            </dt>
+                            <dd class="col-sm-9" id="denyDayType">
+                            </dd>
+                            <dt class="col-sm-3 text-end">
+                                Date
+                            </dt>
+                            <dd class="col-sm-9" id="denyDate">
+                            </dd>
+                            <dt class="col-sm-3 text-end">
+                                Message
+                            </dt>
+                            <dd class="col-sm-9" id="denyMessage">
+                            </dd>
+                        </dl>
+                        <div class="row">
+                            <div class="col">
+                                <label for="Comment" class="form-label">Reason</label><span class="text-danger" title="Required">*</span>
+                                <textarea name="Comment" id="Comment" class="form-control" data-val="true" data-val-required="The Reason field is required." required></textarea>
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Comment" data-valmsg-replace="true"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <input type="hidden" name="id" id="denyID" />
+                        <a class="btn btn-link" href="javascript:void(0)" data-bs-dismiss="modal">No</a>
+                        <input type="submit" value="Yes, proceed" class="btn btn-danger" />
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
 
 <!-- Confirm modal -->
 <div class="modal fade" id="confirmModal" tabindex="-1">
@@ -999,12 +1066,13 @@
                         date = `${response.date_start} to ${response.date_end}`;
                     }
 
+                    $("#leaveId").val(response.leave_ID);
                     $("#date").text(date);
                     $("#message").text(response.message);
-
-                    $("#approveBtn").attr("href", `/Leave/Approve1/${response.leave_ID}`);
-                    $("#denyBtn").attr("data-id", response.leave_ID);
-                    // $("#denyBtn").attr("href", `/Leave/Deny1/${response.leave_ID}`);
+                    $("#commentRequired").removeClass("visually-hidden").addClass("visually-hidden");
+                    $("#approveBtn1").attr("href", `/Leave/Approve1/${response.leave_ID}`);
+                    console.log($("#approveBtn1"));
+                    resetForm($("#approveForm"));
                 },
                 error: function () {
                     alert('An error occurred while assigning the shift.');
@@ -1021,15 +1089,36 @@
             eyeMarker.toggle();
         }
 
+        $("#approveBtn").on("click", function () {
+            $("#commentRequired").removeClass("visually-hidden").addClass("visually-hidden");
+            var form = $("#approveForm");
+            var field = $("#Comment");
+
+            field.prop("required", false);
+            form.attr("action", "/Leave/Approve1/");
+            form.submit();
+        });
+
         $("#denyBtn").on("click", function () {
-            console.log("Yes");
+            $("#denyID").val($(this).data("id"));
+
+            var form = $("#approveForm");
+            var field = $("#Comment");
+
+            field.prop("required", true);
+            $("#commentRequired").removeClass("visually-hidden");
+            form.attr("action", "/Leave/Deny1");
+            form.submit();
+        });
+
+        $("#denyBtn1").on("click", function () {
             $("#denyName").text($("#name").text());
             $("#denyLeaveType").text($("#leaveType").text());
             $("#denyDayType").text($("#dayType").text());
             $("#denyDate").text($("#date").text());
             $("#denyMessage").text($("#message").text());
-            $("#denyID").val($(this).data("id"));
 
+            resetForm($("#denyForm"));
             // Show the modal
             $("#denyModal").modal("show");
         });
@@ -1061,6 +1150,28 @@
                     alert('An error occurred while assigning the time in/out.');
                 }
             });
+        }
+
+        function resetForm(f) {
+            var form = $(f);
+            // 1. Reset all inputs to their initial values
+            form[0].reset();
+
+            // 2. Clear validation messages and states
+            form.find(".input-validation-error")
+                .removeClass("input-validation-error");
+
+            form.find(".field-validation-error")
+                .removeClass("field-validation-error")
+                .addClass("field-validation-valid")
+                .empty();
+
+            form.find(".field-validation-valid")
+                .empty();
+
+            // 3. Reset validation (jQuery Validate)
+            var validator = form.validate();
+            validator.resetForm();
         }
     </script>
 }

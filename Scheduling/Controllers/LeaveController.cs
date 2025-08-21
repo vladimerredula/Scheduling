@@ -550,7 +550,7 @@ namespace Scheduling.Controllers
             });
         }
 
-        public async Task<IActionResult> Approve1(int Id)
+        public async Task<IActionResult> Approve1(int Id, string Comment = null)
         {
             var leave = await _db.Leaves
                 .Include(l => l.User)
@@ -573,6 +573,7 @@ namespace Scheduling.Controllers
                 {
                     // Final approval
                     leave.Status = "Approved";
+                    leave.Comment = Comment;
                     leave.Approver_2 = approverId;
                     leave.Date_approved_2 = today;
                     leave.Notify = 1; // Notify the user that the leave was approved
