@@ -29,8 +29,7 @@ namespace Scheduling.Controllers
                     Ip_address = s.Ip_address,
                     Full_name = s.User.Full_name,
                     Last_activity = s.Last_activity.ToString("yyyy-MM-dd HH:mm"),
-                    User_agent = s.User_agent,
-                    Signed_in_at = s.Signed_in_at.ToString("yyyy-MM-dd HH:mm")
+                    User_agent = s.User_agent
                 })
                 .ToListAsync();
 

@@ -16,7 +16,7 @@ namespace Scheduling.Models
 
         public string App_name { get; set; } = "SCH";
 
-        public DateTime Signed_in_at { get; set; } = DateTime.Now;
+        public DateTime? Signed_in_at { get; set; } = DateTime.Now;
 
         public DateTime? Signed_out_at { get; set; }
 
