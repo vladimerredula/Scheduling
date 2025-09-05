@@ -42,10 +42,7 @@
             <div class="row justify-content-between mb-3">
 
                 <div class="col-auto">
-                    @if (_template.HasPermission("MonthNav"))
-                    {
-                        <a class="btn btn-light border" id="prevBtn" title="Go to previous month"><i class="bi bi-arrow-bar-left"></i> @prevMonth.ToString("MMM")</a>
-                    }
+                    <a class="btn btn-light border" id="prevBtn" title="Go to previous month"><i class="bi bi-arrow-bar-left"></i> @prevMonth.ToString("MMM")</a>
                 </div>
                 <div class="col text-center">
                     <span class="fs-3 fw-semibold">@firstDay.ToString("MMMM yyyy")</span>
@@ -56,10 +53,7 @@
                         <a class="btn btn-light border me-2" id="viewSl" title="View Shift leaders for this month">Shift leaders</a>
                     }
                     <a class="btn btn-light border me-2" id="reloadBtn" title="Reload schedule"><i class="bi bi-arrow-clockwise"></i></a>
-                    @if (_template.HasPermission("MonthNav"))
-                    {
-                        <a class="btn btn-light border" id="nextBtn" title="Go to next month">@nextMonth.ToString("MMM") <i class="bi bi-arrow-bar-right"></i></a>
-                    }
+                    <a class="btn btn-light border" id="nextBtn" title="Go to next month">@nextMonth.ToString("MMM") <i class="bi bi-arrow-bar-right"></i></a>
                 </div>
             </div>
 
@@ -144,10 +138,6 @@
                                         <div class="row my-0">
                                             <div class="col align-self-center text-truncate">
                                                 @user.Full_name
-                                                @if (isShiftLeader && canAssignShift)
-                                                {
-                                                    @* <span class="text-danger fw-bold"> SL</span> *@
-                                                }
                                             </div>
                                             @if (isPartTime)
                                             {
@@ -303,54 +293,45 @@
                                                     style="border: none;"
                                                     @(hasLeave && leave?.Status == "Approved" && shiftId != 0 ? "tabindex=-1" : "")
                                                     @(disabledSelect)>
-                                                        <option value="0"></option>
+                                                        <option class="bg-body" value="0"></option>
+                                                        // Shifts
                                                         @foreach (var pattern in patterns)
                                                         {
                                                             if (shifts.Any(s => s.Pattern == pattern))
                                                             {
                                                                 if (shifts.Where(s => s.Pattern != null).GroupBy(s => s.Pattern).Count() > 1)
                                                                 {
-                                                                    <option class="text-body text-start fw-bold" value="" disabled style="font-size:12px">&nbsp;@pattern&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
+                                                                    <option class="bg-body text-body text-start fw-bold" value="" disabled style="font-size:12px">&nbsp;@pattern&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
                                                                 }
                                                                 foreach (var shift in shifts.Where(s => s.Pattern == pattern).OrderBy(s => s.Shift_name))
                                                                 {
                                                                     if (shift.Shift_ID == shiftId)
                                                                     {
-                                                                        <option class="text-body" value="@shift.Shift_ID" selected>@(shift.Acronym ?? shift.Shift_name)</option>
+                                                                        <option class="bg-body text-body" value="@shift.Shift_ID" selected>@(shift.Acronym ?? shift.Shift_name)</option>
                                                                     }
                                                                     else
                                                                     {
-                                                                        <option class="text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
+                                                                        <option class="bg-body text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
                                                                     }
                                                                 }
                                                             }
                                                         }
 
-                                                        @if (shifts.Any(s => !patterns.Contains(s.Pattern)))
+                                                        // Shifts without pattern
+                                                        @foreach (var shift in shifts.Where(s => !patterns.Contains(s.Pattern)).OrderBy(s => s.Shift_name))
                                                         {
-                                                            foreach (var shift in shifts.Where(s => !patterns.Contains(s.Pattern)).OrderBy(s => s.Shift_name))
-                                                            {
-                                                                if (shift.Shift_ID == shiftId)
-                                                                {
-                                                                    <option class="text-body" value="@shift.Shift_ID" selected>@(shift.Acronym ?? shift.Shift_name)</option>
-                                                                }
-                                                                else
-                                                                {
-                                                                    <option class="text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
-                                                                }
-                                                            }
+                                                            <option class="bg-body text-body" value="@shift.Shift_ID" selected="@(shift.Shift_ID == shiftId)">
+                                                                @(shift.Acronym ?? shift.Shift_name)
+                                                            </option>
                                                         }
 
+                                                        // Cancel / Uncancel option
                                                         @if (schedule?.Shift_ID != null)
                                                         {
-                                                            @if (schedule?.Comment == "cancelled")
-                                                            {
-                                                                <option class="text-body" value="998">*Uncancel shift</option>
-                                                            }
-                                                            else
-                                                            {
-                                                                <option class="text-body" value="999">*Cancel shift</option>
-                                                            }
+                                                            var optionValue = schedule?.Comment == "cancelled" ? "998" : "999";
+                                                            var optionText = schedule?.Comment == "cancelled" ? "*Uncancel shift" : "*Cancel shift";
+
+                                                            <option class="bg-body text-body" value="@optionValue">@optionText</option>
                                                         }
                                                     </select>
                                                 }
