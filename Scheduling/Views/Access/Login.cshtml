@@ -13,7 +13,16 @@
     <link rel="icon" type="image/x-icon" href="~/images/favicon/favicon.ico">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/lib/flatpickr/css/flatpickr.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" />
+    <script>
+        // (function () {
+        //   const theme = localStorage.getItem('theme') || 'auto';
+        //   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        //   const resolved = theme === 'auto' ? (prefersDark ? 'dark' : 'light') : theme;
+        //   document.documentElement.setAttribute('data-bs-theme', resolved);
+        // })();
+    </script>
 </head>
 <body class="bg-body-secondary text-body">
     <div class="container">
@@ -57,8 +66,71 @@
         </div>
     </div>
 
-    @Html.AntiForgeryToken()
+    @* <div class="dropdown position-fixed bottom-0 end-0 mb-3 me-3">
+        <button class="btn btn-secondary dropdown-toggle" id="bd-theme" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i id="bd-theme-icon" class="bi"></i>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a class="dropdown-item" id="light" data-bs-theme-value="light">
+                    <i class="bi bi-sun-fill"></i> Light
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" id="dark" data-bs-theme-value="dark">
+                    <i class="bi bi-moon-stars-fill"></i> Dark
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" id="auto" data-bs-theme-value="auto">
+                    <i class="bi bi-circle-half"></i> Auto
+                </a>
+            </li>
+        </ul>
+    </div> *@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // document.addEventListener('DOMContentLoaded', () => {
+        //     const themeToggle = document.querySelectorAll('[data-bs-theme-value]');
+        //     const themeIcon = document.querySelector('#bd-theme i');
+        //     const themeStorageKey = 'theme';
+        //     const storedTheme = localStorage.getItem(themeStorageKey) || 'auto';
+
+        //     Set the data-bs-theme attribute to the stored or default theme
+        //     document.documentElement.setAttribute('data-bs-theme', storedTheme);
+
+        //     Helper to update active class and icon
+        //     function updateActiveTheme(theme) {
+        //         themeToggle.forEach(btn => {
+        //             btn.classList.remove('active');
+        //             if (btn.getAttribute('data-bs-theme-value') === theme) {
+        //                 btn.classList.add('active');
+        //             }
+        //         });
+
+        //         Update icon
+        //         const icons = {
+        //             light: 'bi-sun-fill',
+        //             dark: 'bi-moon-stars-fill',
+        //             auto: 'bi-circle-half'
+        //         };
+        //         themeIcon.className = `bi ${icons[theme]}`;
+        //     }
+
+        //     updateActiveTheme(storedTheme);
+
+        //     Handle theme change
+        //     themeToggle.forEach(btn => {
+        //         btn.addEventListener('click', () => {
+        //             const selectedTheme = btn.getAttribute('data-bs-theme-value');
+        //             localStorage.setItem(themeStorageKey, selectedTheme);
+        //             document.documentElement.setAttribute('data-bs-theme', selectedTheme);
+        //             updateActiveTheme(selectedTheme);
+        //         });
+        //     });
+        // });
+    </script>
 </body>
 </html>
