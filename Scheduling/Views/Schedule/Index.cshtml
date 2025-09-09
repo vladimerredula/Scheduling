@@ -358,6 +358,7 @@ else
             initializeFlatpickr();
             initializePopovers();
             initializeContextMenus();
+            initializeTooltips();
 
             $('#monthPicker').datepicker({
                 format: "MM yyyy",
@@ -470,6 +471,18 @@ else
                 }
             });
         });
+
+        function initializeTooltips() {
+            $('select[data-date]').each(function() {
+                updateTooltip($(this));
+            }).on('change', function() {
+                updateTooltip($(this));
+            });
+        }
+
+        function updateTooltip($select) {
+            $select.attr('title', $select.find('option:selected').text());
+        }
 
         function addShiftLeader() {
             let selectSl = $("#selectSl");
@@ -918,6 +931,7 @@ else
                     initializePopovers();
                     initializeFlatpickr();
                     initializeContextMenus();
+                    initializeTooltips();
                     hideSpinner();
                 },
                 error: function () {
