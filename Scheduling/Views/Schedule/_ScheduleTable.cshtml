@@ -75,11 +75,11 @@
                                 var missingSlPopover = "";
                                 var missingSl = false;
 
-                                if (isProdDept)
+                                if (isProdDept && canAssignShift)
                                 {
                                     var todaysSl = shiftLeaders.Where(s => s.Item1.Date == date.Date).Select(s => s.Item3).ToList();
 
-                                    if (todaysSl.Count < 3 && canAssignShift && holiday?.Type != "Company" && hasSchedule)
+                                    if (todaysSl.Count < 3 && holiday?.Type != "Company" && hasSchedule)
                                     {
                                         var missingShifts = expectedShifts.Except(todaysSl).ToList();
 
@@ -117,7 +117,7 @@
                         </tr>
                     </thead>
 
-                    @foreach (var sector in users.GroupBy(u => u.Sector_ID))
+                    @foreach (var sector in users.OrderBy(u => u.Sector.Order).GroupBy(u => u.Sector_ID))
                     {
                         <tbody class="sector" data-sector-id="@sector.Key">
                             <tr class="sectorName">
@@ -295,34 +295,46 @@
                                                     @(disabledSelect)>
                                                         <option class="bg-body" value="0"></option>
                                                         // Shifts
-                                                        @foreach (var pattern in patterns)
+                                                        @if (canAssignShift)
                                                         {
-                                                            if (shifts.Any(s => s.Pattern == pattern))
+                                                            @foreach (var pattern in patterns)
                                                             {
-                                                                if (shifts.Where(s => s.Pattern != null).GroupBy(s => s.Pattern).Count() > 1)
+                                                                if (shifts.Any(s => s.Pattern == pattern))
                                                                 {
-                                                                    <option class="bg-body text-body text-start fw-bold" value="" disabled style="font-size:12px">&nbsp;@pattern&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
-                                                                }
-                                                                foreach (var shift in shifts.Where(s => s.Pattern == pattern).OrderBy(s => s.Shift_name))
-                                                                {
-                                                                    if (shift.Shift_ID == shiftId)
+                                                                    if (shifts.Where(s => s.Pattern != null).GroupBy(s => s.Pattern).Count() > 1)
                                                                     {
-                                                                        <option class="bg-body text-body" value="@shift.Shift_ID" selected>@(shift.Acronym ?? shift.Shift_name)</option>
+                                                                        <option class="bg-body text-body text-start fw-bold" value="" disabled style="font-size:12px">&nbsp;@pattern&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
                                                                     }
-                                                                    else
+                                                                    foreach (var shift in shifts.Where(s => s.Pattern == pattern).OrderBy(s => s.Shift_name))
                                                                     {
-                                                                        <option class="bg-body text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
+                                                                        if (shift.Shift_ID == shiftId)
+                                                                        {
+                                                                            <option class="bg-body text-body" value="@shift.Shift_ID" selected>@(shift.Acronym ?? shift.Shift_name)</option>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <option class="bg-body text-body" value="@shift.Shift_ID">@(shift.Acronym ?? shift.Shift_name)</option>
+                                                                        }
                                                                     }
                                                                 }
                                                             }
-                                                        }
 
-                                                        // Shifts without pattern
-                                                        @foreach (var shift in shifts.Where(s => !patterns.Contains(s.Pattern)).OrderBy(s => s.Shift_name))
+                                                            // Shifts without pattern
+                                                            @foreach (var shift in shifts.Where(s => !patterns.Contains(s.Pattern)).OrderBy(s => s.Shift_name))
+                                                            {
+                                                                <option class="bg-body text-body" value="@shift.Shift_ID" selected="@(shift.Shift_ID == shiftId)">
+                                                                    @(shift.Acronym ?? shift.Shift_name)
+                                                                </option>
+                                                            }
+                                                        } else if (shiftId != 0)
                                                         {
-                                                            <option class="bg-body text-body" value="@shift.Shift_ID" selected="@(shift.Shift_ID == shiftId)">
-                                                                @(shift.Acronym ?? shift.Shift_name)
-                                                            </option>
+                                                            var shift = shifts.FirstOrDefault(s => s.Shift_ID == shiftId);
+                                                            if (shift != null)
+                                                            {
+                                                                <option class="bg-body text-body" value="@shift.Shift_ID" selected="@(shift.Shift_ID == shiftId)">
+                                                                    @(shift.Acronym ?? shift.Shift_name)
+                                                                </option>
+                                                            }
                                                         }
 
                                                         // Cancel / Uncancel option
